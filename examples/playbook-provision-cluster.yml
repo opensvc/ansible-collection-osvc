@@ -1,0 +1,7 @@
+- hosts: all
+  tasks:
+    - import_role:
+        name: opensvc.cluster.provision_cluster
+      vars:
+        osvc_clustername: testcluster
+        osvc_hb_timeout: 25s

@@ -1,0 +1,11 @@
+---
+osvc_prereq_pkgs:
+  - python36
+  - python36-requests
+  - python36-crypto
+  - python36-cryptography
+  - psmisc
+  - sg3_utils
+
+osvc_repo_url: https://repo.opensvc.com/rpms/current
+osvc_pkg_dl_path: /tmp/opensvc.latest.rpm

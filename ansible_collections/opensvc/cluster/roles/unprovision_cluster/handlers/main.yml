@@ -1,0 +1,6 @@
+---
+# handlers file for unprovision_cluster
+
+- name: systemctl-daemon-reload
+  systemd:
+    daemon_reload: yes

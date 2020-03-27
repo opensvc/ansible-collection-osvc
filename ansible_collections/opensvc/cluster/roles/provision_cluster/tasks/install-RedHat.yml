@@ -1,0 +1,6 @@
+---
+
+- name: Install OpenSVC agent package
+  yum:
+    name: "{{ osvc_pkg_dl_path }}"
+    state: present

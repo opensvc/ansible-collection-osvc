@@ -1,0 +1,6 @@
+---
+# handlers file for provision_cluster
+- name: Reload sshd
+  service:
+    name: ssh
+    state: reloaded

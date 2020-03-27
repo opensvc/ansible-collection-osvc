@@ -1,0 +1,11 @@
+[clusternodes]
+demo1.acme.com ansible_ssh_private_key_file="ssh.private.key"
+demo2.acme.com ansible_ssh_private_key_file="ssh.private.key"
+
+[webservers]
+web1.acme.com
+web2.acme.com
+
+[dbservers]
+db1.acme.com
+db2.acme.com

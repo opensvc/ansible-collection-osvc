@@ -1,0 +1,134 @@
+---
+# tasks file for provision_cluster
+ 
+- name: Include OS variables
+  include_vars: "{{ ansible_os_family }}.yml"
+
+- name: Install prerequisites packages
+  package:
+    name: "{{ osvc_prereq_pkgs }}"
+    state: latest
+
+- name: Gather the package facts
+  package_facts:
+    manager: auto
+
+- name: Download OpenSVC agent latest package
+  get_url:
+    url: "{{ osvc_repo_url }}"
+    dest: "{{ osvc_pkg_dl_path }}"
+    force: yes
+    mode: 0600
+  when: "'opensvc' not in ansible_facts.packages"
+
+- name: Install OpenSVC agent package
+  include_tasks: "install-{{ ansible_os_family }}.yml"
+  when: "'opensvc' not in ansible_facts.packages"
+
+- name: Remove package file from /tmp
+  file:
+    path: "{{ osvc_pkg_dl_path }}"
+    state: absent
+  when: "'opensvc' not in ansible_facts.packages"
+
+- name: Enable opensvc-agent.service unit file
+  service:
+    name: opensvc-agent.service
+    enabled: yes
+    state: started
+
+- name: Build hosts file
+  lineinfile:
+    dest: /etc/hosts
+    regexp: '{{ hostvars[item].ansible_hostname }} {{ hostvars[item].ansible_hostname.split(".")[0] }}'
+    line: '{{ hostvars[item].ansible_default_ipv4.address }} {{ hostvars[item].ansible_hostname }}  {{ hostvars[item].ansible_hostname.split(".")[0] }}'
+    state: present
+    backup: yes
+  when:
+    - "hostvars[item].ansible_default_ipv4.address is defined"
+  with_items: "{{ ansible_play_hosts }}"
+
+- name: Enable ssh root access accross cluster nodes
+  replace:
+    dest: /etc/ssh/sshd_config
+    regexp: '^PermitRootLogin (yes|without-password)'
+    replace: "PermitRootLogin prohibit-password"
+  notify: reload sshd
+
+- name: Enable sysrq trigger
+  sysctl:
+    name: kernel.sysrq
+    value: '1'
+    state: present
+    sysctl_file: /etc/sysctl.d/99-opensvc-sysrq.conf
+    sysctl_set: yes
+
+########################## FIRST NODE ##########################
+
+- name: Check hb cluster param exists on first node
+  command: om cluster get --kw hb#1.type
+  register: clusterhbtype
+  changed_when: no
+  failed_when: no
+  when: inventory_hostname == ansible_play_hosts[0]
+
+- name: Configure cluster with unicast hb
+  command: om cluster set --kw hb#1.type=unicast --kw hb#1.timeout={{ osvc_hb_timeout }}
+  when:
+    - inventory_hostname == ansible_play_hosts[0]
+    - clusterhbtype.stdout == "None"
+
+- name: Get current cluster name
+  command: om cluster get --kw cluster.name
+  register: clustername
+  changed_when: no
+  failed_when: no
+  when:
+    - inventory_hostname == ansible_play_hosts[0]
+
+- name: Set cluster name
+  command: "om cluster set --kw cluster.name={{ osvc_clustername }}"
+  when: 
+    - inventory_hostname == ansible_play_hosts[0]
+    - clustername.stdout != osvc_clustername
+
+- name: Get cluster secret on first node
+  command: om cluster get --kw cluster.secret
+  register: clustersecret
+  changed_when: no
+  failed_when: no
+  when: inventory_hostname == ansible_play_hosts[0]
+
+########################## OTHER NODES ##########################
+
+- name: Check other nodes are joined to a cluster
+  command: om cluster get --kw cluster.nodes
+  register: clusternodes
+  changed_when: no
+  failed_when: no
+
+- name: Consider that we have join the cluster
+  set_fact:
+    joined: 'true'
+
+- name: Check if we are actually joined
+  set_fact:
+    joined: 'false'
+  when:
+    - clusternodes.stdout == ansible_hostname
+    - inventory_hostname != ansible_play_hosts[0]
+
+- name: Join other nodes to the cluster
+  command: "om daemon join --secret {{ hostvars[ansible_play_hosts[0]].clustersecret.stdout }} --node {{ hostvars[ansible_play_hosts[0]].ansible_hostname }}"
+  when:
+    - 'joined == false'
+
+- name: Wait for join to be terminated
+  command: 'om node wait --duration 20s --filter monitor.nodes.{{ ansible_hostname }}.monitor.status=idle'
+  when:
+    - 'joined == false'
+
+- name: Add mutual root ssh trust
+  command: 'om node update ssh authorized keys --node "*"'
+  when:
+    - 'joined == false'

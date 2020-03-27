@@ -1,0 +1,6 @@
+---
+# defaults file for provision_cluster
+
+osvc_clustername: demo
+
+osvc_hb_timeout: 20s

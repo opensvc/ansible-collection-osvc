@@ -1,0 +1,5 @@
+---
+
+- name: Install OpenSVC agent package
+  apt:
+    deb: "{{ osvc_pkg_dl_path }}"

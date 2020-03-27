@@ -1,3 +1,4 @@
 *.tar.gz
 */collections/*
 *.old
+examples/ssh.private.key
