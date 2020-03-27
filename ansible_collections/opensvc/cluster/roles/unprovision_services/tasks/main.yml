@@ -39,7 +39,7 @@
     - inventory_hostname == ansible_play_hosts[0]
 
 - name: Check if we actually need to purge something
-  shell: om '*/*/*+!*/*/cluster' ls | wc -l
+  command: om '*/*/*+!*/*/cluster' ls | wc -l
   changed_when: no
   failed_when: no
   register: osvc_cluster_svc_count
@@ -61,7 +61,7 @@
     - osvc_cluster_need_svc_purge|bool
 
 - name: Check for actual service unprov
-  shell: om '*/*/*+!*/*/cluster' ls | wc -l
+  command: om '*/*/*+!*/*/cluster' ls | wc -l
   changed_when: no
   failed_when: no
   register: osvc_cluster_svc_unprov_cmdres

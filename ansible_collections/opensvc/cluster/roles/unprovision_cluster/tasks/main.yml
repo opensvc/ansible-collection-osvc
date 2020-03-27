@@ -15,7 +15,7 @@
   failed_when: no
 
 - name: Stop OpenSVC daemon
-  shell: om daemon shutdown
+  command: om daemon shutdown
   when: osvc_daemon_ps.rc == 0
 
 - name: Remove OpenSVC package

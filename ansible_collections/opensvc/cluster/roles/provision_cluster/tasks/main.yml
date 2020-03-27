@@ -1,6 +1,5 @@
 ---
 # tasks file for provision_cluster
- 
 - name: Include OS variables
   include_vars: "{{ ansible_os_family }}.yml"
 
@@ -88,7 +87,7 @@
 
 - name: Set cluster name
   command: "om cluster set --kw cluster.name={{ osvc_clustername }}"
-  when: 
+  when:
     - inventory_hostname == ansible_play_hosts[0]
     - clustername.stdout != osvc_clustername
 
@@ -121,14 +120,14 @@
 - name: Join other nodes to the cluster
   command: "om daemon join --secret {{ hostvars[ansible_play_hosts[0]].clustersecret.stdout }} --node {{ hostvars[ansible_play_hosts[0]].ansible_hostname }}"
   when:
-    - 'joined == false'
+    - not joined
 
 - name: Wait for join to be terminated
   command: 'om node wait --duration 20s --filter monitor.nodes.{{ ansible_hostname }}.monitor.status=idle'
   when:
-    - 'joined == false'
+    - not joined
 
 - name: Add mutual root ssh trust
   command: 'om node update ssh authorized keys --node "*"'
   when:
-    - 'joined == false'
+    - not joined
