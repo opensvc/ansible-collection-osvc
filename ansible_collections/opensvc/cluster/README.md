@@ -17,14 +17,10 @@ Then you can use the roles from the collection in your playbooks:
         - opensvc.cluster
     
       roles:
-        - kubernetes
-        - role: k8s_manifests
+        - role: provision_cluster
           vars:
-            k8s_manifests_base_dir: ''
-            k8s_manifests:
-              - monitoring/prometheus
-              - dir: docker-registry
-                namespace: registry
+            osvc_clustername: prod01
+            osvc_hb_timeout: 30s
 
 ## Author
 
