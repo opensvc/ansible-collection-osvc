@@ -1,2 +1,3 @@
 ---
-# vars file for provision_cluster
+# number of nodes in cluster
+nodecount: "{{ ansible_play_hosts | length }}"

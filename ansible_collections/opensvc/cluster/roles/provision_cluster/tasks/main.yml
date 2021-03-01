@@ -1,7 +1,12 @@
 ---
 # tasks file for provision_cluster
+
 - name: Include OS variables
   include_vars: "{{ ansible_os_family }}.yml"
+
+- debug:
+    var: nodecount
+    verbosity: 2
 
 - name: Install prerequisites packages
   package:
@@ -96,7 +101,9 @@
   register: clustersecret
   changed_when: no
   failed_when: no
-  when: inventory_hostname == ansible_play_hosts[0]
+  when:
+    - inventory_hostname == ansible_play_hosts[0]
+    - nodecount|int > 1
 
 ########################## OTHER NODES ##########################
 
@@ -105,29 +112,37 @@
   register: clusternodes
   changed_when: no
   failed_when: no
+  when:
+    - nodecount|int > 1
 
 - name: Consider that we have join the cluster
   set_fact:
     joined: 'true'
+  when:
+    - nodecount|int > 1
 
 - name: Check if we are actually joined
   set_fact:
     joined: 'false'
   when:
+    - nodecount|int > 1
     - clusternodes.stdout == ansible_hostname
     - inventory_hostname != ansible_play_hosts[0]
 
 - name: Join other nodes to the cluster
   command: "om daemon join --secret {{ hostvars[ansible_play_hosts[0]].clustersecret.stdout }} --node {{ hostvars[ansible_play_hosts[0]].ansible_hostname }}"
   when:
+    - nodecount|int > 1
     - not joined
 
 - name: Wait for join to be terminated
   command: 'om node wait --duration 20s --filter monitor.nodes.{{ ansible_hostname }}.monitor.status=idle'
   when:
+    - nodecount|int > 1
     - not joined
 
 - name: Add mutual root ssh trust
   command: 'om node update ssh authorized keys --node "*"'
   when:
+    - nodecount|int > 1
     - not joined
