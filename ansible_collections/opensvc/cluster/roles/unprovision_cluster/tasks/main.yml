@@ -19,7 +19,7 @@
   when: osvc_daemon_ps.rc == 0
 
 - name: Remove OpenSVC package
-  package: 
+  package:
     name: opensvc
     state: absent
 
