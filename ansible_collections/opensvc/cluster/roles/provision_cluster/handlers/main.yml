@@ -2,5 +2,5 @@
 # handlers file for provision_cluster
 - name: Reload sshd
   service:
-    name: ssh
+    name: "{{ systemd_ssh_unit }}"
     state: reloaded

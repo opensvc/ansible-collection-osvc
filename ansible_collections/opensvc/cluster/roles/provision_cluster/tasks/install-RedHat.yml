@@ -1,6 +1,31 @@
 ---
 
-- name: Install OpenSVC agent package
-  yum:
-    name: "{{ osvc_pkg_dl_path }}"
+- name: install common packages for rhel/centos/fedora (ver < 8)
+  ansible.builtin.yum:
+    name:  "{{ packages }}"
     state: present
+  vars:
+    packages:
+      - python36
+      - python36-requests
+      - python36-crypto
+      - python36-cryptography
+      - sg3_utils
+      - psmisc
+  when:
+    - (ansible_distribution_major_version|int < 8)
+
+- name: install common packages for rhel/centos/fedora (ver > 8)
+  yum:
+    name:  "{{ packages }}"
+    state: present
+  vars:
+    packages:
+      - podman
+      - psmisc
+      - python3
+      - python3-requests
+      - python3-cryptography
+      - sg3_utils
+  when:
+    - (ansible_distribution_major_version|int >= 8)

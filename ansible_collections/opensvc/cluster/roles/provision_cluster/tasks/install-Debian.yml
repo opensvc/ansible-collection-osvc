@@ -1,5 +1,37 @@
 ---
 
-- name: Install OpenSVC agent package
+- name: install common packages for ubuntu/deb
   apt:
-    deb: "{{ osvc_pkg_dl_path }}"
+    name:  "{{ packages }}"
+    state: present
+    update_cache: yes
+  vars:
+    packages:
+      - docker.io
+      - python3-crypto
+      - python3-cryptography
+      - python3-requests
+      - runc
+      - sg3-utils
+
+- name: install packages for old ubuntu
+  apt:
+    name:  "{{ packages }}"
+    state: present
+  vars:
+    packages:
+      - python-crypto
+      - python-cryptography
+      - python-requests
+  when: (ansible_facts['distribution'] == "Ubuntu" ) and
+        ansible_distribution_major_version|int < 20
+
+- name: install package for ubuntu 20.04
+  apt:
+    name:  "{{ packages }}"
+    state: present
+  vars:
+    packages:
+      - python-is-python3
+  when: (ansible_facts['distribution'] == "Ubuntu" ) and
+        (ansible_distribution_major_version|int >= 20)

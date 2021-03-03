@@ -1,17 +1,24 @@
 ---
 # tasks file for provision_cluster
 
+- name: Distribution
+  debug: msg="{{ ansible_distribution }}"
+
+- name: Distribution version
+  debug: msg="{{ ansible_distribution_version }}"
+
+- name: Distribution major version
+  debug: msg="{{ ansible_distribution_major_version }}"
+
 - name: Include OS variables
   include_vars: "{{ ansible_os_family }}.yml"
+
+- name: Deploy per OS prerequisites
+  include_tasks: "install-{{ ansible_os_family }}.yml"
 
 - debug:
     var: nodecount
     verbosity: 2
-
-- name: Install prerequisites packages
-  package:
-    name: "{{ osvc_prereq_pkgs }}"
-    state: latest
 
 - name: Gather the package facts
   package_facts:
@@ -26,7 +33,7 @@
   when: "'opensvc' not in ansible_facts.packages"
 
 - name: Install OpenSVC agent package
-  include_tasks: "install-{{ ansible_os_family }}.yml"
+  include_tasks: "install-{{ ansible_os_family }}-opensvc.yml"
   when: "'opensvc' not in ansible_facts.packages"
 
 - name: Remove package file from /tmp
@@ -57,7 +64,7 @@
     dest: /etc/ssh/sshd_config
     regexp: '^PermitRootLogin (yes|without-password)'
     replace: "PermitRootLogin prohibit-password"
-  notify: reload sshd
+  notify: Reload sshd
 
 - name: Enable sysrq trigger
   sysctl:
