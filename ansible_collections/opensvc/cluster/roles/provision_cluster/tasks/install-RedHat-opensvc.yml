@@ -1,0 +1,6 @@
+---
+
+- name: Install OpenSVC agent package
+  ansible.builtin.yum:
+    name: "{{ osvc_pkg_dl_path }}"
+    state: present
