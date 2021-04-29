@@ -4,3 +4,5 @@
 osvc_clustername: demo
 
 osvc_hb_timeout: 20s
+
+osvc_update_etc_hosts: false

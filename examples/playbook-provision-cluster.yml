@@ -5,3 +5,4 @@
       vars:
         osvc_clustername: testcluster
         osvc_hb_timeout: 25s
+        osvc_update_etc_hosts: true

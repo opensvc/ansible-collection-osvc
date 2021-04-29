@@ -48,16 +48,18 @@
     enabled: yes
     state: started
 
-- name: Build hosts file
-  lineinfile:
-    dest: /etc/hosts
-    regexp: '{{ hostvars[item].ansible_hostname }} {{ hostvars[item].ansible_hostname.split(".")[0] }}'
-    line: '{{ hostvars[item].ansible_default_ipv4.address }} {{ hostvars[item].ansible_hostname }}  {{ hostvars[item].ansible_hostname.split(".")[0] }}'
-    state: present
-    backup: yes
-  when:
-    - "hostvars[item].ansible_default_ipv4.address is defined"
+- name: Ensure resolver is aware of cluster nodes
+  ansible.builtin.debug:
+    msg: "{{ lookup('community.general.dig', item )}}"
   with_items: "{{ ansible_play_hosts }}"
+
+- name: Update /etc/hosts file
+  blockinfile:
+    dest: /etc/hosts
+    content: "{{ lookup('template', 'templates/hosts.j2') }}"
+    state: present
+  when:
+    - osvc_update_etc_hosts is true
 
 - name: Enable ssh root access accross cluster nodes
   replace:
