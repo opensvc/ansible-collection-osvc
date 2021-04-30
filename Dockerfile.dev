@@ -3,11 +3,11 @@ FROM python:3.9.2-alpine3.12
 LABEL maintainer="OpenSVC Ansible Team <ansible@opensvc.com>"
 LABEL vendor1="OpenSVC"
 
-COPY requirements.txt /tmp
+COPY requirements.dev.txt /tmp
 RUN apk add --update --no-cache ca-certificates \
+                                cargo \
                                 openssh-client \
                                 build-base \
-                                cargo \
                                 gcc \
                                 g++ \
                                 make \
@@ -16,10 +16,17 @@ RUN apk add --update --no-cache ca-certificates \
                                 libffi-dev \
                                 rust \
                                 sshpass \
-                                libressl-dev &&\
-                                pip install --upgrade pip && \
-                                pip install -r /tmp/requirements.txt &&\
-                                apk del -r --purge gcc make g++ rust &&\
+                                libressl-dev
+
+RUN  pip install --upgrade pip 
+
+RUN  pip install -r /tmp/requirements.dev.txt
+
+RUN pip uninstall -y ansible-base
+
+RUN python -m pip install https://github.com/ansible/ansible/archive/devel.tar.gz
+
+RUN                             apk del -r --purge gcc make g++ &&\
                                 rm -rf /source/* &&\
                                 rm -rf /var/cache/apk/* &&\
                                 rm -rf /tmp/*
