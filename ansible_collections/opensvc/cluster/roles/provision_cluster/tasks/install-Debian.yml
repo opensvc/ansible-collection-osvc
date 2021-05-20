@@ -2,9 +2,9 @@
 
 - name: install common packages for ubuntu/deb
   apt:
-    name:  "{{ packages }}"
+    name: "{{ packages }}"
     state: present
-    update_cache: yes
+    update_cache: true
   vars:
     packages:
       - docker.io
@@ -16,7 +16,7 @@
 
 - name: install packages for old ubuntu
   apt:
-    name:  "{{ packages }}"
+    name: "{{ packages }}"
     state: present
   vars:
     packages:
@@ -28,7 +28,7 @@
 
 - name: install package for ubuntu 20.04
   apt:
-    name:  "{{ packages }}"
+    name: "{{ packages }}"
     state: present
   vars:
     packages:

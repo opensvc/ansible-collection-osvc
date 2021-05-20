@@ -2,7 +2,7 @@
 
 - name: install common packages for rhel/centos/fedora (ver < 8)
   ansible.builtin.yum:
-    name:  "{{ packages }}"
+    name: "{{ packages }}"
     state: present
   vars:
     packages:
@@ -17,7 +17,7 @@
 
 - name: install common packages for rhel/centos/fedora (ver > 8)
   yum:
-    name:  "{{ packages }}"
+    name: "{{ packages }}"
     state: present
   vars:
     packages:
