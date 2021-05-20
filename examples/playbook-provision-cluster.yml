@@ -1,6 +1,7 @@
 - hosts: all
   tasks:
-    - import_role:
+    - name: import role provision_cluster
+      import_role:
         name: opensvc.cluster.provision_cluster
       vars:
         osvc_clustername: testcluster
