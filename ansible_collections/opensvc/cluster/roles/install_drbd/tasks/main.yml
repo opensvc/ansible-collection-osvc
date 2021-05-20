@@ -1,0 +1,26 @@
+---
+# tasks file for install_drbd
+- name: install DRBD software prerequisites
+  include_tasks: "install-{{ ansible_os_family }}-prerequisites.yml"
+
+# need to be done before kernel module installation, to benefit from initramfs update involved by kms installation
+- name: set LVM filter to avoid drbd devices to be scanned
+  ansible.builtin.lineinfile:
+    path: /etc/lvm/lvm.conf
+    regexp: '.*filter.*/dev/drbd.*" ].*'
+    insertbefore: '# Configuration option devices/global_filter'
+    line: '        filter = [ "r|/dev/drbd.*|" ]'
+
+- name: install DRBD software
+  include_tasks: "install-{{ ansible_os_family }}.yml"
+
+- name: add the drbd module
+  community.general.modprobe:
+    name: drbd
+    state: present
+
+- name: disable drbd systemd unit
+  ansible.builtin.service:
+    name: drbd.service
+    enabled: false
+    state: stopped

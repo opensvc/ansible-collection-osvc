@@ -1,0 +1,13 @@
+- name: add apt repo for drbd
+  ansible.builtin.apt_repository:
+    validate_certs: false
+    repo: "{{ osvc_drbd_ppa }}"
+    state: present
+
+- name: Install drbd packages
+  ansible.builtin.package:
+    name: "{{ item }}"
+    state: latest
+  with_items:
+    - drbd-dkms
+    - drbd-utils

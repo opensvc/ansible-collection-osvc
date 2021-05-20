@@ -1,0 +1,4 @@
+---
+# defaults file for install_drbd
+
+osvc_drbd_ppa: ppa:linbit/linbit-drbd9-stack
