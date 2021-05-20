@@ -31,6 +31,10 @@ RUN                             apk del -r --purge gcc make g++ &&\
                                 rm -rf /var/cache/apk/* &&\
                                 rm -rf /tmp/*
 
+COPY requirements.dev.yml /tmp/
+
+RUN ansible-galaxy collection install -p /usr/share/ansible/collections -r /tmp/requirements.dev.yml
+
 WORKDIR /opt
 ADD ansible_collections/opensvc/ /opt/opensvc/
 
