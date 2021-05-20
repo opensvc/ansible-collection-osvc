@@ -15,7 +15,7 @@
   set_fact:
     _cni_bin_is_installed: 'true'
   when:
-    - item.stat.exists == true
+    - item.stat.exists
   loop: "{{ cni_check_result.results }}"
 
 - name: display cni binary install flag
@@ -34,7 +34,7 @@
   register: get_url_result
   until: get_url_result is succeeded
   when:
-    - _cni_bin_is_installed == false
+    - not _cni_bin_is_installed
 
 - name: create directory if it does not exist
   file:
@@ -45,7 +45,7 @@
     - "{{ osvc_cni_plugins_dir }}"
     - "{{ osvc_cni_config_dir }}"
   when:
-    - _cni_bin_is_installed == false
+    - not _cni_bin_is_installed
 
 - name: unarchive package
   shell: |
@@ -55,7 +55,7 @@
   args:
     executable: "/bin/bash"
   when:
-    - _cni_bin_is_installed == false
+    - not _cni_bin_is_installed
     - get_url_result is changed
 
 - name: get CNI paths for OpenSVC cluster
@@ -65,11 +65,11 @@
   changed_when: false
   run_once: true
   when:
-    - _cni_bin_is_installed == false
+    - not _cni_bin_is_installed
 
 - name: set CNI paths for OpenSVC cluster
   command: om cluster set --kw cni.plugins={{ osvc_cni_plugins_dir }} --kw cni.config={{ osvc_cni_config_dir }}
   run_once: true
   when:
-    - _cni_bin_is_installed == false
+    - not _cni_bin_is_installed
     - osvc_cni_plugins_dir != cnipluginspath.stdout
