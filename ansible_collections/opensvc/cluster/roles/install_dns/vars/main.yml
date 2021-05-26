@@ -1,0 +1,4 @@
+---
+# vars file for install_dns
+# number of nodes in cluster
+nodecount: "{{ ansible_play_hosts | length }}"

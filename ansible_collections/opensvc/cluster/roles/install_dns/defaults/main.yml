@@ -1,0 +1,11 @@
+---
+# defaults file for install_dns
+osvc_dns_service_namespace: system
+osvc_dns_short_service_name: dns
+osvc_dns_cfgmap_name: "{{ osvc_dns_service_namespace }}/cfg/{{ osvc_dns_short_service_name }}"
+osvc_dns_service_name: "{{ osvc_dns_service_namespace }}/svc/{{ osvc_dns_short_service_name }}"
+
+osvc_dns_cfg_server_template: https://raw.githubusercontent.com/opensvc/opensvc_templates/main/dns/pdns.conf.template
+osvc_dns_cfg_recursor_template: https://raw.githubusercontent.com/opensvc/opensvc_templates/main/dns/recursor.conf.template
+osvc_dns_cfg_configure_template: https://raw.githubusercontent.com/opensvc/opensvc_templates/main/dns/configure
+osvc_dns_svc_template: https://raw.githubusercontent.com/opensvc/opensvc_templates/main/dns/dns.conf
