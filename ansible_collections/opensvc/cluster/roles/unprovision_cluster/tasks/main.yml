@@ -5,14 +5,14 @@
   systemd:
     name: opensvc-agent
     state: stopped
-    enabled: no
-  failed_when: no
+    enabled: false
+  failed_when: false
 
 - name: retrieve process list
   command: ps afx | grep [o]svcd.py
   register: osvc_daemon_ps
-  changed_when: no
-  failed_when: no
+  changed_when: false
+  failed_when: false
 
 - name: Stop OpenSVC daemon
   command: om daemon shutdown
