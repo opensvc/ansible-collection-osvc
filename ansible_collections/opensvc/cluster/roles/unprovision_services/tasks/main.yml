@@ -4,8 +4,8 @@
 - name: Check cluster vip current config
   command: om cluster get --kw cluster.vip --eval
   register: osvc_cluster_vip
-  changed_when: no
-  failed_when: no
+  changed_when: false
+  failed_when: false
 
 - name: Consider that vip is not configured
   set_fact:
@@ -17,9 +17,10 @@
   when:
     - osvc_cluster_vip.stdout.find('None') == -1
 
-- debug:
-     var: osvc_cluster_vip_is_configured
-     verbosity: 2
+- name: Display osvc_cluster_vip_is_configured variable content
+  debug:
+    var: osvc_cluster_vip_is_configured
+    verbosity: 2
 
 - name: Unconfigure cluster vip
   command: om cluster unset --kw cluster.vip
@@ -40,8 +41,8 @@
 
 - name: Check if we actually need to purge something
   command: om '*/*/*+!*/*/cluster' ls | wc -l
-  changed_when: no
-  failed_when: no
+  changed_when: false
+  failed_when: false
   register: osvc_cluster_svc_count
   when:
     - inventory_hostname == ansible_play_hosts[0]
@@ -55,15 +56,15 @@
 
 - name: Purge all OpenSVC services
   command: om '*/*/*+!*/*/cluster' purge --wait --time {{ osvc_svc_purge_wait_time }}
-  failed_when: no
+  failed_when: false
   when:
     - inventory_hostname == ansible_play_hosts[0]
     - osvc_cluster_need_svc_purge|bool
 
 - name: Check for actual service unprov
   command: om '*/*/*+!*/*/cluster' ls | wc -l
-  changed_when: no
-  failed_when: no
+  changed_when: false
+  failed_when: false
   register: osvc_cluster_svc_unprov_cmdres
   retries: "{{ osvc_svc_purge_retries }}"
   delay: "{{ osvc_svc_purge_delay }}"
