@@ -43,6 +43,13 @@ if [ "$1" = 'check' ]; then
 	    ansible-lint -v $playbook 
 	    echo "=> End of syntax checking & linting for playbook $playbook"
     done
+    for role in $(cd /usr/share/ansible/collections/ansible_collections/opensvc/cluster/roles && ls -1)
+    do
+	    echo "=> Start syntax linting for role $role"
+        ansible-lint /usr/share/ansible/collections/ansible_collections/opensvc/cluster/roles/$role 
+        echo "=> End of syntax linting for role $role"
+        echo
+    done
     exit $?
 fi
 
