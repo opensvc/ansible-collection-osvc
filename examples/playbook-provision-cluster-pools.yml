@@ -1,0 +1,29 @@
+- hosts: all
+  tasks:
+    - name: import role provision_cluster
+      import_role:
+        name: opensvc.cluster.provision_cluster
+      vars:
+        osvc_clustername: testcluster
+        osvc_hb_timeout: 25s
+        osvc_update_etc_hosts: true
+
+    - name: import role install_drbd
+      import_role:
+        name: opensvc.cluster.install_drbd
+
+    - name: configure directory pool
+      import_role:
+        name: opensvc.cluster.install_pool
+      vars:
+        osvc_pool_name: dirpool
+        osvc_pool_type: directory
+
+    - name: configure drbd pool backed by lvm vg
+      import_role:
+        name: opensvc.cluster.install_pool
+      vars:
+        osvc_pool_name: drbdpool
+        osvc_pool_type: drbd
+        osvc_pool_vg: datavg
+
