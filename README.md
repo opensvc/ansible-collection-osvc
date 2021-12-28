@@ -17,7 +17,7 @@ There are multiple ways of using the collection, they are described below
 This repository requires some products to be installed:
 
 __Collection usage__
-- python interpreter `2.7` and `3.6`
+- python interpreter `2.7` and `3.6+`
 - ansible >= `2.9.0`
 - docker
 
@@ -86,7 +86,7 @@ You can contribute to this collection by using the development environment:
     ```
 3. Spawn a docker container using the new image, and start testing your changes using the bind mounted `examples` directory
     ```shell
-    user@node:~/dev/ansible-collection-osvc$ docker run --rm -v $HOME/dev/ansible-collection-osvc/examples:/examples -it osvccol:test /bin/sh
+    user@node:~/dev/ansible-collection-osvc$ docker run --rm -v $HOME/dev/ansible-collection-osvc/examples:/examples -it osvccol:stable /bin/sh
     /examples # 
     ```
 4. Update `inventory` and `ssh.private.key` files
@@ -133,7 +133,7 @@ If you need to rework your changes, just follow those steps :
     ```
 4. Spawn a new docker container
     ```shell
-    user@node:~/dev/ansible-collection-osvc$ docker run --rm -v $HOME/dev/ansible-collection-osvc/examples:/examples -it osvccol:test /bin/sh
+    user@node:~/dev/ansible-collection-osvc$ docker run --rm -v $HOME/dev/ansible-collection-osvc/examples:/examples -it osvccol:stable /bin/sh
     ```
 5. Repeat your tests
     ```shell
