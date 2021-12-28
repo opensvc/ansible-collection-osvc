@@ -1,6 +1,6 @@
 - name: Install drbd packages prerequisites
   ansible.builtin.package:
     name: "{{ item }}"
-    state: latest
+    state: present
   with_items:
     - lvm2

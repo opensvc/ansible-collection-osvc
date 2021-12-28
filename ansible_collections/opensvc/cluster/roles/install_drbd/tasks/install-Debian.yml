@@ -7,7 +7,7 @@
 - name: Install drbd packages
   ansible.builtin.package:
     name: "{{ item }}"
-    state: latest
+    state: present
   with_items:
     - drbd-dkms
     - drbd-utils

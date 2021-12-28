@@ -26,4 +26,3 @@
         osvc_pool_name: drbdpool
         osvc_pool_type: drbd
         osvc_pool_vg: datavg
-

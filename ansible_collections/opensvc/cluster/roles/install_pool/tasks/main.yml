@@ -29,11 +29,11 @@
 - name: configure directory pool
   include_tasks: "directory.yml"
   when:
-    - not _pool_is_configured 
+    - not _pool_is_configured
     - osvc_pool_type == "directory"
 
 - name: configure drbd pool
   include_tasks: "drbd.yml"
   when:
-    - not _pool_is_configured 
+    - not _pool_is_configured
     - osvc_pool_type == "drbd"
