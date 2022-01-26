@@ -24,9 +24,9 @@ do
 	cat requirements.template.txt | sed -e s@ANSIBLE_VERSION@${version}@ >| requirements.${version}.txt
 	title "Building ansible ${version} image"
 	echo docker build --network host --build-arg REQUIREMENTS_FILE=requirements.${version}.txt -f Dockerfile -t osvccol:${version} .
-	cmds ${version} /examples/inventory.orig /examples/playbook-provision-cluster.yml
+	cmds ${version} /examples/inventory /examples/playbook-provision-cluster.yml
 done
 
 title "Building ansible upstream image"
 echo docker build --network host -f Dockerfile.dev -t osvccol:dev .
-cmds dev /examples/inventory.orig /examples/playbook-provision-cluster.yml
+cmds dev /examples/inventory /examples/playbook-provision-cluster.yml

@@ -105,8 +105,8 @@ You can contribute to this collection by using the development environment:
     ```shell
     /examples # cat inventory 
     [clusternodes]
-    demo1.acme.com ansible_ssh_private_key_file="ssh.private.key"
-    demo2.acme.com ansible_ssh_private_key_file="ssh.private.key"
+    demo1.acme.com ansible_host="1.1.1.1" ansible_ssh_private_key_file="ssh.private.key"
+    demo2.acme.com ansible_host="2.2.2.2" ansible_ssh_private_key_file="ssh.private.key"
     
     [webservers]
     web1.acme.com
