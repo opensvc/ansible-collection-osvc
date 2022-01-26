@@ -49,18 +49,13 @@
     enabled: true
     state: started
 
-- name: Ensure resolver is aware of cluster nodes
-  ansible.builtin.debug:
-    msg: "{{ lookup('community.general.dig', item ) }}"
-  with_items: "{{ ansible_play_hosts }}"
-
 - name: Update /etc/hosts file
   blockinfile:
     dest: /etc/hosts
     content: "{{ lookup('template', 'templates/hosts.j2') }}"
     state: present
   when:
-    - osvc_update_etc_hosts is true
+    - osvc_update_etc_hosts | bool
 
 - name: Enable ssh root access accross cluster nodes
   replace:
@@ -70,7 +65,7 @@
   notify: Reload sshd
 
 - name: Enable sysrq trigger
-  sysctl:
+  ansible.posix.sysctl:
     name: kernel.sysrq
     value: '1'
     state: present
