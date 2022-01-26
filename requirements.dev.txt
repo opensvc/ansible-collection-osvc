@@ -1,5 +1,7 @@
 pylint
+pyyaml
 ansible-lint
+ansible-core
 yamllint
 dnspython
 docker
