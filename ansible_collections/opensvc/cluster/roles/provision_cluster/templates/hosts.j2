@@ -1,3 +1,4 @@
-{% for item in ansible_play_batch %}
-{{ hostvars[item].ansible_ssh_host }}       {{ item }}  {{ hostvars[item].ansible_hostname }}
+{% for item in play_hosts %}
+{% set short_name = item.split('.') %}
+{{ hostvars[item]['ansible_host'] }}  {{ item }} {{ short_name[0] }}
 {% endfor %}
