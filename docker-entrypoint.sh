@@ -1,8 +1,15 @@
 #!/bin/sh
 set -e
 
-ANSIBLE_INVENTORY="/examples/inventory"
+ANSIBLE_ROOT="/examples"
+ANSIBLE_INVENTORY="${ANSIBLE_ROOT}/inventory"
 ANSIBLE_SERVER_GROUP="clusternodes"
+
+if [ "$1" = 'get-tarball' ]; then
+    echo "=> Copy collection tarball outside of container"
+    cd /opt && cp -f *.tar.gz ${ANSIBLE_ROOT}/
+    exit $?
+fi
 
 if [ "$1" = 'run' ]; then
     echo "=> Provision a new cluster"
@@ -35,12 +42,12 @@ if [ "$1" = 'unprovision-services' ]; then
 fi
 
 if [ "$1" = 'check' ]; then
-    for playbook in $(ls -1 *.yml)
+    for playbook in $(cd ${ANSIBLE_ROOT} && ls -1 *.yml)
     do
 	    echo
 	    echo "=> Start syntax checking & linting for playbook $playbook"
-	    ansible-playbook -i ${ANSIBLE_INVENTORY} --syntax-check $playbook --limit clusternodes
-	    ansible-lint -v $playbook 
+	    ansible-playbook -i ${ANSIBLE_INVENTORY} --syntax-check ${ANSIBLE_ROOT}/$playbook --limit ${ANSIBLE_SERVER_GROUP}
+	    ansible-lint -v ${ANSIBLE_ROOT}/$playbook 
 	    echo "=> End of syntax checking & linting for playbook $playbook"
     done
     for role in $(cd /usr/share/ansible/collections/ansible_collections/opensvc/cluster/roles && ls -1)
