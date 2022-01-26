@@ -3,7 +3,9 @@ FROM python:3.9.2-alpine3.12
 LABEL maintainer="OpenSVC Ansible Team <ansible@opensvc.com>"
 LABEL vendor1="OpenSVC"
 
-COPY requirements.txt /tmp
+ARG REQUIREMENTS_FILE=requirements.txt
+
+COPY $REQUIREMENTS_FILE /tmp
 RUN apk add --update --no-cache ca-certificates \
                                 openssh-client \
                                 build-base \
@@ -19,7 +21,7 @@ RUN apk add --update --no-cache ca-certificates \
                                 sshpass \
                                 libressl-dev &&\
                                 pip install --upgrade pip && \
-                                pip install -r /tmp/requirements.txt &&\
+                                pip install -r /tmp/$REQUIREMENTS_FILE &&\
                                 apk del -r --purge gcc make g++ rust &&\
                                 rm -rf /source/* &&\
                                 rm -rf /var/cache/apk/* &&\

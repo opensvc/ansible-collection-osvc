@@ -1,0 +1,7 @@
+ansible~=ANSIBLE_VERSION
+pylint
+pyyaml
+ansible-lint
+yamllint
+dnspython
+docker
