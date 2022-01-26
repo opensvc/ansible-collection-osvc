@@ -1,4 +1,5 @@
 - hosts: all
+  gather_facts: true
   tasks:
     - name: import role provision_cluster
       import_role:
