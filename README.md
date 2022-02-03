@@ -21,6 +21,10 @@ __Collection usage__
 - ansible >= `2.9.0`
 - docker
 
+## Ansible version compatibility
+
+This collection has been tested against the following Ansible versions: >=2.9, 2.10, 2.11, 2.12.
+
 ----
 
 
