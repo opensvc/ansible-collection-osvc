@@ -15,7 +15,9 @@ function cmds()
 	local inv=$2
 	local play=$3
 	echo docker run --rm -it osvccol:${ver} ansible --version \| grep "^ansible"
+	echo docker run --rm -it osvccol:${ver} ansible-test-sanity
 	echo docker run --rm -v $PWD/examples:/examples -it osvccol:${ver} check
+	echo docker run --rm -v $PWD/examples:/examples -it osvccol:${ver} get-tarball
 	echo docker run --rm -v $PWD/examples:/examples -it osvccol:${ver} ansible-playbook -i ${inv} ${play} 
 }
 
