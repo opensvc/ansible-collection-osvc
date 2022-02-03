@@ -60,4 +60,16 @@ if [ "$1" = 'check' ]; then
     exit $?
 fi
 
+if [ "$1" = 'ansible-test-sanity' ]; then
+    for collection in $(cd /usr/share/ansible/collections/ansible_collections/opensvc && ls -1)
+    do
+        echo "=> Start ansible-test for collection opensvc/$collection"
+	cd /usr/share/ansible/collections/ansible_collections/opensvc/$collection
+        ansible-test sanity
+        echo "=> End of ansible-test for collection opensvc/$collection"
+        echo
+    done
+    exit $?
+fi
+
 exec "$@"
