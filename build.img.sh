@@ -27,6 +27,8 @@ do
 	cmds ${version} /examples/inventory /examples/playbook-provision-cluster.yml
 done
 
+sed -i "s@ansible~=2.9@ansible~=2.9,<2.10@" requirements.2.9.txt
+
 title "Building ansible upstream image"
 echo docker build --network host -f Dockerfile.dev -t osvccol:dev .
 cmds dev /examples/inventory /examples/playbook-provision-cluster.yml
