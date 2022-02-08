@@ -4,3 +4,4 @@
   ansible.builtin.yum:
     name: "{{ osvc_pkg_dl_path }}"
     state: present
+    disable_gpg_check: true

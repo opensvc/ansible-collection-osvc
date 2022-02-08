@@ -2,6 +2,7 @@
   ansible.builtin.yum:
     name: https://www.elrepo.org/elrepo-release-7.el7.elrepo.noarch.rpm
     state: present
+    disable_gpg_check: true
   when:
     - ansible_distribution_major_version|int == 7
 
@@ -9,6 +10,7 @@
   ansible.builtin.yum:
     name: https://www.elrepo.org/elrepo-release-8.el8.elrepo.noarch.rpm
     state: present
+    disable_gpg_check: true
   when:
     - ansible_distribution_major_version|int == 8
 
@@ -16,6 +18,7 @@
   ansible.builtin.yum:
     name: "{{ item }}"
     state: present
+    disable_gpg_check: true
   with_items:
     - kmod-drbd90
     - drbd90-utils
