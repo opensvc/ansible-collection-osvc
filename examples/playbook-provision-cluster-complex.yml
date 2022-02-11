@@ -1,0 +1,52 @@
+- hosts: all
+  tasks:
+    - name: import role provision_cluster
+      import_role:
+        name: opensvc.cluster.provision_cluster
+      vars:
+        osvc_clustername: testcluster
+        osvc_hb_timeout: 25s
+        osvc_update_etc_hosts: true
+        osvc_configure_webapp: true
+        osvc_configure_vip: true
+        osvc_cluster_vip_addr: '1.2.3.4'
+        osvc_cluster_vip_cidr_subnet: '24'
+        osvc_cluster_vip_nic_name: 'vippe'
+        osvc_node_prd_nic: 'enp1s0'
+        osvc_vip_external_fqdn: 'vip-cluster.opensvc.org'
+        osvc_webapp_user: 'webadmin'
+        osvc_webapp_password: 's3cr3t'
+        osvc_ca_cert_name: 'TEST CLUSTER'
+        osvc_ca_cert_country: 'FR'
+        osvc_ca_cert_org: 'The Cluster Company'
+
+    - name: import role install_cni
+      import_role:
+        name: opensvc.cluster.install_cni
+      vars:
+        osvc_cni_plugins_dir: /opt/cni/bin
+        osvc_cni_config_dir: /var/lib/opensvc/cni/net.d
+
+    - name: import role install_backend_network
+      import_role:
+        name: opensvc.cluster.install_backend_network
+      vars:
+        osvc_backend_subnet_name: backendipv4
+        osvc_backend_subnet_range: 10.123.0.0/16
+        osvc_backend_subnet_ips_per_node: 4096
+
+    - name: import role install_backend_network
+      import_role:
+        name: opensvc.cluster.install_backend_network
+      vars:
+        osvc_backend_subnet_name: backendipv6
+        osvc_backend_subnet_range: fdfe::/112
+        osvc_backend_subnet_ips_per_node: 1024
+
+    - name: import role install_drbd
+      import_role:
+        name: opensvc.cluster.install_drbd
+
+    - name: import role install_dns
+      import_role:
+        name: opensvc.cluster.install_dns

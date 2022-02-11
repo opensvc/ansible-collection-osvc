@@ -1,0 +1,65 @@
+- name: set fact on vip creation
+  set_fact:
+    vip_created: true
+  run_once: true
+
+- name: check for vip existence
+  shell: "om system/svc/vip ls"
+  changed_when: false
+  register: svcvip
+  run_once: true
+
+- name: set fact according to actual vip existence
+  set_fact:
+    vip_created: false
+  run_once: true
+  when:
+    - "'system/svc/vip' not in svcvip.stdout"
+ 
+- name: Identify node ip used for production
+  shell: grep -w {{ ansible_hostname }} /etc/hosts | head -1 | awk '{print $1}'
+  register: grepquery
+  when:
+    - not vip_created
+
+- set_fact:
+    osvc_node_prd_ip={{ grepquery.stdout }}
+  when:
+    - not vip_created
+
+- name: Identify node nic used for production
+  shell: ip route ls | grep {{ osvc_node_prd_ip }} | head -1 | grep -Po '(?<=dev )(\S+)'
+  register: iproutequery
+  when:
+    - not vip_created
+
+- set_fact:
+    osvc_node_prd_nic={{ iproutequery.stdout }}
+  when:
+    - not vip_created
+
+- name: Add cluster vip
+  shell: "om cluster set --kw cluster.vip@{{ ansible_hostname }}={{ osvc_cluster_vip_addr }}/{{ osvc_cluster_vip_cidr_subnet }}@{{ osvc_cluster_vip_nic_name }}@{{ osvc_node_prd_nic }} && sleep 5"
+  throttle: 1
+  when:
+    - not vip_created
+    - nodecount|int > 1
+
+- name: Add cluster vip (single-node)
+  command: "om cluster set --kw cluster.vip@{{ ansible_hostname }}={{ osvc_cluster_vip_addr }}/{{ osvc_cluster_vip_cidr_subnet }}@{{ osvc_node_prd_nic }}"
+  run_once: true
+  when:
+    - not vip_created
+    - nodecount|int == 1
+
+- name: wait for vip service instance to be spawned
+  command: 'sleep 5'
+  run_once: true
+  when:
+    - not vip_created
+
+- name: unfreeze vip service 
+  command: 'om system/svc/vip thaw'
+  run_once: true
+  when:
+    - not vip_created

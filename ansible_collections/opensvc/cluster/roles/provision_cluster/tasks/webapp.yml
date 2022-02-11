@@ -1,0 +1,130 @@
+########################## CREATE CLUSTER CA CERTIFICATE ##########################
+
+- name: get cluster name
+  command: om cluster get --kw cluster.name
+  register: clustername
+  changed_when: no
+  failed_when: no
+  run_once: true
+
+- name: set fact on certificate creation
+  set_fact:
+    ca_cert_created: true
+  run_once: true
+
+- name: check for ca certificate existence
+  shell: "om system/sec/ca-{{ clustername.stdout }} ls"
+  changed_when: false
+  register: ca_certificate
+  run_once: true
+
+- name: set fact according to actual ca cert existence
+  set_fact:
+    ca_cert_created: false
+  run_once: true
+  when:
+    - clustername.stdout not in ca_certificate.stdout
+
+- name: create ca certificate
+  shell: "om system/sec/ca-{{ clustername.stdout }} create"
+  run_once: true
+  when: 
+    - not ca_cert_created
+
+- name: set ca certificate parameters
+  shell: "om system/sec/ca-{{ clustername.stdout }} set --kw cn='{{ osvc_ca_cert_name }}' --kw c='{{ osvc_ca_cert_country }}' --kw o='{{ osvc_ca_cert_org }}'"
+  run_once: true
+  when: 
+    - not ca_cert_created
+
+- name: generate ca certificate
+  shell: "om system/sec/ca-{{ clustername.stdout }} gen cert"
+  run_once: true
+  when: 
+    - not ca_cert_created
+
+########################## CREATE CLUSTER LISTENER CERTIFICATE ##########################
+
+- name: set fact on listener certificate creation
+  set_fact:
+    listener_cert_created: true
+  run_once: true
+
+- name: check for listener certificate existence
+  shell: "om system/sec/cert-{{ clustername.stdout }} ls"
+  changed_when: false
+  run_once: true
+  register: listener_certificate
+
+- name: set fact according to actual listener cert existence
+  set_fact:
+    listener_cert_created: false
+  run_once: true
+  when:
+    - clustername.stdout not in listener_certificate.stdout
+
+- name: create listener certificate
+  shell: "om system/sec/cert-{{ clustername.stdout }} create"
+  run_once: true
+  when:
+    - not listener_cert_created
+
+- name: set listener certificate parameters
+  shell: "om system/sec/cert-{{ clustername.stdout }} set --kw ca='system/sec/ca-{{ clustername.stdout }}' --kw alt_names='{{ osvc_vip_external_fqdn }}' "
+  run_once: true
+  when:
+    - not listener_cert_created
+
+- name: generate listener certificate
+  shell: "om system/sec/cert-{{ clustername.stdout }} gen cert"
+  run_once: true
+  when:
+    - not listener_cert_created
+
+########################## CREATE WEB GUI USER ##########################
+
+- name: set fact on web user 
+  set_fact:
+    web_user_created: true
+  run_once: true
+
+- name: check for user existence
+  shell: "om system/usr/{{ osvc_webapp_user }} ls"
+  changed_when: false
+  register: user_list
+  run_once: true
+
+- name: set fact according to actual listener cert existence
+  set_fact:
+    web_user_created: 'false'
+  run_once: true
+  when:
+    - osvc_webapp_user not in user_list.stdout
+
+- name: create web user
+  shell: "om system/usr/{{ osvc_webapp_user }} create"
+  run_once: true
+  when:
+    - not web_user_created
+
+- name: set user password
+  shell: "om system/usr/{{ osvc_webapp_user }} add --key password --value {{ osvc_webapp_password }}"
+  run_once: true
+  when:
+    - web_user_created == false
+
+- name: set user grant
+  shell: "om system/usr/{{ osvc_webapp_user }} set --kw grant=root"
+  run_once: true
+  when:
+    - not web_user_created
+
+- name: restart opensvc daemon
+  shell: "om daemon restart"
+  when:
+    - not web_user_created
+
+- name: Wait for restart to be terminated
+  command: 'om node wait --duration 120s --filter monitor.nodes.{{ ansible_hostname }}.monitor.status=idle'
+  when:
+    - not web_user_created

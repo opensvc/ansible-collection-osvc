@@ -151,3 +151,13 @@
   when:
     - nodecount | int > 1
     - not joined
+
+- name: Configure cluster vip
+  include_tasks: "vip.yml"
+  when:
+    - osvc_configure_vip | bool
+
+- name: Configure webapp/api access
+  include_tasks: "webapp.yml"
+  when:
+    - osvc_configure_webapp | bool
