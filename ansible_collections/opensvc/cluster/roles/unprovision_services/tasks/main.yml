@@ -1,6 +1,11 @@
 ---
 # tasks file for unprovision_services
 
+- name: Freeze cluster
+  command: om node freeze
+  when:
+    - inventory_hostname == ansible_play_hosts[0]
+
 - name: Check cluster vip current config
   command: om cluster get --kw cluster.vip --eval
   register: osvc_cluster_vip
