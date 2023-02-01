@@ -18,6 +18,12 @@
   community.general.modprobe:
     name: drbd
     state: present
+  notify:
+    - restart opensvc daemon
+    - wait for restart to be terminated
+
+- name: Flush handlers
+  meta: flush_handlers
 
 - name: disable drbd systemd unit
   ansible.builtin.service:

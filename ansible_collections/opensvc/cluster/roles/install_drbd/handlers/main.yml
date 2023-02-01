@@ -1,0 +1,7 @@
+---
+# handlers file for install_drbd
+- name: restart opensvc daemon
+  ansible.builtin.command: 'om daemon restart'
+
+- name: wait for restart to be terminated
+  ansible.builtin.command: 'om node wait --duration 120s --filter monitor.nodes.{{ ansible_hostname }}.monitor.status=idle'
