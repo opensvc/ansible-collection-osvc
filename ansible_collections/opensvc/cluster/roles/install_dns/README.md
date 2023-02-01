@@ -12,12 +12,7 @@ The roles provision_cluster can be used to meet the prerequisites.
 Role Variables
 --------------
 
-`osvc_dns1_ip_addr`
-`osvc_dns2_ip_addr`
-
-These optional variables can be set to force the nodes ip addr that will operate de dns instances.
-By default, those variables are filled in with the node main ip, taken from ansible facts.
-Consider only the first variable for single node deployments.
+None
 
 Example Playbook
 ----------------
@@ -28,25 +23,6 @@ Example 1: use default nodes ip addr
       tasks:
         - import_role:
             name: opensvc.cluster.install_dns
-
-Example 2: single node deployment with forced ip addr
-
-    - hosts: all
-      tasks:
-        - import_role:
-            name: opensvc.cluster.install_dns
-          vars:
-            osvc_dns1_ip_addr: 10.11.12.1
-
-Example 3: dual nodes deployment with forced ip addr
-
-    - hosts: all
-      tasks:
-        - import_role:
-            name: opensvc.cluster.install_dns
-          vars:
-            osvc_dns1_ip_addr: 10.11.12.1
-            osvc_dns2_ip_addr: 10.11.12.2
 
 
 License

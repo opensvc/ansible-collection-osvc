@@ -9,3 +9,14 @@ osvc_dns_cfg_server_template: https://raw.githubusercontent.com/opensvc/opensvc_
 osvc_dns_cfg_recursor_template: https://raw.githubusercontent.com/opensvc/opensvc_templates/main/dns/recursor.conf.template
 osvc_dns_cfg_configure_template: https://raw.githubusercontent.com/opensvc/opensvc_templates/main/dns/configure
 osvc_dns_svc_template: https://raw.githubusercontent.com/opensvc/opensvc_templates/main/dns/dns.conf
+
+# by default recursor allow the following subnets as requestors => 127.0.0.1/32,10.0.0.0/8,fd00::/112,::1
+# if you need to add some more, fill in the variable below with patterns like:
+# osvc_dns_cfg_recursor_allowed_subnets: '172.16.10.0/24'
+# osvc_dns_cfg_recursor_allowed_subnets: '172.16.10.0/24,192.168.200.0/24'
+osvc_dns_cfg_recursor_allowed_subnets: ''
+
+# by default dns ip list is aken from host main ip
+# when nodes are hidden by public ip different from node's ip
+# ansible_host inventory variable can be used to specify the nodes public ip
+osvc_use_ip_from_ansible_host: false

@@ -31,8 +31,28 @@
   when:
     - not dns_cfg_created
 
+- name: download recursor config file
+  get_url:
+    url: "{{ osvc_dns_cfg_recursor_template }}"
+    dest: /tmp/recursor
+    mode: 0700
+  run_once: true
+  when:
+    - not dns_cfg_created
+
+- name: modify allow-from parameter from recursor config file
+  ansible.builtin.lineinfile:
+    path: /tmp/recursor
+    state: present
+    regexp: '^(allow-from=.*)$'
+    line: '\g<1>,{{ osvc_dns_cfg_recursor_allowed_subnets }}'
+    backrefs: yes
+  run_once: true
+  when:
+    - not dns_cfg_created
+
 - name: set dns cfgmap recursor key content
-  command: om {{ osvc_dns_cfgmap_name }} add --key recursor --from {{ osvc_dns_cfg_recursor_template }}
+  command: om {{ osvc_dns_cfgmap_name }} add --key recursor --from /tmp/recursor
   run_once: true
   when:
     - not dns_cfg_created
@@ -61,33 +81,53 @@
   when:
     - osvc_dns_service_name not in osvc_dns_svc_query.stdout
 
-- name: define osvc_dns1_ip_addr variable
-  ansible.builtin.set_fact:
-    osvc_dns1_ip_addr: "{{ hostvars[ansible_play_hosts[0]].ansible_default_ipv4.address }}"
+- name: build dict with nodes ip addr
+  set_fact:
+    ipv4_dict: "{{ dict(ansible_play_hosts|zip(_ipv4)) }}"
+  vars:
+    _ipv4: "{{ ansible_play_hosts|
+               map('extract', hostvars, ['ansible_default_ipv4', 'address'])|
+               list }}"
+  run_once: true
+  when:
+    - not osvc_use_ip_from_ansible_host
+    - not dns_svc_created
+
+- name: build dict with ansible_host ip addr
+  set_fact:
+    ipv4_dict: "{{ dict(ansible_play_hosts|zip(_ipv4)) }}"
+  vars:
+    _ipv4: "{{ansible_play_hosts | map('extract', hostvars, 'ansible_host') | list}}"
+  run_once: true
+  when:
+    - osvc_use_ip_from_ansible_host
+    - not dns_svc_created
+
+- name: debug dns dict
+  ansible.builtin.debug:
+    var: ipv4_dict
   run_once: true
   when:
     - not dns_svc_created
 
-- name: define osvc_dns2_ip_addr variable
-  ansible.builtin.set_fact:
-    osvc_dns2_ip_addr: "{{ hostvars[ansible_play_hosts[1]].ansible_default_ipv4.address }}"
+- name: Concatenate the ip addr
+  set_fact:
+    dnslist: "{{ ipv4_dict.values() | join(' ') }}"
   run_once: true
   when:
-    - nodecount|int > 1
     - not dns_svc_created
 
-- name: configure cluster dns thread when node count greater than 1
-  command: om cluster set --kw 'cluster.dns={{ osvc_dns1_ip_addr }} {{ osvc_dns2_ip_addr }}'
+- name: debug dns list
+  ansible.builtin.debug:
+    var: dnslist
   run_once: true
   when:
-    - nodecount|int > 1
     - not dns_svc_created
 
-- name: configure cluster dns thread when node count is 1
-  command: om cluster set --kw 'cluster.dns={{ osvc_dns1_ip_addr }}'
+- name: configure cluster dns thread
+  command: om cluster set --kw 'cluster.dns={{ dnslist }}'
   run_once: true
   when:
-    - nodecount|int == 1
     - not dns_svc_created
 
 - name: Check for dns.cluster propagation before provisioning service
@@ -96,7 +136,7 @@
   register: cmd_res
   retries: 20
   delay: 2
-  until: cmd_res.stdout.find(osvc_dns2_ip_addr)
+  until: dnslist in cmd_res.stdout
   when:
     - nodecount|int > 1
     - not dns_svc_created
@@ -104,6 +144,13 @@
 
 - name: deploy dns service
   command: om {{ osvc_dns_service_name }} deploy --config {{ osvc_dns_svc_template }}
+  run_once: true
+  when:
+    - not dns_svc_created
+
+- name: wait for dns service
+  ansible.builtin.script:
+    cmd: ../files/monitor.overall.sh {{ osvc_dns_service_name }} up 300s
   run_once: true
   when:
     - not dns_svc_created
