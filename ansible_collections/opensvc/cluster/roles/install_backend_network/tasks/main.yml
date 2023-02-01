@@ -33,6 +33,7 @@
       --kw network#{{ osvc_backend_subnet_name }}.type=routed_bridge
       --kw network#{{ osvc_backend_subnet_name }}.network={{ osvc_backend_subnet_range }}
       --kw network#{{ osvc_backend_subnet_name }}.ips_per_node={{ osvc_backend_subnet_ips_per_node }}
+      --kw network#{{ osvc_backend_subnet_name }}.tunnel={{ osvc_backend_tunnel }}
   run_once: true
   when:
     - not _network_is_configured

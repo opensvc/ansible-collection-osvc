@@ -29,6 +29,12 @@ The number of allocatable ips per node on the network.
 
 Default value is `1024`
 
+`osvc_backend_tunnel`
+
+Create and route trafic through tunnels to peer nodes policy. `auto` tunnel if the peer is not in the same subnet, `always` tunnel even if the peer seems to be in the same subnet (some hosting providers require this as traffic goes through router even between adjacent nodes. `never` tunnel is also possible.
+
+Default value is `auto`
+
 Example Playbook
 ----------------
 
@@ -42,6 +48,7 @@ The snippet below can be used as a playbook:
             osvc_backend_subnet_name: backendnet
             osvc_backend_subnet_range: 10.123.0.0/16
             osvc_backend_subnet_ips_per_node: 4096
+            osvc_backend_tunnel: auto
 
 With the previous inputs on a 2-nodes cluster, the role will configure a network named `backendnet`.
 
