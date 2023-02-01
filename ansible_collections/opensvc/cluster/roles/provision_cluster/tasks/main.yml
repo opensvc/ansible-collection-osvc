@@ -25,6 +25,11 @@
   package_facts:
     manager: auto
 
+- name: Debug osvc_repo_url
+  ansible.builtin.debug:
+    var: osvc_repo_url
+    verbosity: 2
+
 - name: Download OpenSVC agent latest package
   get_url:
     url: "{{ osvc_repo_url }}"
@@ -63,6 +68,9 @@
     regexp: '^PermitRootLogin (yes|without-password)'
     replace: "PermitRootLogin prohibit-password"
   notify: Reload sshd
+
+- name: Flush handlers
+  meta: flush_handlers
 
 - name: Enable sysrq trigger
   ansible.posix.sysctl:
@@ -161,3 +169,8 @@
   include_tasks: "webapp.yml"
   when:
     - osvc_configure_webapp | bool
+
+- name: Disable iptables usage by docker
+  include_tasks: "docker.yml"
+  when:
+    - osvc_deploy_docker_daemon_json | bool

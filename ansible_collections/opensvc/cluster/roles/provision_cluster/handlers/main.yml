@@ -4,3 +4,8 @@
   service:
     name: "{{ systemd_ssh_unit }}"
     state: reloaded
+
+- name: restart docker service
+  service:
+    name: "{{ systemd_docker_unit }}"
+    state: restarted

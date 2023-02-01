@@ -12,6 +12,14 @@ osvc_hb_timeout: 20s
 # true: you expect the playbook to do the config
 osvc_update_etc_hosts: false
 
+# depending on your cluster setup, you may need to disable default docker behavior with iptables
+# if false, do not change /etc/docker/daemon.json config file
+# if true, override /etc/docker/daemon.json content with iptables=false
+osvc_deploy_docker_daemon_json: false
+
+# when docker daemon config deployment is enabled, we need to restart the docker service
+systemd_docker_unit: 'docker.service'
+
 # configure the cluster virtual ip
 # recommended for streched vlans setup
 # clients can connect to webapp/api using this floating ip
@@ -38,3 +46,4 @@ osvc_ca_cert_mode: 'self'
 osvc_ca_cert_name: 'TEST CLUSTER'
 osvc_ca_cert_country: 'US'
 osvc_ca_cert_org: 'ACME Company'
+
