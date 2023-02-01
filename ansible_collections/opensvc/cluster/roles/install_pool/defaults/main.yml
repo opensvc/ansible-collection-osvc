@@ -3,3 +3,7 @@
 osvc_pool_type: "directory"
 
 osvc_pool_name: "pool"
+
+osvc_pool_status_schedule: ""
+
+osvc_pool_network: ""

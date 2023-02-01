@@ -37,6 +37,9 @@ Optional. The cluster pool volume group. No default value.
 
 Optional. The cluster pool zpool. No default value.
 
+`osvc_pool_network`
+
+Optional. For DRBD pools, it allow to specify a backend network for replication paths. Use node public ips by default.
 
 
 Example Playbook

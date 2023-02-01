@@ -37,3 +37,15 @@
   when:
     - not _pool_is_configured
     - osvc_pool_type == "drbd"
+
+- name: configure pool schedule
+  ansible.builtin.command:
+    cmd: >
+      om cluster set
+      --kw pool#{{ osvc_pool_name }}.status_schedule={{ osvc_pool_status_schedule }}
+  run_once: true
+  register: output
+  changed_when: output.rc == 0
+  when:
+    - not _pool_is_configured
+    - ( osvc_pool_status_schedule | length ) > 0

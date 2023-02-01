@@ -31,6 +31,17 @@
   when:
     - (osvc_pool_vg is defined) and (osvc_pool_vg|length > 0)
 
+- name: configure drbd pool replicating through backend network
+  ansible.builtin.command:
+    cmd: >
+      om cluster set
+      --kw pool#{{ osvc_pool_name }}.network={{ osvc_pool_network }}
+  run_once: true
+  register: output
+  changed_when: output.rc == 0
+  when:
+    - (osvc_pool_network is defined) and (osvc_pool_network|length > 0)
+
 - name: configure drbd pool backed by zpool
   ansible.builtin.command:
     cmd: >
