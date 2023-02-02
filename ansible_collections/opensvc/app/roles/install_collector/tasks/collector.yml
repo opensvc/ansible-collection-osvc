@@ -1,0 +1,50 @@
+---
+
+- name: set facts on collector service creation
+  ansible.builtin.set_fact:
+    osvc_collector_svc_created: 'true'
+  run_once: true
+
+- name: check for collector svc existence
+  command: om {{ osvc_collector_environ_svcname }} ls
+  changed_when: false
+  register: osvc_collector_svcname_query
+  run_once: true
+
+- name: set fact according to actual collector svc existence
+  ansible.builtin.set_fact:
+    osvc_collector_svc_created: 'false'
+  run_once: true
+  when:
+    - osvc_collector_environ_svcname not in osvc_collector_svcname_query.stdout
+
+- name: create collector service
+  command: "om {{ osvc_collector_environ_svcname }} create --config {{ osvc_collector_service_config }}"
+  run_once: true
+  when:
+    - not osvc_collector_svc_created
+
+- name: configure network to share host netns
+  include_tasks: "net.host.yml"
+  run_once: true
+  when:
+    - osvc_collector_network_host
+    - not osvc_collector_svc_created
+
+- name: provision collector service
+  command: "om {{ osvc_collector_environ_svcname }} provision"
+  run_once: true
+  when:
+    - not osvc_collector_svc_created
+
+- name: wait for collector service
+  opensvc.app.svc_monitor_overall:
+    svcpath: "{{ osvc_collector_environ_svcname }}"
+    expected: "up"
+    timeout: "300s"
+  register: result
+  run_once: true
+  when:
+    - not osvc_collector_svc_created
+
+- debug: var=result

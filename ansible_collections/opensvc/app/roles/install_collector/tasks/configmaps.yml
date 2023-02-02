@@ -1,0 +1,36 @@
+---
+
+- name: set facts on environment configmaps creation
+  ansible.builtin.set_fact:
+    osvc_collector_environ_cfg_created: 'true'
+  run_once: true
+
+- name: check for environment configmaps existence
+  command: om {{ osvc_collector_environ_cfgname }} ls
+  changed_when: false
+  register: osvc_collector_environ_cfgname_query
+  run_once: true
+
+- name: set fact according to actual environment configmaps existence
+  ansible.builtin.set_fact:
+    osvc_collector_environ_cfg_created: 'false'
+  run_once: true
+  when:
+    - osvc_collector_environ_cfgname not in osvc_collector_environ_cfgname_query.stdout
+
+- name: create environment configmaps
+  command: om {{ osvc_collector_environ_cfgname }} create
+  run_once: true
+  when:
+    - not osvc_collector_environ_cfg_created
+
+- name: load environment configmaps variable
+  command: om {{ osvc_collector_environ_cfgname }} add --key {{ item.key }} --from {{ item.value }}
+  run_once: true
+  when:
+    - not osvc_collector_environ_cfg_created
+  with_items:
+    - { key: "nginx.conf", value: "{{ osvc_collector_nginx_conf_file }}" }
+    - { key: "dbdump.sh", value: "{{ osvc_collector_dbdump_script }}" }
+    - { key: "dbrestore.sh", value: "{{ osvc_collector_dbrestore_script }}" }
+    - { key: "dbdump.tables", value: "{{ osvc_collector_dbtables_list }}" }

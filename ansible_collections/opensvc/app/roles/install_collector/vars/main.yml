@@ -1,0 +1,18 @@
+---
+# vars file for install_collector
+
+# target opensvc namespace to host the collector objects
+osvc_collector_namespace: "prod"
+
+osvc_collector_nginx_conf_file: "https://raw.githubusercontent.com/opensvc/opensvc_templates/main/collector/nginx.conf"
+osvc_collector_dbdump_script: "https://raw.githubusercontent.com/opensvc/opensvc_templates/main/collector/scripts/dbdump.sh"
+osvc_collector_dbrestore_script: "https://raw.githubusercontent.com/opensvc/opensvc_templates/main/collector/scripts/dbrestore.sh"
+osvc_collector_dbtables_list: "https://raw.githubusercontent.com/opensvc/opensvc_templates/main/collector/scripts/dbdump.tables"
+
+osvc_collector_db_password: "opensvc"
+osvc_collector_web2py_admin_console_password: "opensvc"
+osvc_collector_repo: "https://github.com/opensvc/collector"
+
+osvc_collector_service_config: "https://raw.githubusercontent.com/opensvc/opensvc_templates/main/collector/collector.conf"
+
+osvc_collector_network_host: false

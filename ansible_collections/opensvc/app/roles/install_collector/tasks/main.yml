@@ -1,0 +1,13 @@
+---
+# tasks file for install_collector
+#
+
+- name: install environment secrets
+  include_tasks: "secrets.yml"
+
+- name: install environment configmaps
+  include_tasks: "configmaps.yml"
+
+- name: deploy collector service
+  include_tasks: "collector.yml"
+
