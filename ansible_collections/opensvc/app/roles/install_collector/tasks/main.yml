@@ -10,4 +10,3 @@
 
 - name: deploy collector service
   include_tasks: "collector.yml"
-

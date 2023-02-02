@@ -6,5 +6,7 @@
   run_once: true
 
 - name: network=host connect container#0 to hostns
-  command: om {{ osvc_collector_environ_svcname }} set --kw container#0.netns=host
+  command: >
+           om {{ osvc_collector_environ_svcname }}
+           set --kw container#0.netns=host
   run_once: true

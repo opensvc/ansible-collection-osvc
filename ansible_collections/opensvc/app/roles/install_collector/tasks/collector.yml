@@ -19,7 +19,9 @@
     - osvc_collector_environ_svcname not in osvc_collector_svcname_query.stdout
 
 - name: create collector service
-  command: "om {{ osvc_collector_environ_svcname }} create --config {{ osvc_collector_service_config }}"
+  command: >
+           om {{ osvc_collector_environ_svcname }} create
+           --config {{ osvc_collector_service_config }}
   run_once: true
   when:
     - not osvc_collector_svc_created
@@ -47,4 +49,5 @@
   when:
     - not osvc_collector_svc_created
 
-- debug: var=result
+- name: debug module output
+  debug: var=result

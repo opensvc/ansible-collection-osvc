@@ -16,7 +16,10 @@
     osvc_collector_environ_cfg_created: 'false'
   run_once: true
   when:
-    - osvc_collector_environ_cfgname not in osvc_collector_environ_cfgname_query.stdout
+    - >
+      osvc_collector_environ_cfgname
+      not in
+      osvc_collector_environ_cfgname_query.stdout
 
 - name: create environment configmaps
   command: om {{ osvc_collector_environ_cfgname }} create
@@ -25,12 +28,14 @@
     - not osvc_collector_environ_cfg_created
 
 - name: load environment configmaps variable
-  command: om {{ osvc_collector_environ_cfgname }} add --key {{ item.key }} --from {{ item.value }}
+  command: >
+           om {{ osvc_collector_environ_cfgname }}
+           add --key {{ item.key }} --from {{ item.value }}
   run_once: true
   when:
     - not osvc_collector_environ_cfg_created
   with_items:
-    - { key: "nginx.conf", value: "{{ osvc_collector_nginx_conf_file }}" }
-    - { key: "dbdump.sh", value: "{{ osvc_collector_dbdump_script }}" }
-    - { key: "dbrestore.sh", value: "{{ osvc_collector_dbrestore_script }}" }
-    - { key: "dbdump.tables", value: "{{ osvc_collector_dbtables_list }}" }
+    - {key: "nginx.conf", value: "{{ osvc_collector_nginx_conf_file }}"}
+    - {key: "dbdump.sh", value: "{{ osvc_collector_dbdump_script }}"}
+    - {key: "dbrestore.sh", value: "{{ osvc_collector_dbrestore_script }}"}
+    - {key: "dbdump.tables", value: "{{ osvc_collector_dbtables_list }}"}
