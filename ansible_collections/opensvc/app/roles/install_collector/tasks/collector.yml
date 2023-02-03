@@ -38,9 +38,3 @@
   run_once: true
   when:
     - not osvc_collector_svc_created
-
-- name: wait for collector service
-  ansible.builtin.command: om node wait --filter .monitor.services.\'{{ osvc_collector_environ_svcname }}\'.overall=up --duration 300s
-  run_once: true
-  when:
-    - not osvc_collector_svc_created
