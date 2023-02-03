@@ -1,3 +1,4 @@
+---
 galaxy_info:
   author: OpenSVC Ansible Team <ansible@opensvc.com>
   description: Install DRBD9 prerequisites

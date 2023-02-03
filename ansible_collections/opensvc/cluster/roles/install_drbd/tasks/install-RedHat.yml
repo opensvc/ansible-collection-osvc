@@ -1,3 +1,4 @@
+---
 - name: Install elrepo channels for version 7
   ansible.builtin.yum:
     name: https://www.elrepo.org/elrepo-release-7.el7.elrepo.noarch.rpm

@@ -46,7 +46,7 @@
     state: present
     regexp: '^(allow-from=.*)$'
     line: '\g<1>,{{ osvc_dns_cfg_recursor_allowed_subnets }}'
-    backrefs: yes
+    backrefs: true
   run_once: true
   when:
     - not dns_cfg_created

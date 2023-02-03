@@ -1,10 +1,9 @@
-########################## CREATE CLUSTER CA CERTIFICATE ##########################
-
+---
 - name: get cluster name
   command: om cluster get --kw cluster.name
   register: clustername
-  changed_when: no
-  failed_when: no
+  changed_when: false
+  failed_when: false
   run_once: true
 
 - name: set fact on certificate creation
@@ -28,19 +27,19 @@
 - name: create ca certificate
   shell: "om system/sec/ca-{{ clustername.stdout }} create"
   run_once: true
-  when: 
+  when:
     - not ca_cert_created
 
 - name: set ca certificate parameters
   shell: "om system/sec/ca-{{ clustername.stdout }} set --kw cn='{{ osvc_ca_cert_name }}' --kw c='{{ osvc_ca_cert_country }}' --kw o='{{ osvc_ca_cert_org }}'"
   run_once: true
-  when: 
+  when:
     - not ca_cert_created
 
 - name: generate ca certificate
   shell: "om system/sec/ca-{{ clustername.stdout }} gen cert"
   run_once: true
-  when: 
+  when:
     - not ca_cert_created
 
 ########################## CREATE CLUSTER LISTENER CERTIFICATE ##########################
@@ -83,7 +82,7 @@
 
 ########################## CREATE WEB GUI USER ##########################
 
-- name: set fact on web user 
+- name: set fact on web user
   set_fact:
     web_user_created: true
   run_once: true

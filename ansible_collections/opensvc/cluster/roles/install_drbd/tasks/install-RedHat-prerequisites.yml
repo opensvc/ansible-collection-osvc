@@ -1,3 +1,4 @@
+---
 - name: Install drbd packages prerequisites
   ansible.builtin.package:
     name: "{{ item }}"

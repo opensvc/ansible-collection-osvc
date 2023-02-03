@@ -1,3 +1,4 @@
+---
 galaxy_info:
   author: OpenSVC Ansible Team <ansible@opensvc.com>
   description: Build a simple OpenSVC cluster from a server inventory

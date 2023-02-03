@@ -46,4 +46,3 @@ osvc_ca_cert_mode: 'self'
 osvc_ca_cert_name: 'TEST CLUSTER'
 osvc_ca_cert_country: 'US'
 osvc_ca_cert_org: 'ACME Company'
-

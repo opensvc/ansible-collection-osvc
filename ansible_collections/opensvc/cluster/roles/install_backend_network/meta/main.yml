@@ -1,3 +1,4 @@
+---
 galaxy_info:
   author: OpenSVC Ansible Team <ansible@opensvc.com>
   description: Install backend network in OpenSVC cluster

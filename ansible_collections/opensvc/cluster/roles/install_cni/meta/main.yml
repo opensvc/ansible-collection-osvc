@@ -1,3 +1,4 @@
+---
 galaxy_info:
   author: OpenSVC Ansible Team <ansible@opensvc.com>
   description: Install cni from tarball, needed for OpenSVC backend network
