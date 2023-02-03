@@ -40,14 +40,10 @@
     - not osvc_collector_svc_created
 
 - name: wait for collector service
-  opensvc.app.svc_monitor_overall:
-    svcpath: "{{ osvc_collector_environ_svcname }}"
-    expected: "up"
-    timeout: "300s"
-  register: result
+  ansible.builtin.script:
+    cmd: >
+         ../files/monitor.overall.sh
+         {{ osvc_collector_environ_svcname }} up 300s
   run_once: true
   when:
     - not osvc_collector_svc_created
-
-- name: debug module output
-  debug: var=result
