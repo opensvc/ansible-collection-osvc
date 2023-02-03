@@ -34,16 +34,17 @@
     - not osvc_collector_svc_created
 
 - name: provision collector service
-  command: "om {{ osvc_collector_environ_svcname }} provision"
+  command: "om {{ osvc_collector_environ_svcname }} provision --wait"
   run_once: true
   when:
     - not osvc_collector_svc_created
 
 - name: wait for collector service
-  ansible.builtin.script:
+  ansible.builtin.command:
     cmd: >
-         ../files/monitor.overall.sh
-         {{ osvc_collector_environ_svcname }} up 300s
+         om node wait
+         --filter .monitor.services.\'{{ osvc_collector_environ_svcname }}\'.overall=up
+         --duration 300s
   run_once: true
   when:
     - not osvc_collector_svc_created
