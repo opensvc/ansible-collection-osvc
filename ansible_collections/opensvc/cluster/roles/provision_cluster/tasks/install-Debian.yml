@@ -1,7 +1,7 @@
 ---
 
-- name: install common packages for ubuntu/deb
-  apt:
+- name: Install common packages for ubuntu/deb
+  ansible.builtin.apt:
     name: "{{ packages }}"
     state: present
     update_cache: true
@@ -12,8 +12,8 @@
       - runc
       - sg3-utils
 
-- name: install packages for old ubuntu
-  apt:
+- name: Install packages for old ubuntu
+  ansible.builtin.apt:
     name: "{{ packages }}"
     state: present
   vars:
@@ -24,8 +24,8 @@
   when: (ansible_facts['distribution'] == "Ubuntu" ) and
         ansible_distribution_major_version|int < 20
 
-- name: install package for ubuntu 20.04
-  apt:
+- name: Install package for ubuntu 20.04
+  ansible.builtin.apt:
     name: "{{ packages }}"
     state: present
   vars:
@@ -34,8 +34,8 @@
   when: (ansible_facts['distribution'] == "Ubuntu" ) and
         (ansible_distribution_major_version|int >= 20)
 
-- name: install python crypto for ubuntu < 22
-  apt:
+- name: Install python crypto for ubuntu < 22
+  ansible.builtin.apt:
     name: "{{ packages }}"
     state: present
   vars:
@@ -45,8 +45,8 @@
   when: (ansible_facts['distribution'] == "Ubuntu" ) and
         ansible_distribution_major_version|int < 22
 
-- name: install python crypto for ubuntu >= 22
-  apt:
+- name: Install python crypto for ubuntu >= 22
+  ansible.builtin.apt:
     name: "{{ packages }}"
     state: present
   vars:

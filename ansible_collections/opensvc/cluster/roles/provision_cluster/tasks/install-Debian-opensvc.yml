@@ -1,5 +1,5 @@
 ---
 
 - name: Install OpenSVC agent package
-  apt:
+  ansible.builtin.apt:
     deb: "{{ osvc_pkg_dl_path }}"

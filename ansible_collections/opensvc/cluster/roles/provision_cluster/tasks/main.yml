@@ -2,19 +2,22 @@
 # tasks file for provision_cluster
 
 - name: Distribution
-  debug: msg="{{ ansible_distribution }}"
+  ansible.builtin.debug:
+    msg: "{{ ansible_distribution }}"
 
 - name: Distribution version
-  debug: msg="{{ ansible_distribution_version }}"
+  ansible.builtin.debug:
+    msg: "{{ ansible_distribution_version }}"
 
 - name: Distribution major version
-  debug: msg="{{ ansible_distribution_major_version }}"
+  ansible.builtin.debug:
+    msg: "{{ ansible_distribution_major_version }}"
 
 - name: Include OS variables
-  include_vars: "{{ ansible_os_family }}.yml"
+  ansible.builtin.include_vars: "{{ ansible_os_family }}.yml"
 
 - name: Deploy per OS prerequisites
-  include_tasks: "install-{{ ansible_os_family }}.yml"
+  ansible.builtin.include_tasks: "install-{{ ansible_os_family }}.yml"
 
 - name: Debug node count
   ansible.builtin.debug:
@@ -22,7 +25,7 @@
     verbosity: 2
 
 - name: Gather the package facts
-  package_facts:
+  ansible.builtin.package_facts:
     manager: auto
 
 - name: Debug osvc_repo_url
@@ -31,31 +34,31 @@
     verbosity: 2
 
 - name: Download OpenSVC agent latest package
-  get_url:
+  ansible.builtin.get_url:
     url: "{{ osvc_repo_url }}"
     dest: "{{ osvc_pkg_dl_path }}"
     force: true
-    mode: 0600
+    mode: '0600'
   when: "'opensvc' not in ansible_facts.packages"
 
 - name: Install OpenSVC agent package
-  include_tasks: "install-{{ ansible_os_family }}-opensvc.yml"
+  ansible.builtin.include_tasks: "install-{{ ansible_os_family }}-opensvc.yml"
   when: "'opensvc' not in ansible_facts.packages"
 
 - name: Remove package file from /tmp
-  file:
+  ansible.builtin.file:
     path: "{{ osvc_pkg_dl_path }}"
     state: absent
   when: "'opensvc' not in ansible_facts.packages"
 
 - name: Enable opensvc-agent.service unit file
-  service:
+  ansible.builtin.service:
     name: opensvc-agent.service
     enabled: true
     state: started
 
 - name: Update /etc/hosts file
-  blockinfile:
+  ansible.builtin.blockinfile:
     dest: /etc/hosts
     content: "{{ lookup('template', 'templates/hosts.j2') }}"
     state: present
@@ -63,14 +66,14 @@
     - osvc_update_etc_hosts | bool
 
 - name: Enable ssh root access accross cluster nodes
-  replace:
+  ansible.builtin.replace:
     dest: /etc/ssh/sshd_config
     regexp: '^PermitRootLogin (yes|without-password)'
     replace: "PermitRootLogin prohibit-password"
   notify: Reload sshd
 
 - name: Flush handlers
-  meta: flush_handlers
+  ansible.builtin.meta: flush_handlers
 
 - name: Enable sysrq trigger
   ansible.posix.sysctl:
@@ -83,20 +86,22 @@
 ########################## FIRST NODE ##########################
 
 - name: Check hb cluster param exists on first node
-  command: om cluster get --kw hb#1.type
+  ansible.builtin.command: om cluster get --kw hb#1.type
   register: clusterhbtype
   changed_when: false
   failed_when: false
   when: inventory_hostname == ansible_play_hosts[0]
 
 - name: Configure cluster with unicast hb
-  command: om cluster set --kw hb#1.type=unicast --kw hb#1.timeout={{ osvc_hb_timeout }}
+  ansible.builtin.command: om cluster set --kw hb#1.type=unicast --kw hb#1.timeout={{ osvc_hb_timeout }}
+  register: output
+  changed_when: output.rc == 0
   when:
     - inventory_hostname == ansible_play_hosts[0]
     - clusterhbtype.stdout == "None"
 
 - name: Get current cluster name
-  command: om cluster get --kw cluster.name
+  ansible.builtin.command: om cluster get --kw cluster.name
   register: clustername
   changed_when: false
   failed_when: false
@@ -104,13 +109,15 @@
     - inventory_hostname == ansible_play_hosts[0]
 
 - name: Set cluster name
-  command: "om cluster set --kw cluster.name={{ osvc_clustername }}"
+  ansible.builtin.command: "om cluster set --kw cluster.name={{ osvc_clustername }}"
+  register: output
+  changed_when: output.rc == 0
   when:
     - inventory_hostname == ansible_play_hosts[0]
     - clustername.stdout != osvc_clustername
 
 - name: Get cluster secret on first node
-  command: om cluster get --kw cluster.secret
+  ansible.builtin.command: om cluster get --kw cluster.secret
   register: clustersecret
   changed_when: false
   failed_when: false
@@ -121,7 +128,7 @@
 ########################## OTHER NODES ##########################
 
 - name: Check other nodes are joined to a cluster
-  command: om cluster get --kw cluster.nodes
+  ansible.builtin.command: om cluster get --kw cluster.nodes
   register: clusternodes
   changed_when: false
   failed_when: false
@@ -129,13 +136,13 @@
     - nodecount | int > 1
 
 - name: Consider that we have join the cluster
-  set_fact:
+  ansible.builtin.set_fact:
     joined: 'true'
   when:
     - nodecount | int > 1
 
 - name: Check if we are actually joined
-  set_fact:
+  ansible.builtin.set_fact:
     joined: 'false'
   when:
     - nodecount | int > 1
@@ -143,34 +150,42 @@
     - inventory_hostname != ansible_play_hosts[0]
 
 - name: Join other nodes to the cluster
-  command: "om daemon join --secret {{ hostvars[ansible_play_hosts[0]].clustersecret.stdout }} --node {{ hostvars[ansible_play_hosts[0]].ansible_hostname }}"
+  ansible.builtin.command: >
+    "om daemon join
+    --secret {{ hostvars[ansible_play_hosts[0]].clustersecret.stdout }}
+    --node {{ hostvars[ansible_play_hosts[0]].ansible_hostname }}"
+  register: output
+  changed_when: output.rc == 0
   when:
     - nodecount | int > 1
     - not joined
 
 - name: Wait for join to be terminated
-  command: 'om node wait --duration 20s --filter monitor.nodes.{{ ansible_hostname }}.monitor.status=idle'
+  ansible.builtin.command: 'om node wait --duration 20s --filter monitor.nodes.{{ ansible_hostname }}.monitor.status=idle'
+  changed_when: false
   when:
     - nodecount | int > 1
     - not joined
 
 - name: Add mutual root ssh trust
-  command: 'om node update ssh authorized keys --node "*"'
+  ansible.builtin.command: 'om node update ssh authorized keys --node "*"'
+  register: output
+  changed_when: output.rc == 0
   when:
     - nodecount | int > 1
     - not joined
 
 - name: Configure cluster vip
-  include_tasks: "vip.yml"
+  ansible.builtin.include_tasks: "vip.yml"
   when:
     - osvc_configure_vip | bool
 
 - name: Configure webapp/api access
-  include_tasks: "webapp.yml"
+  ansible.builtin.include_tasks: "webapp.yml"
   when:
     - osvc_configure_webapp | bool
 
 - name: Disable iptables usage by docker
-  include_tasks: "docker.yml"
+  ansible.builtin.include_tasks: "docker.yml"
   when:
     - osvc_deploy_docker_daemon_json | bool
