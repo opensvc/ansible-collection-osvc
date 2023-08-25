@@ -1,63 +1,70 @@
 ---
 # tasks file for install_envoy
 
-- name: set fact on envoy cfgmap creation
+- name: Set fact on envoy cfgmap creation
   ansible.builtin.set_fact:
     envoy_cfg_created: 'true'
   run_once: true
 
-- name: check for envoy cfgmap existence
-  command: om system/cfg/envoy ls
+- name: Check for envoy cfgmap existence
+  ansible.builtin.command: om system/cfg/envoy ls
   changed_when: false
   register: osvc_envoy_cfgmap_query
   run_once: true
 
-- name: set fact according to actual envoy cfgmap existence
+- name: Set fact according to actual envoy cfgmap existence
   ansible.builtin.set_fact:
     envoy_cfg_created: 'false'
   run_once: true
   when:
     - osvc_envoy_cfgmap_name not in osvc_envoy_cfgmap_query.stdout
 
-- name: create envoy cfgmap
-  command: om {{ osvc_envoy_cfgmap_name }} create
+- name: Create envoy cfgmap
+  ansible.builtin.command: om {{ osvc_envoy_cfgmap_name }} create
   run_once: true
+  register: output
+  changed_when: output.rc == 0
   when:
     - not envoy_cfg_created
 
-- name: set envoy cfgmap server key content
-  command: om {{ osvc_envoy_cfgmap_name }} add --key xds.yaml --from {{ osvc_envoy_cfg_xds_template }}
+- name: Set envoy cfgmap server key content
+  ansible.builtin.command: om {{ osvc_envoy_cfgmap_name }} add --key xds.yaml --from {{ osvc_envoy_cfg_xds_template }}
   run_once: true
+  register: output
+  changed_when: output.rc == 0
   when:
     - not envoy_cfg_created
 
-- name: set fact on envoy service creation
+- name: Set fact on envoy service creation
   ansible.builtin.set_fact:
     envoy_svc_created: 'true'
   run_once: true
 
-- name: check for envoy svc existence
-  command: om {{ osvc_envoy_service_name }} ls
+- name: Check for envoy svc existence
+  ansible.builtin.command: om {{ osvc_envoy_service_name }} ls
   changed_when: false
   register: osvc_envoy_svc_query
   run_once: true
 
-- name: set fact according to actual envoy svc existence
+- name: Set fact according to actual envoy svc existence
   ansible.builtin.set_fact:
     envoy_svc_created: 'false'
   run_once: true
   when:
     - osvc_envoy_service_name not in osvc_envoy_svc_query.stdout
 
-- name: deploy envoy service
-  command: om {{ osvc_envoy_service_name }} deploy --config {{ osvc_envoy_svc_template }}
+- name: Deploy envoy service
+  ansible.builtin.command: om {{ osvc_envoy_service_name }} deploy --config {{ osvc_envoy_svc_template }}
   run_once: true
+  register: output
+  changed_when: output.rc == 0
   when:
     - not envoy_svc_created
 
-- name: wait for envoy service
+- name: Wait for envoy service
   ansible.builtin.script:
     cmd: ../files/monitor.overall.sh {{ osvc_envoy_service_name }} up 300s
   run_once: true
+  changed_when: false
   when:
     - not envoy_svc_created
