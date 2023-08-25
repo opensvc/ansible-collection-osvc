@@ -1,5 +1,5 @@
 ---
-- name: add apt repo for drbd
+- name: Add apt repo for drbd
   ansible.builtin.apt_repository:
     validate_certs: false
     repo: "{{ osvc_drbd_ppa }}"
