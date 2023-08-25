@@ -1,0 +1,7 @@
+ansible~=7.0
+pylint
+pyyaml
+ansible-lint
+yamllint
+dnspython
+docker
