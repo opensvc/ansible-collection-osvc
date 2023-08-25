@@ -1,32 +1,32 @@
 ---
 # tasks file for install_backend_network
 
-- name: set fact according to actual network config
+- name: Set fact according to actual network config
   ansible.builtin.set_fact:
     _network_is_configured: 'true'
   run_once: true
 
-- name: check for actual network config
+- name: Check for actual network config
   ansible.builtin.shell:
-    cmd: "om net ls | grep -w {{ osvc_backend_subnet_name }}"
+    cmd: "set -o pipefail && om net ls | grep -w {{ osvc_backend_subnet_name }}"
   failed_when: false
   changed_when: false
   register: _osvc_network_list
   run_once: true
 
-- name: set fact according to actual network existence
+- name: Set fact according to actual network existence
   ansible.builtin.set_fact:
     _network_is_configured: 'false'
   run_once: true
   when:
     - osvc_backend_subnet_name not in _osvc_network_list.stdout
 
-- name: display network existence flag
+- name: Display network existence flag
   ansible.builtin.debug:
     var: _network_is_configured
     verbosity: 2
 
-- name: configure backend network
+- name: Configure backend network
   ansible.builtin.command:
     cmd: >
       om cluster set
@@ -35,5 +35,7 @@
       --kw network#{{ osvc_backend_subnet_name }}.ips_per_node={{ osvc_backend_subnet_ips_per_node }}
       --kw network#{{ osvc_backend_subnet_name }}.tunnel={{ osvc_backend_tunnel }}
   run_once: true
+  register: output
+  changed_when: output.rc == 0
   when:
     - not _network_is_configured
