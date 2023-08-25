@@ -19,4 +19,4 @@ osvc_dns_cfg_recursor_allowed_subnets: ''
 # by default dns ip list is aken from host main ip
 # when nodes are hidden by public ip different from node's ip
 # ansible_host inventory variable can be used to specify the nodes public ip
-osvc_use_ip_from_ansible_host: false
+install_dns_osvc_use_ip_from_ansible_host: false

@@ -1,46 +1,50 @@
 ---
 # tasks file for install_dns
 
-- name: set fact on dns cfgmap creation
+- name: Set fact on dns cfgmap creation
   ansible.builtin.set_fact:
     dns_cfg_created: 'true'
   run_once: true
 
-- name: check for dns cfgmap existence
-  command: om system/cfg/dns ls
+- name: Check for dns cfgmap existence
+  ansible.builtin.command: om system/cfg/dns ls
   changed_when: false
   register: osvc_dns_cfgmap_query
   run_once: true
 
-- name: set fact according to actual dns cfgmap existence
+- name: Set fact according to actual dns cfgmap existence
   ansible.builtin.set_fact:
     dns_cfg_created: 'false'
   run_once: true
   when:
     - osvc_dns_cfgmap_name not in osvc_dns_cfgmap_query.stdout
 
-- name: create dns cfgmap
-  command: om {{ osvc_dns_cfgmap_name }} create
+- name: Create dns cfgmap
+  ansible.builtin.command: om {{ osvc_dns_cfgmap_name }} create
+  register: output
+  changed_when: output.rc == 0
   run_once: true
   when:
     - not dns_cfg_created
 
-- name: set dns cfgmap server key content
-  command: om {{ osvc_dns_cfgmap_name }} add --key server --from {{ osvc_dns_cfg_server_template }}
+- name: Set dns cfgmap server key content
+  ansible.builtin.command: om {{ osvc_dns_cfgmap_name }} add --key server --from {{ osvc_dns_cfg_server_template }}
+  register: output
+  changed_when: output.rc == 0
   run_once: true
   when:
     - not dns_cfg_created
 
-- name: download recursor config file
-  get_url:
+- name: Download recursor config file
+  ansible.builtin.get_url:
     url: "{{ osvc_dns_cfg_recursor_template }}"
     dest: /tmp/recursor
-    mode: 0700
+    mode: '0600'
   run_once: true
   when:
     - not dns_cfg_created
 
-- name: modify allow-from parameter from recursor config file
+- name: Modify allow-from parameter from recursor config file
   ansible.builtin.lineinfile:
     path: /tmp/recursor
     state: present
@@ -51,59 +55,63 @@
   when:
     - not dns_cfg_created
 
-- name: set dns cfgmap recursor key content
-  command: om {{ osvc_dns_cfgmap_name }} add --key recursor --from /tmp/recursor
+- name: Set dns cfgmap recursor key content
+  ansible.builtin.command: om {{ osvc_dns_cfgmap_name }} add --key recursor --from /tmp/recursor
+  register: output
+  changed_when: output.rc == 0
   run_once: true
   when:
     - not dns_cfg_created
 
-- name: set dns cfgmap configure key content
-  command: om {{ osvc_dns_cfgmap_name }} add --key configure --from {{ osvc_dns_cfg_configure_template }}
+- name: Set dns cfgmap configure key content
+  ansible.builtin.command: om {{ osvc_dns_cfgmap_name }} add --key configure --from {{ osvc_dns_cfg_configure_template }}
+  register: output
+  changed_when: output.rc == 0
   run_once: true
   when:
     - not dns_cfg_created
 
-- name: set fact on dns service creation
+- name: Set fact on dns service creation
   ansible.builtin.set_fact:
     dns_svc_created: 'true'
   run_once: true
 
-- name: check for dns svc existence
-  command: om {{ osvc_dns_service_name }} ls
+- name: Check for dns svc existence
+  ansible.builtin.command: om {{ osvc_dns_service_name }} ls
   changed_when: false
   register: osvc_dns_svc_query
   run_once: true
 
-- name: set fact according to actual dns svc existence
+- name: Set fact according to actual dns svc existence
   ansible.builtin.set_fact:
     dns_svc_created: 'false'
   run_once: true
   when:
     - osvc_dns_service_name not in osvc_dns_svc_query.stdout
 
-- name: build dict with nodes ip addr
-  set_fact:
-    ipv4_dict: "{{ dict(ansible_play_hosts|zip(_ipv4)) }}"
+- name: Build dict with nodes ip addr
+  ansible.builtin.set_fact:
+    ipv4_dict: "{{ dict(ansible_play_hosts | zip(_ipv4)) }}"
   vars:
-    _ipv4: "{{ ansible_play_hosts|
-               map('extract', hostvars, ['ansible_default_ipv4', 'address'])|
+    _ipv4: "{{ ansible_play_hosts |
+               map('extract', hostvars, ['ansible_default_ipv4', 'address']) |
                list }}"
   run_once: true
   when:
-    - not osvc_use_ip_from_ansible_host
+    - not install_dns_osvc_use_ip_from_ansible_host
     - not dns_svc_created
 
-- name: build dict with ansible_host ip addr
-  set_fact:
-    ipv4_dict: "{{ dict(ansible_play_hosts|zip(_ipv4)) }}"
+- name: Build dict with ansible_host ip addr
+  ansible.builtin.set_fact:
+    ipv4_dict: "{{ dict(ansible_play_hosts | zip(_ipv4)) }}"
   vars:
-    _ipv4: "{{ansible_play_hosts | map('extract', hostvars, 'ansible_host') | list}}"
+    _ipv4: "{{ ansible_play_hosts | map('extract', hostvars, 'ansible_host') | list }}"
   run_once: true
   when:
-    - osvc_use_ip_from_ansible_host
+    - install_dns_osvc_use_ip_from_ansible_host
     - not dns_svc_created
 
-- name: debug dns dict
+- name: Debug dns dict
   ansible.builtin.debug:
     var: ipv4_dict
   run_once: true
@@ -111,27 +119,29 @@
     - not dns_svc_created
 
 - name: Concatenate the ip addr
-  set_fact:
+  ansible.builtin.set_fact:
     dnslist: "{{ ipv4_dict.values() | join(' ') }}"
   run_once: true
   when:
     - not dns_svc_created
 
-- name: debug dns list
+- name: Debug dns list
   ansible.builtin.debug:
     var: dnslist
   run_once: true
   when:
     - not dns_svc_created
 
-- name: configure cluster dns thread
-  command: om cluster set --kw 'cluster.dns={{ dnslist }}'
+- name: Configure cluster dns thread
+  ansible.builtin.command: om cluster set --kw 'cluster.dns={{ dnslist }}'
+  register: output
+  changed_when: output.rc == 0
   run_once: true
   when:
     - not dns_svc_created
 
 - name: Check for dns.cluster propagation before provisioning service
-  command: om cluster get --kw cluster.dns
+  ansible.builtin.command: om cluster get --kw cluster.dns
   changed_when: false
   register: cmd_res
   retries: 20
@@ -142,15 +152,18 @@
     - not dns_svc_created
     - inventory_hostname != ansible_play_hosts[0]
 
-- name: deploy dns service
-  command: om {{ osvc_dns_service_name }} deploy --config {{ osvc_dns_svc_template }}
+- name: Deploy dns service
+  ansible.builtin.command: om {{ osvc_dns_service_name }} deploy --config {{ osvc_dns_svc_template }}
+  register: output
+  changed_when: output.rc == 0
   run_once: true
   when:
     - not dns_svc_created
 
-- name: wait for dns service
+- name: Wait for dns service
   ansible.builtin.script:
     cmd: ../files/monitor.overall.sh {{ osvc_dns_service_name }} up 300s
+  changed_when: false
   run_once: true
   when:
     - not dns_svc_created
