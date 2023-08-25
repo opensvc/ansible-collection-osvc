@@ -1,6 +1,6 @@
 ---
 # handlers file for unprovision_cluster
 
-- name: systemctl-daemon-reload
-  systemd:
+- name: Systemctl-daemon-reload
+  ansible.builtin.systemd:
     daemon_reload: true
