@@ -1,6 +1,6 @@
 ---
 
-- name: configure directory pool
+- name: Configure directory pool
   ansible.builtin.command:
     cmd: >
       om cluster set
@@ -9,7 +9,7 @@
   register: output
   changed_when: output.rc == 0
 
-- name: configure directory pool path
+- name: Configure directory pool path
   ansible.builtin.command:
     cmd: >
       om cluster set

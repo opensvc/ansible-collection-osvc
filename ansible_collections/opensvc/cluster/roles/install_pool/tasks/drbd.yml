@@ -1,6 +1,6 @@
 ---
 
-- name: configure drbd pool
+- name: Configure drbd pool
   ansible.builtin.command:
     cmd: >
       om cluster set
@@ -9,7 +9,7 @@
   register: output
   changed_when: output.rc == 0
 
-- name: configure drbd pool backed by path
+- name: Configure drbd pool backed by path
   ansible.builtin.command:
     cmd: >
       om cluster set
@@ -20,7 +20,7 @@
   when:
     - (osvc_pool_path is defined) and (osvc_pool_path|length > 0)
 
-- name: configure drbd pool backed by vg
+- name: Configure drbd pool backed by vg
   ansible.builtin.command:
     cmd: >
       om cluster set
@@ -31,7 +31,7 @@
   when:
     - (osvc_pool_vg is defined) and (osvc_pool_vg|length > 0)
 
-- name: configure drbd pool replicating through backend network
+- name: Configure drbd pool replicating through backend network
   ansible.builtin.command:
     cmd: >
       om cluster set
@@ -42,7 +42,7 @@
   when:
     - (osvc_pool_network is defined) and (osvc_pool_network|length > 0)
 
-- name: configure drbd pool backed by zpool
+- name: Configure drbd pool backed by zpool
   ansible.builtin.command:
     cmd: >
       om cluster set
