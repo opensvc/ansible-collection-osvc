@@ -2,50 +2,56 @@
 # tasks file for unprovision_services
 
 - name: Freeze cluster
-  command: om node freeze
+  ansible.builtin.command: "om node freeze"
+  register: output
+  changed_when: output.rc == 0
   when:
     - inventory_hostname == ansible_play_hosts[0]
 
 - name: Check cluster vip current config
-  command: om cluster get --kw cluster.vip --eval
+  ansible.builtin.command: "om cluster get --kw cluster.vip --eval"
   register: osvc_cluster_vip
   changed_when: false
   failed_when: false
 
 - name: Consider that vip is not configured
-  set_fact:
+  ansible.builtin.set_fact:
     osvc_cluster_vip_is_configured: false
 
 - name: Check if vip is actually configured
-  set_fact:
+  ansible.builtin.set_fact:
     osvc_cluster_vip_is_configured: true
   when:
     - osvc_cluster_vip.stdout.find('None') == -1
 
 - name: Display osvc_cluster_vip_is_configured variable content
-  debug:
+  ansible.builtin.debug:
     var: osvc_cluster_vip_is_configured
     verbosity: 2
 
 - name: Unconfigure cluster vip
-  command: om cluster unset --kw cluster.vip
+  ansible.builtin.command: om cluster unset --kw cluster.vip
+  register: output
+  changed_when: output.rc == 0
   when:
-    - osvc_cluster_vip_is_configured|bool
+    - osvc_cluster_vip_is_configured | bool
     - inventory_hostname == ansible_play_hosts[0]
 
 - name: Unconfigure cluster vip (scoped entries)
-  command: om cluster unset --kw cluster.vip@{{ ansible_hostname }}
+  ansible.builtin.command: "om cluster unset --kw cluster.vip@{{ ansible_hostname }}"
+  register: output
+  changed_when: output.rc == 0
   when:
     - osvc_cluster_vip_is_configured|bool
 
 - name: Consider that we do not need to purge anything
-  set_fact:
+  ansible.builtin.set_fact:
     osvc_cluster_need_svc_purge: false
   when:
     - inventory_hostname == ansible_play_hosts[0]
 
 - name: Check if we actually need to purge something
-  command: om '*/*/*+!*/*/cluster' ls | wc -l
+  ansible.builtin.command: "om '*/*/*+!*/*/cluster' ls | wc -l"
   changed_when: false
   failed_when: false
   register: osvc_cluster_svc_count
@@ -53,21 +59,23 @@
     - inventory_hostname == ansible_play_hosts[0]
 
 - name: Update fact
-  set_fact:
+  ansible.builtin.set_fact:
     osvc_cluster_need_svc_purge: true
   when:
     - inventory_hostname == ansible_play_hosts[0]
     - osvc_cluster_svc_count.stdout != '0'
 
 - name: Purge all OpenSVC services
-  command: om '*/*/*+!*/*/cluster' purge --wait --time {{ osvc_svc_purge_wait_time }}
+  ansible.builtin.command: "om '*/*/*+!*/*/cluster' purge --wait --time {{ osvc_svc_purge_wait_time }}"
+  register: output
+  changed_when: output.rc == 0
   failed_when: false
   when:
     - inventory_hostname == ansible_play_hosts[0]
     - osvc_cluster_need_svc_purge|bool
 
 - name: Check for actual service unprov
-  command: om '*/*/*+!*/*/cluster' ls | wc -l
+  ansible.builtin.command: "om '*/*/*+!*/*/cluster' ls | wc -l"
   changed_when: false
   failed_when: false
   register: osvc_cluster_svc_unprov_cmdres
@@ -76,4 +84,4 @@
   until: osvc_cluster_svc_unprov_cmdres.stdout == '0'
   when:
     - inventory_hostname == ansible_play_hosts[0]
-    - osvc_cluster_need_svc_purge|bool
+    - osvc_cluster_need_svc_purge | bool
