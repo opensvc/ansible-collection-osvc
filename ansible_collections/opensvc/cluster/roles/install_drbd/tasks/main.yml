@@ -19,8 +19,8 @@
     name: drbd
     state: present
   notify:
-    - restart opensvc daemon
-    - wait for restart to be terminated
+    - Restart opensvc daemon
+    - Wait for restart to be terminated
 
 - name: Flush handlers
   ansible.builtin.meta: flush_handlers
