@@ -19,6 +19,8 @@
 
 - name: Identify node ip used for production
   ansible.builtin.shell: set -o pipefail && grep -w {{ ansible_hostname }} /etc/hosts | head -1 | awk '{print $1}'
+  args:
+    executable: /bin/bash
   changed_when: false
   register: grepquery
   when:
@@ -32,6 +34,8 @@
 
 - name: Identify node nic used for production
   ansible.builtin.shell: set -o pipefail && ip route ls | grep {{ osvc_node_prd_ip }} | head -1 | grep -Po '(?<=dev )(\S+)'
+  args:
+    executable: /bin/bash
   register: iproutequery
   changed_when: false
   when:
@@ -44,9 +48,9 @@
     - not vip_created
 
 - name: Add cluster vip
-  ansible.builtin.shell: >-
+  ansible.builtin.shell:
     "om cluster set
-    --kw cluster.vip@{{ ansible_hostname }}={{ osvc_cluster_vip_addr }}/{{ osvc_cluster_vip_cidr_subnet }}
+    --kw cluster.vip@{{ ansible_hostname }}={{ osvc_cluster_vip_addr }}/{{ osvc_cluster_vip_cidr_subnet }}\
     @{{ osvc_cluster_vip_nic_name }}@{{ osvc_node_prd_nic }} && sleep 5"
   throttle: 1
   register: output
@@ -57,8 +61,8 @@
 
 - name: Add cluster vip (single-node)
   ansible.builtin.command: >-
-    "om cluster set --kw cluster.vip@{{ ansible_hostname }}=
-    {{ osvc_cluster_vip_addr }}/{{ osvc_cluster_vip_cidr_subnet }}@{{ osvc_node_prd_nic }}"
+    om cluster set --kw cluster.vip@{{ ansible_hostname }}=
+    {{ osvc_cluster_vip_addr }}/{{ osvc_cluster_vip_cidr_subnet }}@{{ osvc_node_prd_nic }}
   run_once: true
   register: output
   changed_when: output.rc == 0

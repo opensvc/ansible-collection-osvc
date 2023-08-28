@@ -8,7 +8,9 @@
 
 - name: Check for actual network config
   ansible.builtin.shell:
-    cmd: "set -o pipefail && om net ls | grep -w {{ osvc_backend_subnet_name }}"
+    cmd: set -o pipefail && om net ls | grep -w {{ osvc_backend_subnet_name }}
+  args:
+    executable: /bin/bash
   failed_when: false
   changed_when: false
   register: _osvc_network_list

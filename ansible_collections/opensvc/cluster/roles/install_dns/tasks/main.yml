@@ -98,7 +98,7 @@
                list }}"
   run_once: true
   when:
-    - not install_dns_osvc_use_ip_from_ansible_host
+    - not osvc_use_ip_from_ansible_host
     - not dns_svc_created
 
 - name: Build dict with ansible_host ip addr
@@ -108,7 +108,7 @@
     _ipv4: "{{ ansible_play_hosts | map('extract', hostvars, 'ansible_host') | list }}"
   run_once: true
   when:
-    - install_dns_osvc_use_ip_from_ansible_host
+    - osvc_use_ip_from_ansible_host
     - not dns_svc_created
 
 - name: Debug dns dict

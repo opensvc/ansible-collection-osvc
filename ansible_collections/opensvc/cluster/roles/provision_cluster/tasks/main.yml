@@ -151,9 +151,9 @@
 
 - name: Join other nodes to the cluster
   ansible.builtin.command: >
-    "om daemon join
+    om daemon join
     --secret {{ hostvars[ansible_play_hosts[0]].clustersecret.stdout }}
-    --node {{ hostvars[ansible_play_hosts[0]].ansible_hostname }}"
+    --node {{ hostvars[ansible_play_hosts[0]].ansible_hostname }}
   register: output
   changed_when: output.rc == 0
   when:

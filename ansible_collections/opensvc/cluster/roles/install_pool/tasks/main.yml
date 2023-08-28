@@ -8,7 +8,9 @@
 
 - name: Check for actual pool config
   ansible.builtin.shell:
-    cmd: "set -o pipefail && om pool ls | grep -w {{ osvc_pool_name }}"
+    cmd: set -o pipefail && om pool ls | grep -w {{ osvc_pool_name }}
+  args:
+    executable: /bin/bash
   failed_when: false
   changed_when: false
   register: _osvc_pool_list

@@ -34,10 +34,10 @@
 
 - name: Set ca certificate parameters
   ansible.builtin.command: >-
-    "om system/sec/ca-{{ clustername.stdout }} set
+    om system/sec/ca-{{ clustername.stdout }} set
     --kw cn='{{ osvc_ca_cert_name }}'
     --kw c='{{ osvc_ca_cert_country }}'
-    --kw o='{{ osvc_ca_cert_org }}'"
+    --kw o='{{ osvc_ca_cert_org }}'
   run_once: true
   register: output
   changed_when: output.rc == 0
@@ -82,9 +82,9 @@
 
 - name: Set listener certificate parameters
   ansible.builtin.command: >-
-    "om system/sec/cert-{{ clustername.stdout }} set
+    om system/sec/cert-{{ clustername.stdout }} set
     --kw ca='system/sec/ca-{{ clustername.stdout }}'
-    --kw alt_names='{{ osvc_vip_external_fqdn }}'"
+    --kw alt_names='{{ osvc_vip_external_fqdn }}'
   run_once: true
   register: output
   changed_when: output.rc == 0
