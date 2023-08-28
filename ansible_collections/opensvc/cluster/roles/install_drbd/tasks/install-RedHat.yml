@@ -15,6 +15,14 @@
   when:
     - ansible_distribution_major_version|int == 8
 
+- name: Install elrepo channels for version 9
+  ansible.builtin.yum:
+    name: https://www.elrepo.org/elrepo-release-9.el9.elrepo.noarch.rpm
+    state: present
+    disable_gpg_check: true
+  when:
+    - ansible_distribution_major_version|int == 9
+
 - name: Install drbd packages
   ansible.builtin.yum:
     name: "{{ item }}"
@@ -23,3 +31,16 @@
   with_items:
     - kmod-drbd90
     - drbd90-utils
+  when:
+    - ansible_distribution_major_version|int <= 8
+
+- name: Install drbd packages
+  ansible.builtin.yum:
+    name: "{{ item }}"
+    state: present
+    disable_gpg_check: true
+  with_items:
+    - kmod-drbd9x
+    - drbd9x-utils
+  when:
+    - ansible_distribution_major_version|int > 8
