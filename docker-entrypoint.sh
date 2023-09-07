@@ -41,7 +41,7 @@ if [ "$1" = 'unprovision-services' ]; then
     exit $ret
 fi
 
-if [ "$1" = 'check' ]; then
+if [ "$1" = 'check-playbooks' ]; then
     for playbook in $(cd ${ANSIBLE_ROOT} && ls -1 *.yml)
     do
 	    echo
@@ -50,15 +50,43 @@ if [ "$1" = 'check' ]; then
 	    ansible-lint -v ${ANSIBLE_ROOT}/$playbook 
 	    echo "=> End of syntax checking & linting for playbook $playbook"
     done
+    exit $?
+fi
+
+if [ "$1" = 'ansible-lint-cluster-roles' ]; then
     for role in $(cd /usr/share/ansible/collections/ansible_collections/opensvc/cluster/roles && ls -1)
     do
-	    echo "=> Start syntax linting for role $role"
+	    echo "=> Start syntax linting for cluster role $role"
         ansible-lint /usr/share/ansible/collections/ansible_collections/opensvc/cluster/roles/$role 
-        echo "=> End of syntax linting for role $role"
+        echo "=> End of syntax linting for cluster role $role"
         echo
     done
     exit $?
 fi
+
+if [ "$1" = 'ansible-lint-app-roles' ]; then
+    for role in $(cd /usr/share/ansible/collections/ansible_collections/opensvc/app/roles && ls -1)
+    do
+	    echo "=> Start syntax linting for app role $role"
+        ansible-lint /usr/share/ansible/collections/ansible_collections/opensvc/app/roles/$role 
+        echo "=> End of syntax linting for app role $role"
+        echo
+    done
+    exit $?
+fi
+
+if [ "$1" = 'ansible-lint-collections' ]; then
+    for collection in $(cd /usr/share/ansible/collections/ansible_collections/opensvc && ls -1)
+    do
+        echo "=> Start syntax linting for collection $collection"
+        cd /usr/share/ansible/collections/ansible_collections/opensvc/$collection
+        ansible-lint
+        echo "=> End of syntax linting for role $collection"
+        echo
+    done
+    exit $?
+fi
+
 
 if [ "$1" = 'ansible-test-sanity' ]; then
     for collection in $(cd /usr/share/ansible/collections/ansible_collections/opensvc && ls -1)
