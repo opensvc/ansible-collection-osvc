@@ -18,12 +18,12 @@ This repository requires some products to be installed:
 
 __Collection usage__
 - python interpreter `2.7` and `3.6+`
-- ansible >= `2.9.0`
+- ansible >= `2.11.0`
 - docker
 
 ## Ansible version compatibility
 
-This collection has been tested against the following Ansible versions: >=2.9, 2.10, 2.11, 2.12.
+This collection has been tested against the following Ansible versions: >=2.11, 2.13, 2.14, 2.15.
 
 ----
 
