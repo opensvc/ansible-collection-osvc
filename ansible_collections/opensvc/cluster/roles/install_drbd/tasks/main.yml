@@ -14,13 +14,28 @@
 - name: Install DRBD software
   ansible.builtin.include_tasks: "install-{{ ansible_os_family }}.yml"
 
-- name: Add the drbd module
-  community.general.modprobe:
-    name: drbd
-    state: present
+- name: Load drbd kernel module
+  ansible.builtin.shell:
+    cmd: modprobe drbd
+  args:
+    executable: /bin/bash
+  changed_when: false
   notify:
     - Restart opensvc daemon
     - Wait for restart to be terminated
+
+- name: Check for drbd module to be loaded
+  ansible.builtin.shell:
+    cmd: set -o pipefail && modinfo drbd | grep -w "^version:" | awk '{print $2}'
+  args:
+    executable: /bin/bash
+  changed_when: false
+  register: _osvc_drbd_version
+
+- name: Test drbd version
+  ansible.builtin.assert:
+    that:
+      - "_osvc_drbd_version.stdout is version('9.0.0', '>=')"
 
 - name: Flush handlers
   ansible.builtin.meta: flush_handlers
