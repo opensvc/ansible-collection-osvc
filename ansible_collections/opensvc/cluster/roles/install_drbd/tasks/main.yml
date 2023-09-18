@@ -15,10 +15,7 @@
   ansible.builtin.include_tasks: "install-{{ ansible_os_family }}.yml"
 
 - name: Load drbd kernel module
-  ansible.builtin.shell:
-    cmd: modprobe drbd
-  args:
-    executable: /bin/bash
+  ansible.builtin.command: modprobe drbd
   changed_when: false
   notify:
     - Restart opensvc daemon

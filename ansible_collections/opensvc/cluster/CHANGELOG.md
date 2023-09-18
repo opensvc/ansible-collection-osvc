@@ -1,3 +1,7 @@
+## 1.2.1
+
+- Fix command-instead-of-shell warning during galaxy import
+
 ## 1.2.0
 
 - Remove community.general dependency (install_drbd role impacted)
