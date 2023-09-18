@@ -18,6 +18,7 @@ RUN apk add --update --no-cache ca-certificates \
                                 py-pip \
                                 libffi-dev \
                                 rust \
+                                shellcheck \
                                 sshpass \
                                 libressl-dev &&\
                                 pip install --upgrade pip && \
