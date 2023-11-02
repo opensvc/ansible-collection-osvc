@@ -1,17 +1,17 @@
 ---
 
-- name: set facts on environment configmaps creation
+- name: Set facts on environment configmaps creation
   ansible.builtin.set_fact:
     osvc_collector_environ_cfg_created: 'true'
   run_once: true
 
-- name: check for environment configmaps existence
-  command: om {{ osvc_collector_environ_cfgname }} ls
+- name: Check for environment configmaps existence
+  ansible.builtin.command: om {{ osvc_collector_environ_cfgname }} ls
   changed_when: false
   register: osvc_collector_environ_cfgname_query
   run_once: true
 
-- name: set fact according to actual environment configmaps existence
+- name: Set fact according to actual environment configmaps existence
   ansible.builtin.set_fact:
     osvc_collector_environ_cfg_created: 'false'
   run_once: true
@@ -21,17 +21,21 @@
       not in
       osvc_collector_environ_cfgname_query.stdout
 
-- name: create environment configmaps
-  command: om {{ osvc_collector_environ_cfgname }} create
+- name: Create environment configmaps
+  ansible.builtin.command: om {{ osvc_collector_environ_cfgname }} create
   run_once: true
+  register: output
+  changed_when: output.rc == 0
   when:
     - not osvc_collector_environ_cfg_created
 
-- name: load environment configmaps variable
-  command: >
+- name: Load environment configmaps variable
+  ansible.builtin.command: >
            om {{ osvc_collector_environ_cfgname }}
            add --key {{ item.key }} --from {{ item.value }}
   run_once: true
+  register: output
+  changed_when: output.rc == 0
   when:
     - not osvc_collector_environ_cfg_created
   with_items:

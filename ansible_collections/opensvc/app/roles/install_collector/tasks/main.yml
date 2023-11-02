@@ -2,11 +2,11 @@
 # tasks file for install_collector
 #
 
-- name: install environment secrets
-  include_tasks: "secrets.yml"
+- name: Install environment secrets
+  ansible.builtin.include_tasks: "secrets.yml"
 
-- name: install environment configmaps
-  include_tasks: "configmaps.yml"
+- name: Install environment configmaps
+  ansible.builtin.include_tasks: "configmaps.yml"
 
-- name: deploy collector service
-  include_tasks: "collector.yml"
+- name: Deploy collector service
+  ansible.builtin.include_tasks: "collector.yml"
