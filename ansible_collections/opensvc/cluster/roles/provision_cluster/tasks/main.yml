@@ -167,13 +167,36 @@
     - nodecount | int > 1
     - not joined
 
+- name: Pause for 5 seconds for agent cache update
+  ansible.builtin.pause:
+    seconds: 5
+
 - name: Add mutual root ssh trust
   ansible.builtin.command: 'om node update ssh authorized keys --node "*"'
   register: output
   changed_when: output.rc == 0
   when:
     - nodecount | int > 1
-    - not joined
+
+- name: Print to console
+  ansible.builtin.debug:
+    msg: "{{ output.stdout }}"
+    verbosity: 2
+  when:
+    - nodecount | int > 1
+
+- name: Get content of root authorized_keys
+  ansible.builtin.command: cat /root/.ssh/authorized_keys
+  register: command_output
+  when:
+    - nodecount | int > 1
+
+- name: Print to console
+  ansible.builtin.debug:
+    msg: "{{ command_output.stdout_lines }}"
+    verbosity: 2
+  when:
+    - nodecount | int > 1
 
 - name: Configure cluster vip
   ansible.builtin.include_tasks: "vip.yml"
