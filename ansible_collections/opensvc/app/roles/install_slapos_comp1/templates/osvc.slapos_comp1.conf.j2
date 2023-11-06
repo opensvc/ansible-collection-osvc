@@ -1,0 +1,151 @@
+[DEFAULT]
+nodes = *
+topology = failover
+orchestrate = ha
+
+[fs#flag]
+type = flag
+
+[volume#0]
+type = shm
+size = 1m
+configs = {name}/*:/
+name = {name}-cfg
+perm = 755
+
+[disk#0]
+type = loop
+file = /opt/{fqdn}.img
+size = {env.size}
+standby = true
+
+[disk#1]
+type = vg
+pvs = {disk#0.file}
+name = {fqdn}
+standby = true
+
+[disk#2]
+type = lv
+name = {svcname}
+vg = {disk#1.name}
+size = 100%FREE
+standby = true
+
+[disk#3]
+type = drbd
+res = {fqdn}
+disk = /dev/{disk#1.name}/{disk#2.name}
+standby = true
+
+[fs#0]
+type = ext4
+dev = {disk#3.exposed_devs[0]}
+mnt = /srv/{fqdn}
+shared = true
+blocking_post_provision = mkdir -p /srv/{fqdn}/re6st/etc/re6stnet /srv/{fqdn}/re6st/var/log/re6stnet /srv/{fqdn}/re6st/var/lib/re6stnet /srv/{fqdn}/slapos/srv/slapgrid /srv/{fqdn}/slapos/etc/opt
+
+[fs#1]
+type = bind
+dev = /srv/{fqdn}/re6st/etc/re6stnet
+mnt = /etc/re6stnet
+shared = true
+subset = binds
+
+[fs#2]
+type = bind
+dev = /srv/{fqdn}/re6st/var/log/re6stnet
+mnt = /var/log/re6stnet
+shared = true
+subset = binds
+
+[fs#3]
+type = bind
+dev = /srv/{fqdn}/re6st/var/lib/re6stnet
+mnt = /var/lib/re6stnet
+shared = true
+subset = binds
+
+[fs#4]
+type = bind
+dev = /srv/{fqdn}/slapos/srv/slapgrid
+mnt = /srv/slapgrid
+shared = true
+subset = binds
+
+[fs#5]
+type = bind
+dev = /srv/{fqdn}/slapos/etc/opt
+mnt = /etc/opt
+shared = true
+subset = binds
+
+[app#0]
+type = forking
+start = {name}-cfg/re6st start
+stop = {name}-cfg/re6st stop
+check = {name}-cfg/re6st status
+subset = re6st
+status_log = true
+disable = true
+
+[app#1]
+type = forking
+start = {name}-cfg/slapos start
+start_timeout = 600
+stop = {name}-cfg/slapos stop
+check = {name}-cfg/slapos status
+subset = slapos
+status_log = true
+disable = true
+
+[task#collect]
+type = host
+command = /bin/sh -c '/opt/slapos/bin/slapos node collect >> /opt/slapos/log/slapos-node-collect.log 2>&1'
+schedule = @1m
+check = last_run
+subset = admin
+run_requires = app#0(up) app#1(up)
+disable = true
+
+[task#software]
+type = host
+command = /opt/slapos/bin/slapos node software --now --maximal_delay=30 --verbose --logfile=/opt/slapos/log/slapos-node-software.log
+schedule = @1m
+check = last_run
+subset = admin
+run_requires = app#0(up) app#1(up)
+disable = true
+
+[task#addpart]
+type = host
+command = /opt/slapos/bin/slapos node instance --now --maximal_delay=20 --promise-timeout 20 --verbose --logfile=/opt/slapos/log/slapos-node-instance.log
+schedule = @1m
+check = last_run
+subset = admin
+run_requires = app#0(up) app#1(up)
+disable = true
+
+[task#delpart]
+type = host
+command = /opt/slapos/bin/slapos node report --now --maximal_delay=3600 --verbose --logfile=/opt/slapos/log/slapos-node-report.log
+schedule = @60m
+check = last_run
+subset = admin
+run_requires = app#0(up) app#1(up)
+disable = true
+
+[task#chkaddip]
+type = host
+command = /bin/sh -c '/opt/slapos/bin/slapos node format --now >> /opt/slapos/log/slapos-node-format.log'
+schedule = @60m
+check = last_run
+subset = admin
+run_requires = app#0(up) app#1(up)
+disable = true
+
+[subset#task:admin]
+parallel = true
+
+[env]
+size = {{ osvc_slapos_comp1_data_size }}

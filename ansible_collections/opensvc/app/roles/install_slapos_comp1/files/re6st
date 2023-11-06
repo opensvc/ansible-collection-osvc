@@ -1,0 +1,65 @@
+#!/usr/bin/env bash
+
+GEOIP2_MMDB=/etc/re6stnet/GeoLite2-Country.mmdb
+RE6STETC=/etc/re6stnet
+
+function status {
+    pgrep '^(re6stnet|babeld|openvpn)$' >/dev/null 2>&1
+    ret=$?
+    [ $ret -eq 0 ] && {
+        /usr/sbin/ip -6 route | grep -wv ^unreachable | grep -q 'dev re6stnet.* proto babel' || {
+            echo "ipv6 routes not configured" >&2
+        }
+    }
+    return $ret
+}
+
+function stop {
+    wait_for_end_of_tasks
+    pkill -15 '^(re6stnet|babeld|openvpn)$'
+    sleep 3
+}
+
+function start {
+    [ -r $GEOIP2_MMDB ] && export GEOIP2_MMDB
+    cd $RE6STETC && nohup re6stnet @re6stnet.conf >> /dev/null 2>&1 &
+}
+
+function wait_for_end_of_tasks {
+	echo wait_for_end_of_tasks...
+	while true
+	do
+	    nbtask=$(om daemon status --format flat_json | grep $OPENSVC_SVCPATH | grep running | wc -l)
+	    (($nbtask)) || break
+	    echo wait 1s...
+	    sleep 1
+	done
+}
+
+case $1 in
+restart)
+        stop
+        start
+        ;;
+start)
+        status && {
+            echo "already started"
+            exit 0
+        }
+	    start
+        ;;
+stop)
+        stop
+        ;;
+info)
+        echo "Name: re6st launcher"
+        ;;
+status)
+        status
+        exit $?
+        ;;
+*)
+        echo "unsupported action: $1" >&2
+        exit 1
+        ;;
+esac

@@ -1,0 +1,25 @@
+---
+# defaults file for install_slapos_comp1
+#
+# opensvc
+osvc_slapos_comp1_namespace: "slapos"
+osvc_slapos_comp1_name: "comp1"
+osvc_slapos_comp1_svcpath: "{{ osvc_slapos_comp1_namespace }}/svc/{{ osvc_slapos_comp1_name }}"
+osvc_slapos_comp1_cfgpath: "{{ osvc_slapos_comp1_namespace }}/cfg/{{ osvc_slapos_comp1_name }}"
+
+# size of drbd volume (re6st + slapos comp1)
+osvc_slapos_comp1_data_size: 2GB
+
+# re6st
+osvc_re6st_installer_url: "https://deploy.erp5.net/gnet/re6st"
+osvc_re6st_token: "notoken"
+osvc_re6st_router_advertisement: "no"
+
+# slapos
+osvc_slapos_comp1_installer_url: "https://deploy.rapid.space/slapos-base"
+osvc_slapos_comp1_master_url: "https://slap.vifib.com/"
+osvc_slapos_comp1_web_master_url: "https://panel.rapid.space/"
+osvc_slapos_comp1_computer_name: "noname"
+osvc_slapos_token: "notoken"
+osvc_slapos_interface_name: "lo"
+osvc_slapos_partition_number: "10"

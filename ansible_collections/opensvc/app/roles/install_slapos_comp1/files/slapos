@@ -1,0 +1,60 @@
+#!/usr/bin/env bash
+
+export PATH=$PATH:/opt/slapos/bin
+
+function status {
+    ps auxww | \
+      grep -E "/opt/slapos/parts/python3/bin/[p]ython3" | \
+      grep -qPzo '^.*?supervisor.supervisord.main.*?\n?.*/opt/slapos/bin/slapos-watchdog.*?'
+    ret=$?
+    return $ret
+}
+
+function kill {
+    ps auxww | \
+      grep -E "/opt/slapos/parts/python3/bin/[p]ython3" | \
+      grep -Pzo '^.*?supervisor.supervisord.main.*?\n?.*/opt/slapos/bin/slapos-watchdog.*?' | \
+      awk '{print $2}' | \
+      xargs kill -9
+}
+
+function stop {
+    slapos node stop all
+    slapos node supervisorctl shutdown
+    status && kill
+    echo
+}
+
+function start {
+    slapos node
+    sleep 2
+    slapos node boot
+}
+
+case $1 in
+restart)
+        stop
+        start
+        ;;
+start)
+        status && {
+            echo "already started"
+            exit 0
+        }
+	    start
+        ;;
+stop)
+        stop
+        ;;
+info)
+        echo "Name: $0 launcher"
+        ;;
+status)
+        status
+        exit $?
+        ;;
+*)
+        echo "unsupported action: $1" >&2
+        exit 1
+        ;;
+esac

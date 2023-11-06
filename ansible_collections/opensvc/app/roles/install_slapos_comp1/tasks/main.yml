@@ -1,0 +1,10 @@
+---
+
+- name: Deploy OpenSVC service
+  ansible.builtin.include_tasks: "add.osvc.service.yml"
+
+- name: Deploy re6st component
+  ansible.builtin.include_tasks: "install.re6st.yml"
+
+- name: Deploy slapos component
+  ansible.builtin.include_tasks: "install.slapos.yml"

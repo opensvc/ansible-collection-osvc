@@ -1,0 +1,6 @@
+---
+- name: Test install_slapos_comp1 playbook
+  hosts: localhost
+  remote_user: root
+  roles:
+    - install_slapos_comp1

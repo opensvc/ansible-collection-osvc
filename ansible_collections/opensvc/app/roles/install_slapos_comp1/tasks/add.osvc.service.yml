@@ -1,0 +1,129 @@
+---
+- name: Display all variables/facts known for a host
+  ansible.builtin.debug:
+    var: hostvars[inventory_hostname]
+    verbosity: 3
+
+- name: Set fact on cfgmap creation
+  ansible.builtin.set_fact:
+    slapos_comp1_cfg_created: 'true'
+
+- name: Check for cfgmap existence
+  ansible.builtin.command: "om {{ osvc_slapos_comp1_cfgpath }} ls"
+  changed_when: false
+  register: slapos_comp1_cfg
+
+- name: Set fact according to actual cfg existence
+  ansible.builtin.set_fact:
+    slapos_comp1_cfg_created: 'false'
+  when:
+    - osvc_slapos_comp1_cfgpath not in slapos_comp1_cfg.stdout
+
+- name: Set re6st launcher filename
+  ansible.builtin.set_fact:
+    osvc_re6st_launcher: "/tmp/re6st"
+  when:
+    - not slapos_comp1_cfg_created
+    - inventory_hostname == ansible_play_hosts[0]
+
+- name: Copy launcher to target node
+  ansible.builtin.copy:
+    src: "{{ item }}"
+    dest: /tmp
+    owner: root
+    mode: '600'
+    force: true
+  with_fileglob:
+    - files/*
+  when:
+    - not slapos_comp1_cfg_created
+    - inventory_hostname == ansible_play_hosts[0]
+
+- name: Create re6st/slapos cluster configmap
+  ansible.builtin.command: "om {{ osvc_slapos_comp1_cfgpath }} create"
+  register: output
+  changed_when: output.rc == 0
+  when:
+    - not slapos_comp1_cfg_created
+    - inventory_hostname == ansible_play_hosts[0]
+
+- name: Load app launchers into configmap
+  ansible.builtin.command: "om {{ osvc_slapos_comp1_cfgpath }} add --key {{ item }} --from /tmp/{{ item }}"
+  register: output
+  changed_when: output.rc == 0
+  with_items:
+    - re6st
+    - slapos
+  when:
+    - not slapos_comp1_cfg_created
+    - inventory_hostname == ansible_play_hosts[0]
+
+####################################################################
+
+- name: Set opensvc service template filename
+  ansible.builtin.set_fact:
+    osvc_svc_template: "/tmp/osvc.{{ osvc_slapos_comp1_name }}.conf"
+
+- name: Set fact on slapos_comp1 service creation
+  ansible.builtin.set_fact:
+    slapos_comp1_svc_created: 'true'
+
+- name: Check for slapos_comp1 service existence
+  ansible.builtin.command: "om {{ osvc_slapos_comp1_svcpath }} ls"
+  changed_when: false
+  register: slapos_comp1_svc
+
+- name: Set fact according to actual slapos_comp1 svc existence
+  ansible.builtin.set_fact:
+    slapos_comp1_svc_created: 'false'
+  when:
+    - osvc_slapos_comp1_svcpath not in slapos_comp1_svc.stdout
+
+- name: Deploy slapos_comp1 opensvc service configuration file
+  ansible.builtin.template:
+    src: osvc.slapos_comp1.conf.j2
+    dest: "{{ osvc_svc_template }}"
+    mode: '600'
+  when:
+    - not slapos_comp1_svc_created
+    - inventory_hostname == ansible_play_hosts[0]
+
+- name: Create slapos_comp1 service
+  ansible.builtin.command: "om {{ osvc_slapos_comp1_svcpath }} create --config {{ osvc_svc_template }}"
+  register: output
+  changed_when: output.rc == 0
+  when:
+    - not slapos_comp1_svc_created
+    - inventory_hostname == ansible_play_hosts[0]
+
+- name: Provision slapos_comp1 service
+  ansible.builtin.command: "om {{ osvc_slapos_comp1_svcpath }} provision --wait"
+  register: output
+  changed_when: output.rc == 0
+  when:
+    - not slapos_comp1_svc_created
+    - inventory_hostname == ansible_play_hosts[0]
+
+- name: Wait for slapos_comp1 service state up
+  ansible.builtin.script:
+    cmd: ./files/osvc_wait.sh {{ ansible_hostname }} {{ osvc_slapos_comp1_svcpath }} avail up 300
+  changed_when: false
+  register: osvcwait
+  when:
+    - not slapos_comp1_svc_created
+    - inventory_hostname == ansible_play_hosts[0]
+
+- name: Print return information from the previous task
+  ansible.builtin.debug:
+    var: osvcwait.stdout_lines
+    verbosity: 2
+  when:
+    - not slapos_comp1_svc_created
+    - inventory_hostname == ansible_play_hosts[0]
+
+- name: Force sync#i0 before switching the service
+  ansible.builtin.command: "om {{ osvc_slapos_comp1_svcpath }} sync nodes --rid sync#i0"
+  changed_when: false
+  when:
+    - not slapos_comp1_svc_created
+    - inventory_hostname == ansible_play_hosts[0]
