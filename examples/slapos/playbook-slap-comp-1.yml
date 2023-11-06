@@ -1,0 +1,27 @@
+- hosts: all
+  any_errors_fatal: true
+  gather_facts: true
+  tasks:
+    - name: Import role provision_cluster
+      import_role:
+        name: opensvc.cluster.provision_cluster
+      vars:
+        osvc_clustername: hyperopenx
+        osvc_hb_timeout: 30s
+        osvc_update_etc_hosts: true
+        osvc_configure_webapp: false
+        osvc_configure_vip: false
+
+    - name: import role install_drbd
+      import_role:
+        name: opensvc.cluster.install_drbd
+
+    - name: import role install_slapos_comp1
+      import_role:
+        name: opensvc.app.install_slapos_comp1
+      vars:
+        osvc_re6st_token: 219111oebvazertyuiopdgxwlf
+        osvc_slapos_comp1_data_size: 20GB
+        osvc_slapos_token: 20230928-1EFFEB4
+        osvc_slapos_comp1_computer_name: slaposcomp1ha
+        osvc_slapos_partition_number: 5
