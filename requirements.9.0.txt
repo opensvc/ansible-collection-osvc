@@ -1,4 +1,4 @@
-ansible~=7.0
+ansible~=9.0
 pylint
 pyyaml
 ansible-lint

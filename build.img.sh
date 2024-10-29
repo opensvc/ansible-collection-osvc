@@ -1,6 +1,6 @@
 #!/bin/bash
 
-ANSIBLE_VERSIONS="6.0 7.0 8.0"
+ANSIBLE_VERSIONS="8.0 9.0 10.0 11.0.0a2"
 
 function title()
 {
@@ -28,8 +28,6 @@ do
 	echo docker build --network host --build-arg REQUIREMENTS_FILE=requirements.${version}.txt -f Dockerfile -t osvccol:${version} .
 	cmds ${version} /examples/inventory /examples/playbook-provision-cluster.yml
 done
-
-sed -i "s@ansible~=2.9@ansible~=2.9,<2.10@" requirements.2.9.txt
 
 title "Building ansible upstream image"
 echo docker build --network host -f Dockerfile.dev -t osvccol:dev .
