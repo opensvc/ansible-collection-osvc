@@ -1,0 +1,9 @@
+---
+# defaults file for install_envoy
+osvc_envoy_service_namespace: system
+osvc_envoy_short_service_name: envoy
+osvc_envoy_cfgmap_name: "{{ osvc_envoy_service_namespace }}/cfg/{{ osvc_envoy_short_service_name }}"
+osvc_envoy_service_name: "{{ osvc_envoy_service_namespace }}/svc/{{ osvc_envoy_short_service_name }}"
+
+osvc_envoy_cfg_xds_template: https://raw.githubusercontent.com/opensvc/opensvc_templates/main/igw_envoy/xds.yaml
+osvc_envoy_svc_template: https://raw.githubusercontent.com/opensvc/opensvc_templates/main/igw_envoy/hostns.conf

@@ -1,0 +1,54 @@
+---
+
+- name: Configure drbd pool
+  ansible.builtin.command:
+    cmd: >
+      om cluster set
+      --kw pool#{{ osvc_pool_name }}.type={{ osvc_pool_type }}
+  run_once: true
+  register: output
+  changed_when: output.rc == 0
+
+- name: Configure drbd pool backed by path
+  ansible.builtin.command:
+    cmd: >
+      om cluster set
+      --kw pool#{{ osvc_pool_name }}.path={{ osvc_pool_path }}
+  run_once: true
+  register: output
+  changed_when: output.rc == 0
+  when:
+    - (osvc_pool_path is defined) and (osvc_pool_path|length > 0)
+
+- name: Configure drbd pool backed by vg
+  ansible.builtin.command:
+    cmd: >
+      om cluster set
+      --kw pool#{{ osvc_pool_name }}.vg={{ osvc_pool_vg }}
+  run_once: true
+  register: output
+  changed_when: output.rc == 0
+  when:
+    - (osvc_pool_vg is defined) and (osvc_pool_vg|length > 0)
+
+- name: Configure drbd pool replicating through backend network
+  ansible.builtin.command:
+    cmd: >
+      om cluster set
+      --kw pool#{{ osvc_pool_name }}.network={{ osvc_pool_network }}
+  run_once: true
+  register: output
+  changed_when: output.rc == 0
+  when:
+    - (osvc_pool_network is defined) and (osvc_pool_network|length > 0)
+
+- name: Configure drbd pool backed by zpool
+  ansible.builtin.command:
+    cmd: >
+      om cluster set
+      --kw pool#{{ osvc_pool_name }}.zpool={{ osvc_pool_zpool }}
+  run_once: true
+  register: output
+  changed_when: output.rc == 0
+  when:
+    - (osvc_pool_zpool is defined) and (osvc_pool_zpool|length > 0)

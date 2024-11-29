@@ -1,0 +1,6 @@
+---
+- name: Test install_cni playbook
+  hosts: localhost
+  remote_user: root
+  roles:
+    - install_cni

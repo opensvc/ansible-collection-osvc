@@ -1,0 +1,8 @@
+---
+- name: Install DRBD package prerequisites on RHEL
+  ansible.builtin.yum:
+    name: "{{ item }}"
+    state: present
+  loop:
+    - gnupg2
+    - lvm2

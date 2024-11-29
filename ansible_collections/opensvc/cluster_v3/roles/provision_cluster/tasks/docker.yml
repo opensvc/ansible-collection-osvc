@@ -1,0 +1,16 @@
+---
+- name: Copy docker daemon config file
+  ansible.builtin.copy:
+    src: 'files/docker.daemon.json'
+    dest: '/etc/docker/daemon.json'
+    mode: '0644'
+  notify:
+    - restart docker service
+
+- name: Flush handlers
+  ansible.builtin.meta: flush_handlers
+
+- name: Restore default forward chain accept policy
+  ansible.builtin.iptables:
+    chain: FORWARD
+    policy: ACCEPT

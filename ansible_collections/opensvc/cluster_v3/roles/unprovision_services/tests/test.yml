@@ -1,0 +1,6 @@
+---
+- name: Test unprovision_services playbook
+  hosts: localhost
+  remote_user: root
+  roles:
+    - unprovision_services

@@ -1,0 +1,80 @@
+---
+# tasks file for install_cni
+
+- name: Set fact according to binary deployment
+  ansible.builtin.set_fact:
+    _cni_bin_is_installed: 'false'
+
+- name: Check if cni bin exists
+  ansible.builtin.stat:
+    path: "{{ osvc_cni_plugins_dir }}/{{ item }}"
+  with_items: "{{ _cni_plugin_binaries | flatten }}"
+  register: cni_check_result
+
+- name: Set fact according to actual cni binary existence
+  ansible.builtin.set_fact:
+    _cni_bin_is_installed: 'true'
+  when:
+    - item.stat.exists
+  loop: "{{ cni_check_result.results }}"
+
+- name: Display cni binary install flag
+  ansible.builtin.debug:
+    var: _cni_bin_is_installed
+    verbosity: 2
+
+- name: Deploy cni plugins
+  ansible.builtin.get_url:
+    url: "{{ item.url }}"
+    dest: "{{ item.dest }}"
+    checksum: "{{ item.checksum }}"
+    timeout: 300
+    mode: '0440'
+  loop:
+    - "{{ cni_download }}"
+  register: get_url_result
+  until: get_url_result is succeeded
+  when:
+    - not _cni_bin_is_installed
+
+- name: Create directory if it does not exist
+  ansible.builtin.file:
+    path: "{{ item }}"
+    state: directory
+    mode: '0755'
+  with_items:
+    - "{{ osvc_cni_plugins_dir }}"
+    - "{{ osvc_cni_config_dir }}"
+  when:
+    - not _cni_bin_is_installed
+
+- name: Unarchive package
+  ansible.builtin.shell: |
+    set -o pipefail
+    cd {{ osvc_cni_plugins_dir }}
+    TMP_DIR="`mktemp -d`" && tar -zx -C $TMP_DIR -f {{ cni_download.dest }} && mv $TMP_DIR/* . && rm -rf $TMP_DIR
+  args:
+    executable: "/bin/bash"
+  register: output
+  changed_when: output.rc == 0
+  when:
+    - not _cni_bin_is_installed
+    - get_url_result is changed
+
+- name: Get CNI paths for OpenSVC cluster
+  ansible.builtin.command: om cluster get --kw cni.plugins
+  register: cnipluginspath
+  failed_when: false
+  changed_when: false
+  run_once: true
+  when:
+    - not _cni_bin_is_installed
+
+- name: Set CNI paths for OpenSVC cluster
+  ansible.builtin.command: om cluster set --kw cni.plugins={{ osvc_cni_plugins_dir }} --kw cni.config={{ osvc_cni_config_dir }}
+  run_once: true
+  register: output
+  changed_when: output.rc == 0
+  when:
+    - not _cni_bin_is_installed
+    - osvc_cni_plugins_dir != cnipluginspath.stdout

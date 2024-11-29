@@ -1,0 +1,50 @@
+---
+- name: Add OpenSVC repository
+  ansible.builtin.yum_repository:
+    name: opensvc
+    description: OpenSVC Repository
+    baseurl: "{{ opensvc_repo_url }}"
+    enabled: true
+    gpgcheck: false
+    state: present
+  when: ansible_os_family == "RedHat"
+
+- name: Update packages list
+  ansible.builtin.yum:
+    update_cache: true
+
+- name: Install common packages for RHEL/CentOS/Fedora (ver >= 8)
+  ansible.builtin.yum:
+    name: "{{ packages }}"
+    state: present
+  vars:
+    packages:
+      - podman
+      - psmisc
+      - sg3_utils
+  when:
+    - ansible_distribution_major_version | int >= 8
+
+- name: Install opensvc-server package
+  ansible.builtin.yum:
+    name: opensvc-server
+    state: present
+    update_cache: true
+    enablerepo: opensvc
+    disablerepo: "*"
+  become: true
+
+- name: Check installed OpenSVC package
+  ansible.builtin.shell: "rpm -qa | grep opensvc"
+  register: opensvc_package
+  changed_when: false
+
+- name: Debug OpenSVC installed package
+  ansible.builtin.debug:
+    msg: "Installed OpenSVC package: {{ opensvc_package.stdout }}"
+
+- name: Enable and start opensvc-agent.service
+  ansible.builtin.service:
+    name: opensvc-agent.service
+    enabled: true
+    state: started
