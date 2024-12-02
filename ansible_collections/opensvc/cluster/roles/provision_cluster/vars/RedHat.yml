@@ -1,4 +1,2 @@
 ---
-osvc_repo_url: https://repo.opensvc.com/rpms/current
-osvc_pkg_dl_path: /tmp/opensvc.latest.rpm
 systemd_ssh_unit: sshd

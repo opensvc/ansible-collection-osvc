@@ -46,3 +46,7 @@ osvc_ca_cert_mode: 'self'
 osvc_ca_cert_name: 'TEST CLUSTER'
 osvc_ca_cert_country: 'US'
 osvc_ca_cert_org: 'ACME Company'
+
+# opensvc repository
+osvc_repo_url: "{% if ansible_distribution == 'Debian' %}https://repo.opensvc.com/deb{% else %}https://repo.opensvc.com/rpms{% endif %}/current"
+osvc_pkg_dl_path: "{% if ansible_distribution == 'Debian' %}/tmp/opensvc.latest.deb{% else %}/tmp/opensvc.latest.rpm{% endif %}/current"
