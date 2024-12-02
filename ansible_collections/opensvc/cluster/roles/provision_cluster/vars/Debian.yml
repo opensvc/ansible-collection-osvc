@@ -1,4 +1,2 @@
 ---
-osvc_repo_url: https://repo.opensvc.com/deb/current
-osvc_pkg_dl_path: /tmp/opensvc.latest.deb
 systemd_ssh_unit: ssh
