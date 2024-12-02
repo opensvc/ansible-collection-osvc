@@ -1,0 +1,9 @@
+{
+	"iptables": false,
+	"storage-driver": "overlay2",
+	"log-driver": "journald",
+  	"log-opts": {
+	    "labels": "com.opensvc.id,com.opensvc.name,com.opensvc.namespace,com.opensvc.kind,com.opensvc.path,com.opensvc.rid",
+    	    "tag": "{{.Name}}/{{.ID}}"
+  	}
+}

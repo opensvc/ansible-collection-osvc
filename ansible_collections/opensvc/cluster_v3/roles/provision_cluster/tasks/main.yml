@@ -1,0 +1,200 @@
+---
+# Tasks file for provision_cluster
+
+- name: Distribution
+  ansible.builtin.debug:
+    msg: "{{ ansible_distribution }}"
+
+- name: Distribution version
+  ansible.builtin.debug:
+    msg: "{{ ansible_distribution_version }}"
+
+- name: Distribution major version
+  ansible.builtin.debug:
+    msg: "{{ ansible_distribution_major_version }}"
+
+- name: Determine OpenSVC repository URL
+  ansible.builtin.set_fact:
+    opensvc_repo_url: >-
+      {{
+        osvc_repositories[ansible_distribution]
+          .get(ansible_distribution_major_version,
+               osvc_repositories[ansible_distribution].default)
+      }}
+
+- name: Deploy per OS prerequisites and install osvc package
+  ansible.builtin.include_tasks: "install-{{ ansible_os_family }}.yml"
+
+- name: Debug node count
+  ansible.builtin.debug:
+    var: nodecount
+    verbosity: 2
+
+- name: Update /etc/hosts file
+  ansible.builtin.blockinfile:
+    dest: /etc/hosts
+    content: "{{ lookup('template', 'templates/hosts.j2') }}"
+    state: present
+  when:
+    - osvc_update_etc_hosts | bool
+
+- name: Enable ssh root access accross cluster nodes
+  ansible.builtin.replace:
+    dest: /etc/ssh/sshd_config
+    regexp: '^PermitRootLogin (yes|without-password)'
+    replace: "PermitRootLogin prohibit-password"
+  notify: Reload sshd
+
+- name: Flush handlers
+  ansible.builtin.meta: flush_handlers
+
+- name: Enable sysrq trigger
+  ansible.posix.sysctl:
+    name: kernel.sysrq
+    value: '1'
+    state: present
+    sysctl_file: /etc/sysctl.d/99-opensvc-sysrq.conf
+    sysctl_set: true
+
+########################## FIRST NODE ##########################
+
+- name: Check hb cluster param exists on first node
+  ansible.builtin.command: om cluster get --kw hb#1.type
+  register: clusterhbtype
+  changed_when: false
+  failed_when: false
+  when: inventory_hostname == ansible_play_hosts[0]
+
+- name: Configure cluster with unicast hb
+  ansible.builtin.command: om cluster set --kw hb#1.type=unicast --kw hb#1.timeout={{ osvc_hb_timeout }}
+  register: output
+  changed_when: output.rc == 0
+  when:
+    - inventory_hostname == ansible_play_hosts[0]
+    - clusterhbtype.stdout == "None"
+
+- name: Get current cluster name
+  ansible.builtin.command: om cluster get --kw cluster.name
+  register: clustername
+  changed_when: false
+  failed_when: false
+  when:
+    - inventory_hostname == ansible_play_hosts[0]
+
+- name: Verify OpenSVC socket is available
+  ansible.builtin.stat:
+    path: /opt/opensvc/var/lsnr/http.sock
+  register: opensvc_socket
+
+- name: Debug socket status
+  ansible.builtin.debug:
+    var: opensvc_socket
+
+- name: Set cluster name
+  ansible.builtin.command: "om cluster set --kw cluster.name={{ osvc_clustername }}"
+  register: output
+  changed_when: output.rc == 0
+  when:
+    - inventory_hostname == ansible_play_hosts[0]
+    - opensvc_socket.stat.exists
+    - clustername.stdout != osvc_clustername
+
+- name: Get cluster token on first node
+  ansible.builtin.command: om daemon auth token --role join
+  register: clustertoken
+  changed_when: false
+  failed_when: clustertoken.rc != 0
+
+- name: Debug cluster token
+  ansible.builtin.debug:
+    msg: "Cluster join token: {{ clustertoken.stdout }}"
+  when:
+    - inventory_hostname == ansible_play_hosts[0]
+    - clustertoken is defined
+    - clustertoken.stdout is defined
+
+########################## OTHER NODES ##########################
+
+- name: Check other nodes are joined to a cluster
+  ansible.builtin.command: om cluster get --kw cluster.nodes
+  register: clusternodes
+  changed_when: false
+  failed_when: false
+  when:
+    - nodecount | int > 1
+
+- name: Debug cluster nodes output
+  ansible.builtin.debug:
+    var: clusternodes.stdout
+
+- name: Set joined status for nodes
+  ansible.builtin.set_fact:
+    joined: "{{ inventory_hostname in clusternodes.stdout.splitlines() }}"
+  when:
+    - nodecount | int > 1
+
+- name: Debug joined status
+  ansible.builtin.debug:
+    msg: "Joined status: {{ joined }}"
+
+- name: Join other nodes to the cluster
+  ansible.builtin.command: >
+    om daemon join --node {{ hostvars[ansible_play_hosts[0]].ansible_hostname }} --token {{ hostvars[ansible_play_hosts[0]].clustertoken.stdout }}
+  async: 30
+  poll: 0
+  register: join_output
+  changed_when: false
+  when:
+    - nodecount | int > 1
+    - inventory_hostname != ansible_play_hosts[0]
+    - not joined
+
+- name: Debug join_output
+  ansible.builtin.debug:
+    var: join_output
+  when: not joined
+
+- name: Check async job status for joining node
+  ansible.builtin.async_status:
+    jid: "{{ join_output.ansible_job_id }}"
+  register: job_result
+  until: job_result.finished
+  retries: 10
+  delay: 5
+  when:
+    - join_output is defined
+    - join_output.ansible_job_id is defined
+    - not joined
+
+- name: Check if join command was successful
+  ansible.builtin.debug:
+    msg: "Join successful!"
+  when:
+    - nodecount | int > 1
+    - inventory_hostname != ansible_play_hosts[0]
+    - not joined
+    - job_result is defined
+    - job_result.rc == 0
+
+# - name: Add mutual root ssh trust
+#  ansible.builtin.command: 'om node update ssh authorized keys --node "*"'
+#  register: output
+#  changed_when: output.rc == 0
+#  when:
+    - nodecount | int > 1
+    - not joined
+
+- name: Configure cluster vip
+  ansible.builtin.include_tasks: "vip.yml"
+  when:
+    - osvc_configure_vip | bool
+
+- name: Configure webapp/api access
+  ansible.builtin.include_tasks: "webapp.yml"
+  when:
+    - osvc_configure_webapp | bool
+
+- name: Disable iptables usage by docker
+  ansible.builtin.include_tasks: "docker.yml"
+  when:
+    - osvc_deploy_docker_daemon_json | bool

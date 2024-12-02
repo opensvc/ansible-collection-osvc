@@ -1,0 +1,44 @@
+---
+# tasks file for unprovision_cluster
+
+- name: Stop and disable opensvc-agent.service unit
+  ansible.builtin.systemd:
+    name: opensvc-agent
+    state: stopped
+    enabled: false
+  failed_when: false
+
+- name: Retrieve process list
+  ansible.builtin.command: "ps afx | grep [o]svcd.py"
+  register: osvc_daemon_ps
+  changed_when: false
+  failed_when: false
+
+- name: Stop OpenSVC daemon
+  ansible.builtin.command: "om daemon shutdown"
+  register: output
+  changed_when: output.rc == 0
+  when: osvc_daemon_ps.rc == 0
+
+- name: Remove OpenSVC package
+  ansible.builtin.package:
+    name: opensvc
+    state: absent
+
+- name: Purge OpenSVC folders
+  ansible.builtin.file:
+    path: "{{ item }}"
+    state: absent
+  with_items:
+    - /etc/opensvc
+    - /var/lib/opensvc
+    - /var/log/opensvc
+    - /var/tmp/opensvc
+    - /usr/share/opensvc
+    - /etc/bash_completion.d/opensvc.sh
+    - /etc/default/opensvc
+    - /etc/sysconfig/opensvc
+    - /etc/profile.d/opensvc.sh
+    - /lib/systemd/system/opensvc-agent.service
+    - /lib/systemd/system/opensvc-services.service
+  notify: Systemctl-daemon-reload

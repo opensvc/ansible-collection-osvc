@@ -1,0 +1,48 @@
+---
+# defaults file for provision_cluster
+
+# set to something unique
+osvc_clustername: demo
+
+# time waited before considering hb as down
+osvc_hb_timeout: 20s
+
+# update /etc/hosts to add each cluster node ip
+# false: you deal with this setup by yourself
+# true: you expect the playbook to do the config
+osvc_update_etc_hosts: false
+
+# depending on your cluster setup, you may need to disable default docker behavior with iptables
+# if false, do not change /etc/docker/daemon.json config file
+# if true, override /etc/docker/daemon.json content with iptables=false
+osvc_deploy_docker_daemon_json: false
+
+# when docker daemon config deployment is enabled, we need to restart the docker service
+systemd_docker_unit: 'docker.service'
+
+# configure the cluster virtual ip
+# recommended for streched vlans setup
+# clients can connect to webapp/api using this floating ip
+osvc_configure_vip: false
+osvc_cluster_vip_addr: '1.2.3.4'
+osvc_cluster_vip_cidr_subnet: '24'
+# vip ip addr will be configured on link vipnic@br-prd (displayed with "ip link list")
+osvc_cluster_vip_nic_name: 'vipnic'
+osvc_node_prd_nic: 'br0'
+# public fqdn https://vip.domain.com:1215
+osvc_vip_external_fqdn: 'vip.domain.com'
+
+# configure the 1215/tcp port for webapp and api usage
+osvc_configure_webapp: false
+# cluster admin credentials (webapp/api)
+osvc_webapp_user: 'admin'
+osvc_webapp_password: 's3cr3t'
+
+# webapp/api are served through tls / http/2
+# we have to autoconfigue ssl certs
+# by default 'self' mode create a per-cluster CA and self-signed certs for 1215/tcp listener
+# other modes can be configured, please contact support@opensvc.com
+osvc_ca_cert_mode: 'self'
+osvc_ca_cert_name: 'TEST CLUSTER'
+osvc_ca_cert_country: 'US'
+osvc_ca_cert_org: 'ACME Company'

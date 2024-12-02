@@ -1,0 +1,6 @@
+---
+- name: Test provision_cluster playbook
+  hosts: localhost
+  remote_user: root
+  roles:
+    - provision_cluster

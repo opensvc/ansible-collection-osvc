@@ -1,0 +1,59 @@
+# REQUIRED
+
+namespace: opensvc
+name: cluster_v3
+version: 0.1.0
+
+# Path to the Markdown (.md) readme file. This path is relative to the root of the collection
+readme: README.md
+
+# A list of the collection's content authors.
+# Can be just the name or in the format 'Full Name <email> (url) @nicks:irc/im.site#channel'
+authors:
+  - OpenSVC Ansible Team <ansible@opensvc.com>
+
+# OPTIONAL but strongly recommended
+
+description: >
+  Ansible facilities for OpenSVC Cluster management, 
+  including high availability, orchestrator configuration, and container management support.
+
+# License details for the collection content
+license:
+  - GPL-2.0-or-later
+
+license_file: ''
+
+# List of tags for indexing/searching purposes
+tags:
+  - linux
+  - infrastructure
+  - tools
+  - orchestrator
+  - cluster
+  - ha
+  - highavailability
+  - container
+  - docker
+  - podman
+  - lxc
+  - kvm
+  - systemd
+  - api
+  - opensvc
+
+# Collections that this collection requires to be installed for it to be usable
+dependencies:
+  "ansible.posix": ">=1.0.0"
+
+# URL of the originating SCM repository
+repository: https://github.com/opensvc/ansible-collection-osvc
+
+# URL to any online docs
+documentation: https://github.com/opensvc/ansible-collection-osvc
+
+# Homepage of the collection/project
+homepage: https://github.com/opensvc/ansible-collection-osvc
+
+# URL to the collection issue tracker
+issues: https://github.com/opensvc/ansible-collection-osvc/issues

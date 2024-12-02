@@ -1,0 +1,6 @@
+---
+# defaults file for install_drbd
+
+osvc_drbd_ppa: ppa:linbit/linbit-drbd9-stack
+osvc_drbd_debian_repo: "https://packages.linbit.com/"
+osvc_drbd_debian_version: "drbd-9"

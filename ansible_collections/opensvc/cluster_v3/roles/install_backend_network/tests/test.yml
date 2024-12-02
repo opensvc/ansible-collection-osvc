@@ -1,0 +1,6 @@
+---
+- name: Test install_backend_network playbook
+  hosts: localhost
+  remote_user: root
+  roles:
+    - install_backend_network

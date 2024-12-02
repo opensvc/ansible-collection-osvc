@@ -1,0 +1,43 @@
+---
+# Tasks file for install_pool
+
+- name: Check for actual pool config
+  ansible.builtin.shell:
+    cmd: set -o pipefail && om pool ls | grep -w {{ osvc_pool_name }}
+  args:
+    executable: /bin/bash
+  failed_when: false
+  changed_when: false
+  register: _osvc_pool_list
+  run_once: true
+
+- name: Set pool configuration flag
+  ansible.builtin.set_fact:
+    _pool_is_configured: "{{ osvc_pool_name in _osvc_pool_list.stdout }}"
+  run_once: true
+
+- name: Display pool existence flag
+  ansible.builtin.debug:
+    var: _pool_is_configured
+    verbosity: 2
+
+- name: Configure pool based on type
+  when: not _pool_is_configured
+  block:
+    - name: Configure directory pool
+      when: osvc_pool_type == "directory"
+      ansible.builtin.include_tasks: "directory.yml"
+
+    - name: Configure drbd pool
+      when: osvc_pool_type == "drbd"
+      ansible.builtin.include_tasks: "drbd.yml"
+
+    - name: Configure pool schedule
+      when: (osvc_pool_status_schedule | length) > 0
+      ansible.builtin.command:
+        cmd: >
+          om cluster set
+          --kw pool#{{ osvc_pool_name }}.status_schedule={{ osvc_pool_status_schedule }}
+      run_once: true
+      register: output
+      changed_when: output.rc == 0

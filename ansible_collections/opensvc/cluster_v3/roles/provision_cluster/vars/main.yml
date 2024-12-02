@@ -1,0 +1,22 @@
+---
+# opensvc_server package repositories
+osvc_repositories:
+  RedHat:
+    default: "https://packages.opensvc.com/dev/opensvc/v3/rhel/9/x86_64/rpms/"
+    7: "https://packages.opensvc.com/dev/opensvc/v3/rhel/7/x86_64/rpms/"
+    8: "https://packages.opensvc.com/dev/opensvc/v3/rhel/8/x86_64/rpms/"
+  Debian:
+    default: "https://packages.opensvc.com/dev/opensvc/v3/debian/bookworm/amd64/"
+  Ubuntu:
+    default: "https://packages.opensvc.com/dev/opensvc/v3/ubuntu/noble/x86_64/rpms/"
+    jammy: "https://packages.opensvc.com/dev/opensvc/v3/ubuntu/jammy/x86_64/rpms/"
+    focal: "https://packages.opensvc.com/dev/opensvc/v3/ubuntu/focal/x86_64/rpms/"
+  Sles:
+    default: "https://packages.opensvc.com/dev/opensvc/v3/sles/15/x86_64/rpms/"
+    12: "https://packages.opensvc.com/dev/opensvc/v3/sles/12/x86_64/rpms/"
+
+# variables definition
+nodecount: "{{ ansible_play_hosts | length }}"
+osvc_configure_vip: false
+osvc_configure_webapp: false
+osvc_deploy_docker_daemon_json: false
