@@ -1,3 +1,4 @@
+---
 - name: Install DRBD package prerequisites on Debian
   ansible.builtin.package:
     name: "{{ item }}"

@@ -23,7 +23,7 @@
       }}
 
 - name: Deploy per OS prerequisites and install osvc package
-  ansible.builtin.include_tasks: "install-{{ ansible_os_family }}.yml"
+  ansible.builtin.include_tasks: "install-{{ ansible_distribution }}.yml"
 
 - name: Debug node count
   ansible.builtin.debug:
@@ -176,11 +176,11 @@
     - job_result is defined
     - job_result.rc == 0
 
-# - name: Add mutual root ssh trust
-#  ansible.builtin.command: 'om node update ssh authorized keys --node "*"'
-#  register: output
-#  changed_when: output.rc == 0
-#  when:
+ - name: Add mutual root ssh trust
+  ansible.builtin.command: 'om node update ssh authorized keys --node "*"'
+  register: output
+  changed_when: output.rc == 0
+  when:
     - nodecount | int > 1
     - not joined
 
@@ -188,11 +188,6 @@
   ansible.builtin.include_tasks: "vip.yml"
   when:
     - osvc_configure_vip | bool
-
-- name: Configure webapp/api access
-  ansible.builtin.include_tasks: "webapp.yml"
-  when:
-    - osvc_configure_webapp | bool
 
 - name: Disable iptables usage by docker
   ansible.builtin.include_tasks: "docker.yml"

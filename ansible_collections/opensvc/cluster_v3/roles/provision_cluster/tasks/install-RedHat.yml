@@ -25,6 +25,19 @@
   when:
     - ansible_distribution_major_version | int >= 8
 
+- name: Check if jq package is already installed
+  command: jq --version
+  register: jq_check
+  failed_when: jq_check.rc != 0
+
+- name: Install jq if not present
+  package:
+    name: jq
+    state: present
+  when:
+    - jq_check.rc != 0
+    - ansible_facts['os_family'] == "RedHat"
+
 - name: Install opensvc-server package
   ansible.builtin.yum:
     name: opensvc-server
