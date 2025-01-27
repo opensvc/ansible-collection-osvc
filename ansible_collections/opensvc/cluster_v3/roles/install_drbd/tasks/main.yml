@@ -11,11 +11,7 @@
     insertbefore: '# Configuration option devices/global_filter'
     line: '        filter = [ "r|/dev/drbd.*|" ]'
 
-- name: Install DRBD software on Ubuntu
-  ansible.builtin.include_tasks: "install-{{ ansible_os_family }}.yml"
-  when: ansible_facts['distribution'] == 'Ubuntu'  # Only install on Ubuntu
-
-- name: Check if DRBD module is already loaded (non-Ubuntu)
+- name: Check if DRBD module is already loaded
   ansible.builtin.shell:
     cmd: |
       set -o pipefail
@@ -24,24 +20,23 @@
     executable: /bin/bash
   register: drbd_check
   changed_when: false
-  when: ansible_facts['distribution'] != 'Ubuntu'  # Skip on Ubuntu
 
 - name: Skip DRBD installation if module is loaded
   ansible.builtin.debug:
     msg: "DRBD module already loaded, skipping installation."
-  when: ansible_facts['distribution'] != 'Ubuntu' and drbd_check.stdout != 'not loaded'
+  when: drbd_check.stdout != 'not loaded'
 
 - name: Load DRBD module if not loaded
   ansible.builtin.command: modprobe drbd
   changed_when: false
-  when: ansible_facts['distribution'] != 'Ubuntu' and drbd_check.stdout == 'not loaded'
+  when: drbd_check.stdout == 'not loaded'
   register: load_drbd
   failed_when: load_drbd.rc != 0  # Fail if the module cannot be loaded
 
 - name: Fail if DRBD module is not found
   ansible.builtin.fail:
     msg: "The DRBD module is not present on this system."
-  when: ansible_facts['distribution'] != 'Ubuntu' and drbd_check.stdout == 'not loaded' and load_drbd.rc != 0
+  when: drbd_check.stdout == 'not loaded' and load_drbd.rc != 0
 
 - name: Check for DRBD module version
   ansible.builtin.shell:
@@ -52,18 +47,18 @@
     executable: /bin/bash
   changed_when: false
   register: _osvc_drbd_version
-  when: ansible_facts['distribution'] != 'Ubuntu' and drbd_check.stdout != 'not loaded'  # Skip on Ubuntu
+  when: drbd_check.stdout != 'not loaded'
 
 - name: Test DRBD version
   ansible.builtin.assert:
     that:
       - "_osvc_drbd_version.stdout is version('9.0.0', '>=')"
-  when: ansible_facts['distribution'] != 'Ubuntu' and drbd_check.stdout != 'not loaded'  # Skip on Ubuntu
+  when: drbd_check.stdout != 'not loaded'
 
 - name: Flush handlers
   ansible.builtin.meta: flush_handlers
 
-- name: Disable drbd systemd unit # this task causes an error on Debian
+- name: Disable drbd systemd unit
   ansible.builtin.service:
     name: drbd.service
     enabled: false

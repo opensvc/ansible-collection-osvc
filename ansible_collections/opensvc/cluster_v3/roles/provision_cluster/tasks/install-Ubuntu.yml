@@ -1,15 +1,15 @@
 ---
-- name: Add OpenSVC repository for Debian-based systems
+- name: Add OpenSVC repository for Ubuntu-based systems
   ansible.builtin.apt_repository:
     repo: "deb [trusted=yes] {{ opensvc_repo_url }} dev-opensvc-v3-{{ ansible_facts['lsb']['codename'] }} main"
     state: present
-  when: ansible_facts['distribution'] == "Debian"
+  when: ansible_facts['distribution'] == "Ubuntu"
 
 - name: Update packages list
   ansible.builtin.apt:
     update_cache: yes
 
-- name: Install common packages for ubuntu/deb
+- name: Install common packages for Ubuntu
   ansible.builtin.apt:
     name: "{{ packages }}"
     state: present

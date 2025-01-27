@@ -27,22 +27,6 @@ osvc_configure_vip: false
 osvc_cluster_vip_addr: '1.2.3.4'
 osvc_cluster_vip_cidr_subnet: '24'
 # vip ip addr will be configured on link vipnic@br-prd (displayed with "ip link list")
-osvc_cluster_vip_nic_name: 'vipnic'
 osvc_node_prd_nic: 'br0'
 # public fqdn https://vip.domain.com:1215
 osvc_vip_external_fqdn: 'vip.domain.com'
-
-# configure the 1215/tcp port for webapp and api usage
-osvc_configure_webapp: false
-# cluster admin credentials (webapp/api)
-osvc_webapp_user: 'admin'
-osvc_webapp_password: 's3cr3t'
-
-# webapp/api are served through tls / http/2
-# we have to autoconfigue ssl certs
-# by default 'self' mode create a per-cluster CA and self-signed certs for 1215/tcp listener
-# other modes can be configured, please contact support@opensvc.com
-osvc_ca_cert_mode: 'self'
-osvc_ca_cert_name: 'TEST CLUSTER'
-osvc_ca_cert_country: 'US'
-osvc_ca_cert_org: 'ACME Company'

@@ -46,7 +46,8 @@
       changed_when: output.rc == 0
 
     - name: Wait for envoy service
-      ansible.builtin.script:
-        cmd: ../files/monitor.overall.sh {{ osvc_envoy_service_name }} up 300s # the command in this script is not supported by om3
+      ansible.builtin.command: | 
+    om node event --wait --filter 'InstanceStatusUpdated,node={{ ansible_play_hosts[0] }},path={{ osvc_envoy_service_name }},.instance_status.avail="up",.instance_status.provisioned="true"'
+    --duration 60s -o json
       run_once: true
       changed_when: false
