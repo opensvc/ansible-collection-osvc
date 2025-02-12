@@ -23,14 +23,30 @@
   when:
     - re6stnetcfg.stat.exists is false
 
-- name: Ensure /etc/systemd is clean on first node
-  ansible.builtin.shell:
-    cmd: set -o pipefail && find /etc/systemd -name re6stnet.service -exec rm -f {} \;
-  args:
-    executable: /bin/bash
+# if the unit is masked, then the re6st installer has already been executed
+- name: Check for re6st existence on first node
+  ansible.builtin.stat:
+    path: /etc/systemd/system/re6stnet.service
+  register: re6stunit
+
+- name: Set fact according to actual re6st existence
+  ansible.builtin.set_fact:
+    re6st_is_installed: 'false'
   when:
-    - not re6st_is_installed
-    - inventory_hostname == ansible_play_hosts[0]
+    - re6stnetcfg.stat.exists is false
+
+- name: Check for re6st config file
+  ansible.builtin.set_fact:
+    re6st_is_installed: 'false'
+  when:
+    - re6stnetcfg.stat.exists is false
+
+- name: Check if re6st is already masked
+  ansible.builtin.set_fact:
+    re6st_is_installed: 'false'
+  when:
+    - re6st_is_installed
+    - re6stnetcfg.stat.lnk_target is defined and not re6stnetcfg.stat.lnk_target == "/dev/null"
 
 - name: Download re6st installer
   ansible.builtin.get_url:
@@ -48,7 +64,7 @@
     line: >
       ANSIBLE_LOG_PATH=~/ansible.re6st.log \g<1>
       --extra-vars re6sttoken={{ osvc_re6st_token }}
-      --extra-vars location={{ osvc_re6st_location }}
+      --extra-vars location='FR,EU'
       --extra-vars enable_router_advertisement={{ osvc_re6st_router_advertisement }}
     backrefs: true
   when:

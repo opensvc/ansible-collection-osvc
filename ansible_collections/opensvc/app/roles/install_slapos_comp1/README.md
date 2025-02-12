@@ -69,6 +69,12 @@ This variable sets the re6st token. Check [re6st token request howto](https://ha
 
 Default value is `notoken`.
 
+`osvc_re6st_location`
+
+This variable sets the re6st location. format is "country code,continent code". (e.g. "FR,EU")
+
+Default value is empty.
+
 `osvc_re6st_router_advertisement`
 
 This variable triggers the re6st router advertisement.

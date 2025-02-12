@@ -13,6 +13,7 @@ osvc_slapos_comp1_data_size: 2GB
 # re6st
 osvc_re6st_installer_url: "https://deploy.erp5.net/gnet/re6st"
 osvc_re6st_token: "notoken"
+osvc_re6st_location: ""
 osvc_re6st_router_advertisement: "no"
 
 # slapos

@@ -56,6 +56,32 @@
     - not slapos_is_installed
     - inventory_hostname == ansible_play_hosts[0]
 
+- name: Display /etc/cron.d content
+  ansible.builtin.shell:
+    cmd: ls -l /etc/cron.d
+  args:
+    executable: /bin/bash
+  changed_when: false
+  when:
+    - not slapos_is_installed
+    - inventory_hostname == ansible_play_hosts[0]
+
+- name: Force supervisord.conf to be generated
+  ansible.builtin.shell:
+    cmd: slapos node instance
+  args:
+    executable: /bin/bash
+  when:
+    - not slapos_is_installed
+    - inventory_hostname == ansible_play_hosts[0]
+
+- name: Wait until the file /srv/slapgrid/etc/supervisord.conf is present
+  ansible.builtin.wait_for:
+    path: /srv/slapgrid/etc/supervisord.conf
+  when:
+    - not slapos_is_installed
+    - inventory_hostname == ansible_play_hosts[0]
+
 - name: Ensure slapos is started
   ansible.builtin.shell:
     cmd: set -o pipefail && slapos node status | grep -w "^watchdog"
@@ -63,8 +89,8 @@
     executable: /bin/bash
   changed_when: false
   register: cmd_res
-  retries: 30
-  delay: 2
+  retries: 60
+  delay: 5
   until: "'RUNNING' in cmd_res.stdout"
   when:
     - not slapos_is_installed
