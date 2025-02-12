@@ -1,6 +1,7 @@
 ---
 galaxy_info:
   role_name: install_drbd
+  namespace: opensvc
   author: OpenSVC Ansible Team <ansible@opensvc.com>
   description: Install DRBD9 prerequisites
   company: OpenSVC

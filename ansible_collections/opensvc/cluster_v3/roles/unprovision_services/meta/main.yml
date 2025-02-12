@@ -1,6 +1,7 @@
 ---
 galaxy_info:
   role_name: unprovision_services
+  namespace: opensvc
   author: OpenSVC Ansible Team <ansible@opensvc.com>
   description: Remove OpenSVC services from cluster
   company: OpenSVC

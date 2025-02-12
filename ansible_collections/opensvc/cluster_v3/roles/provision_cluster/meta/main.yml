@@ -1,6 +1,7 @@
 ---
 galaxy_info:
   role_name: provision_cluster
+  namespace: opensvc
   author: OpenSVC Ansible Team <ansible@opensvc.com>
   description: Build a simple OpenSVC cluster from a server inventory
   company: OpenSVC

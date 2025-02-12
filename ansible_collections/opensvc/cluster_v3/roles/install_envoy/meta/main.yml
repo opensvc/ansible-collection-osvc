@@ -1,6 +1,7 @@
 ---
 galaxy_info:
   role_name: install_envoy
+  namespace: opensvc
   author: OpenSVC Ansible Team <ansible@opensvc.com>
   description: Install envoy ingress gateway service facilities
   company: OpenSVC

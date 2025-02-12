@@ -1,6 +1,7 @@
 ---
 galaxy_info:
   role_name: install_dns
+  namespace: opensvc
   author: OpenSVC Ansible Team <ansible@opensvc.com>
   description: Install name service facilities
   company: OpenSVC
