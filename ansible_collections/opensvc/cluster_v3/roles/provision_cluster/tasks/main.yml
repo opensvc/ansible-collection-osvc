@@ -178,7 +178,16 @@
     - job_result is defined
     - job_result.rc == 0
 
- - name: Add mutual root ssh trust
+- name: Unfreeze cluster
+  ansible.builtin.command: 'om cluster thaw --wait'
+  register: output
+  changed_when: output.rc == 0
+  when:
+    - nodecount | int > 1
+    - not joined
+    - inventory_hostname == ansible_play_hosts[0]
+
+- name: Add mutual root ssh trust
   ansible.builtin.command: 'om node update ssh authorized keys --node "*"'
   register: output
   changed_when: output.rc == 0
