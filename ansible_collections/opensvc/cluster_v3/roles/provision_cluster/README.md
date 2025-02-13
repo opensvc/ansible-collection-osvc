@@ -32,6 +32,15 @@ update /etc/hosts to add each cluster node ip
 
 Default value is `false`.
 
+`osvc_configure_ssh_trust`
+
+create a dedicated opensvc ssh keypair.
+populate root authorized_keys file with public ssh keys.
+=> false: do not configure ssh root trust accross cluster nodes. rsync sync resources and fs.type=flag resource won't work.
+=> true: enable ssh trust autoconfig.
+
+Default value is `false`.
+
 `osvc_configure_vip`
 
 Enable the deployment of cluster virtual ip.

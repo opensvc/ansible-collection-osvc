@@ -44,6 +44,8 @@
     regexp: '^PermitRootLogin (yes|without-password)'
     replace: "PermitRootLogin prohibit-password"
   notify: Reload sshd
+  when:
+    - osvc_configure_ssh_trust | bool
 
 - name: Flush handlers
   ansible.builtin.meta: flush_handlers
@@ -183,6 +185,7 @@
   when:
     - nodecount | int > 1
     - not joined
+    - osvc_configure_ssh_trust | bool
 
 - name: Configure cluster vip
   ansible.builtin.include_tasks: "vip.yml"
