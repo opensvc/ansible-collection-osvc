@@ -27,6 +27,7 @@ osvc_configure_vip: false
 osvc_cluster_vip_addr: '1.2.3.4'
 osvc_cluster_vip_cidr_subnet: '24'
 # vip ip addr will be configured on link vipnic@br-prd (displayed with "ip link list")
+osvc_cluster_vip_nic_name: 'vipnic'
 osvc_node_prd_nic: 'br0'
 # public fqdn https://vip.domain.com:1215
 osvc_vip_external_fqdn: 'vip.domain.com'
