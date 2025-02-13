@@ -10,11 +10,11 @@
   when: ansible_os_family == "RedHat"
 
 - name: Update packages list
-  ansible.builtin.yum:
+  ansible.builtin.package:
     update_cache: true
 
 - name: Install common packages for RHEL/CentOS/Fedora (ver >= 8)
-  ansible.builtin.yum:
+  ansible.builtin.package:
     name: "{{ packages }}"
     state: present
   vars:
@@ -26,12 +26,13 @@
     - ansible_distribution_major_version | int >= 8
 
 - name: Check if jq package is already installed
-  command: jq --version
+  ansible.builtin.command: jq --version
   register: jq_check
   failed_when: jq_check.rc != 0
+  changed_when: false
 
 - name: Install jq if not present
-  package:
+  ansible.builtin.package:
     name: jq
     state: present
   when:
@@ -39,7 +40,7 @@
     - ansible_facts['os_family'] == "RedHat"
 
 - name: Install opensvc-server package
-  ansible.builtin.yum:
+  ansible.builtin.dnf:
     name: opensvc-server
     state: present
     update_cache: true
@@ -47,14 +48,17 @@
     disablerepo: "*"
   become: true
 
-- name: Check installed OpenSVC package
-  ansible.builtin.shell: "rpm -qa | grep opensvc"
-  register: opensvc_package
-  changed_when: false
+- name: Update package facts
+  ansible.builtin.package_facts:
+    manager: auto
+
+- name: List opensvc packages
+  ansible.builtin.set_fact:
+    paquets_osvc: "{{ ansible_facts.packages | dict2items | selectattr('key', 'search', 'opensvc') | list }}"
 
 - name: Debug OpenSVC installed package
   ansible.builtin.debug:
-    msg: "Installed OpenSVC package: {{ opensvc_package.stdout }}"
+    msg: "Installed OpenSVC package: {{ paquets_osvc }}"
 
 - name: Enable and start opensvc-agent.service
   ansible.builtin.service:

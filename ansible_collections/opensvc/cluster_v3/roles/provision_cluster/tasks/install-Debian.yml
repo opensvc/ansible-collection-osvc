@@ -7,7 +7,7 @@
 
 - name: Update packages list
   ansible.builtin.apt:
-    update_cache: yes
+    update_cache: true
 
 - name: Install common packages for ubuntu/deb
   ansible.builtin.apt:
@@ -24,7 +24,7 @@
   ansible.builtin.apt:
     name: opensvc-server
     state: present
-    update_cache: yes
+    update_cache: true
 
 - name: Enable opensvc-agent.service unit file
   ansible.builtin.service:
