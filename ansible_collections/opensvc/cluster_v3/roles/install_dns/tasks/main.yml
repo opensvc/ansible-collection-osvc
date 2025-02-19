@@ -18,10 +18,10 @@
     dns_cfg_created: 'false'
   run_once: true
   when:
-    - osvc_dns_cfgmap_name not in osvc_dns_cfgmap_query.stdout
+    - install_dns_cfgmap_name not in osvc_dns_cfgmap_query.stdout
 
 - name: Create dns cfgmap
-  ansible.builtin.command: om {{ osvc_dns_cfgmap_name }} create
+  ansible.builtin.command: om {{ install_dns_cfgmap_name }} create
   register: output
   changed_when: output.rc == 0
   run_once: true
@@ -29,7 +29,7 @@
     - not dns_cfg_created
 
 - name: Set dns cfgmap server key content
-  ansible.builtin.command: om {{ osvc_dns_cfgmap_name }} add --key server --from {{ osvc_dns_cfg_server_template }}
+  ansible.builtin.command: om {{ install_dns_cfgmap_name }} add --key server --from {{ install_dns_cfg_server_template }}
   register: output
   changed_when: output.rc == 0
   run_once: true
@@ -38,7 +38,7 @@
 
 - name: Download recursor config file
   ansible.builtin.get_url:
-    url: "{{ osvc_dns_cfg_recursor_template }}"
+    url: "{{ install_dns_cfg_recursor_template }}"
     dest: /tmp/recursor
     mode: '0600'
   run_once: true
@@ -50,14 +50,14 @@
     path: /tmp/recursor
     state: present
     regexp: '^(allow-from=.*)$'
-    line: '\g<1>,{{ osvc_dns_cfg_recursor_allowed_subnets }}'
+    line: '\g<1>,{{ install_dns_cfg_recursor_allowed_subnets }}'
     backrefs: true
   run_once: true
   when:
     - not dns_cfg_created
 
 - name: Set dns cfgmap recursor key content
-  ansible.builtin.command: om {{ osvc_dns_cfgmap_name }} add --key recursor --from /tmp/recursor
+  ansible.builtin.command: om {{ install_dns_cfgmap_name }} add --key recursor --from /tmp/recursor
   register: output
   changed_when: output.rc == 0
   run_once: true
@@ -65,7 +65,7 @@
     - not dns_cfg_created
 
 - name: Set dns cfgmap configure key content
-  ansible.builtin.command: om {{ osvc_dns_cfgmap_name }} add --key configure --from {{ osvc_dns_cfg_configure_template }}
+  ansible.builtin.command: om {{ install_dns_cfgmap_name }} add --key configure --from {{ install_dns_cfg_configure_template }}
   register: output
   changed_when: output.rc == 0
   run_once: true
@@ -78,7 +78,7 @@
   run_once: true
 
 - name: Check for dns svc existence
-  ansible.builtin.command: om {{ osvc_dns_service_name }} ls
+  ansible.builtin.command: om {{ install_dns_service_name }} ls
   changed_when: false
   register: osvc_dns_svc_query
   run_once: true
@@ -89,7 +89,7 @@
     dns_svc_created: 'false'
   run_once: true
   when:
-    - osvc_dns_service_name not in osvc_dns_svc_query.stdout
+    - install_dns_service_name not in osvc_dns_svc_query.stdout
 
 - name: Build dict with nodes ip addr
   ansible.builtin.set_fact:
@@ -100,7 +100,7 @@
                list }}"
   run_once: true
   when:
-    - not osvc_use_ip_from_ansible_host
+    - not install_dns_use_ip_from_ansible_host
     - not dns_svc_created
 
 - name: Build dict with ansible_host ip addr
@@ -110,7 +110,7 @@
     _ipv4: "{{ ansible_play_hosts | map('extract', hostvars, 'ansible_host') | list }}"
   run_once: true
   when:
-    - osvc_use_ip_from_ansible_host
+    - install_dns_use_ip_from_ansible_host
     - not dns_svc_created
 
 - name: Debug dns dict
@@ -150,12 +150,12 @@
   delay: 2
   until: dnslist in cmd_res.stdout
   when:
-    - nodecount|int > 1
+    - install_dns_nodecount|int > 1
     - not dns_svc_created
     - inventory_hostname != ansible_play_hosts[0]
 
 - name: Deploy dns service
-  ansible.builtin.command: om {{ osvc_dns_service_name }} deploy --config {{ osvc_dns_svc_template }}
+  ansible.builtin.command: om {{ install_dns_service_name }} deploy --config {{ install_dns_svc_template }}
   register: output
   changed_when: output.rc == 0
   run_once: true
