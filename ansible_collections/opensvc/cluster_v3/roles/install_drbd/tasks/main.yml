@@ -15,7 +15,7 @@
   ansible.builtin.shell:
     cmd: |
       set -o pipefail
-      lsmod | grep drbd || echo 'not loaded'
+      lsmod | grep -q drbd || echo 'not loaded'
   args:
     executable: /bin/bash
   register: drbd_check
@@ -28,7 +28,7 @@
 
 - name: Load DRBD module if not loaded
   ansible.builtin.command: modprobe drbd
-  changed_when: false
+  changed_when: load_drbd.rc == 0
   when: drbd_check.stdout == 'not loaded'
   register: load_drbd
   failed_when: load_drbd.rc != 0  # Fail if the module cannot be loaded
