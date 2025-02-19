@@ -83,22 +83,12 @@
   when:
     - inventory_hostname == ansible_play_hosts[0]
 
-- name: Verify OpenSVC socket is available
-  ansible.builtin.stat:
-    path: /opt/opensvc/var/lsnr/http.sock
-  register: opensvc_socket
-
-- name: Debug socket status
-  ansible.builtin.debug:
-    var: opensvc_socket
-
 - name: Set cluster name
   ansible.builtin.command: "om cluster set --kw cluster.name={{ osvc_clustername }}"
   register: output
   changed_when: output.rc == 0
   when:
     - inventory_hostname == ansible_play_hosts[0]
-    - opensvc_socket.stat.exists
     - clustername.stdout != osvc_clustername
 
 - name: Get cluster token on first node
