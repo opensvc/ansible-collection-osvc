@@ -26,8 +26,8 @@
     state: present
     update_cache: true
 
-- name: Enable opensvc-agent.service unit file
+- name: Enable opensvc-server.service unit file
   ansible.builtin.service:
-    name: opensvc-agent.service
+    name: opensvc-server.service
     enabled: true
     state: started

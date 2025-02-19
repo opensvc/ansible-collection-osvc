@@ -60,8 +60,8 @@
   ansible.builtin.debug:
     msg: "Installed OpenSVC package: {{ paquets_osvc }}"
 
-- name: Enable and start opensvc-agent.service
+- name: Enable and start opensvc-server.service
   ansible.builtin.service:
-    name: opensvc-agent.service
+    name: opensvc-server.service
     enabled: true
     state: started
