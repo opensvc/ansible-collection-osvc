@@ -12,13 +12,13 @@ The role provision_cluster can be used to meet the prerequisites.
 Role Variables
 --------------
 
-`osvc_cni_plugins_dir`
+`install_cni_plugins_dir`
 
 This variable specify the location where the CNI binaries will be installed after CNI tarball extraction.
 
 Default value is `/usr/libexec/cni/bin`
 
-`osvc_cni_config_dir`
+`install_cni_config_dir`
 
 This variable specify the location where the CNI configuration files will be located.
 
@@ -34,8 +34,8 @@ The snippet below can be used as a playbook:
         - import_role:
             name: opensvc.cluster.install_cni
           vars:
-            osvc_cni_plugins_dir: /usr/libexec/cni/bin
-            osvc_cni_config_dir: /var/lib/opensvc/cni/net.d
+            install_cni_plugins_dir: /usr/libexec/cni/bin
+            install_cni_config_dir: /var/lib/opensvc/cni/net.d
 
 
 License

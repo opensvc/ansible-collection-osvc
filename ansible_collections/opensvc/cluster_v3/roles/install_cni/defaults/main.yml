@@ -1,13 +1,13 @@
 ---
 # defaults file for install_cni
 
-osvc_cni_plugins_dir: "/usr/libexec/cni/bin"
+install_cni_plugins_dir: "/usr/libexec/cni/bin"
 
-osvc_cni_config_dir: "/var/lib/opensvc/cni/net.d"
+install_cni_config_dir: "/var/lib/opensvc/cni/net.d"
 
-_cni_plugin_binaries: ['macvlan', 'ipvlan', 'vlan', 'flannel', 'bridge']
+install_cni_plugin_binaries: ['macvlan', 'ipvlan', 'vlan', 'flannel', 'bridge']
 
-_cni_download:
+install_cni_download_url_version:
   v0.8.5:
     url: "https://github.com/containernetworking/plugins/releases/download/v0.8.5/cni-plugins-linux-amd64-v0.8.5.tgz"
     dest: "/tmp/cni-plugins-amd64-v0.8.5.tgz"
@@ -23,4 +23,4 @@ _cni_download:
 
 install_cni_version: "v1.6.2"
 
-cni_download: "{{ _cni_download[_cni_version] }}"
+install_cni_download_url: "{{ install_cni_download_url_version[install_cni_version] }}"
