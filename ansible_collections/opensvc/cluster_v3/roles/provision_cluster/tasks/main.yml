@@ -101,10 +101,7 @@
 - name: Debug cluster token
   ansible.builtin.debug:
     msg: "Cluster join token: {{ clustertoken.stdout }}"
-  when:
-    - inventory_hostname == ansible_play_hosts[0]
-    - clustertoken is defined
-    - clustertoken.stdout is defined
+    verbosity: 2
 
 ########################## OTHER NODES ##########################
 
@@ -119,6 +116,7 @@
 - name: Debug cluster nodes output
   ansible.builtin.debug:
     var: clusternodes.stdout
+    verbosity: 2
 
 - name: Set joined status for nodes
   ansible.builtin.set_fact:
@@ -129,6 +127,7 @@
 - name: Debug joined status
   ansible.builtin.debug:
     msg: "Joined status: {{ joined }}"
+    verbosity: 2
 
 - name: Join other nodes to the cluster
   ansible.builtin.command: >
@@ -145,6 +144,7 @@
 - name: Debug join_output
   ansible.builtin.debug:
     var: join_output
+    verbosity: 2
   when: not joined
 
 - name: Check async job status for joining node
