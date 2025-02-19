@@ -92,10 +92,11 @@
     - clustername.stdout != osvc_clustername
 
 - name: Get cluster token on first node
-  ansible.builtin.command: om daemon auth token --role join
+  ansible.builtin.command: "om daemon auth token --role join"
   register: clustertoken
   changed_when: false
   failed_when: clustertoken.rc != 0
+  run_once: true
 
 - name: Debug cluster token
   ansible.builtin.debug:
