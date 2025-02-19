@@ -64,6 +64,17 @@ if [ "$1" = 'ansible-lint-cluster-roles' ]; then
     exit $?
 fi
 
+if [ "$1" = 'ansible-lint-cluster_v3-roles' ]; then
+    for role in $(cd /usr/share/ansible/collections/ansible_collections/opensvc/cluster_v3/roles && ls -1)
+    do
+        echo "=> Start syntax linting for cluster role $role"
+        ansible-lint /usr/share/ansible/collections/ansible_collections/opensvc/cluster_v3/roles/$role
+        echo "=> End of syntax linting for cluster role $role"
+        echo
+    done
+    exit $?
+fi
+
 if [ "$1" = 'ansible-lint-app-roles' ]; then
     for role in $(cd /usr/share/ansible/collections/ansible_collections/opensvc/app/roles && ls -1)
     do
