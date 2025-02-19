@@ -1,9 +1,9 @@
 ---
 # defaults file for install_backend_network
-osvc_backend_subnet_name: "backend"
+install_backend_network_subnet: "backend"
 
-osvc_backend_subnet_range: "10.100.0.0/16"
+install_backend_network_subnet_range: "10.100.0.0/16"
 
-osvc_backend_subnet_ips_per_node: "1024"
+install_backend_network_subnet_ips_per_node: "1024"
 
-osvc_backend_tunnel: "auto"
+install_backend_network_tunnel: "auto"

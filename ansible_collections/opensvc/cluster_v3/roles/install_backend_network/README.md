@@ -11,25 +11,25 @@ OpenSVC cluster up and running.
 Role Variables
 --------------
 
-`osvc_backend_subnet_name`
+`install_backend_network_subnet`
 
 The cluster backend network name.
 
 Default value is `backend`
 
-`osvc_backend_subnet_range`
+`install_backend_network_subnet_range`
 
-The cluster backend network range. The routed_bridge driver fragments this into `osvc_backend_subnet_ips_per_node` blocks subnets.
+The cluster backend network range. The routed_bridge driver fragments this into `install_backend_network_subnet_ips_per_node` blocks subnets.
 
 Default value is `10.100.0.0/16`
 
-`osvc_backend_subnet_ips_per_node`
+`install_backend_network_subnet_ips_per_node`
 
 The number of allocatable ips per node on the network.
 
 Default value is `1024`
 
-`osvc_backend_tunnel`
+`install_backend_network_tunnel`
 
 Create and route trafic through tunnels to peer nodes policy. `auto` tunnel if the peer is not in the same subnet, `always` tunnel even if the peer seems to be in the same subnet (some hosting providers require this as traffic goes through router even between adjacent nodes. `never` tunnel is also possible.
 
@@ -45,10 +45,10 @@ The snippet below can be used as a playbook:
         - import_role:
             name: opensvc.cluster.install_backend_network
           vars:
-            osvc_backend_subnet_name: backendnet
-            osvc_backend_subnet_range: 10.123.0.0/16
-            osvc_backend_subnet_ips_per_node: 4096
-            osvc_backend_tunnel: auto
+            install_backend_network_subnet: backendnet
+            install_backend_network_subnet_range: 10.123.0.0/16
+            install_backend_network_subnet_ips_per_node: 4096
+            install_backend_network_tunnel: auto
 
 With the previous inputs on a 2-nodes cluster, the role will configure a network named `backendnet`.
 

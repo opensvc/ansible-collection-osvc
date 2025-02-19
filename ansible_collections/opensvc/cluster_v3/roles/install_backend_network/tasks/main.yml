@@ -4,7 +4,7 @@
 # Check if the backend network is already configured
 - name: Check for backend network configuration
   ansible.builtin.shell:
-    cmd: set -o pipefail && om net ls | grep -w {{ osvc_backend_subnet_name }}
+    cmd: set -o pipefail && om net ls | grep -w {{ install_backend_network_subnet }}
   args:
     executable: /bin/bash
   failed_when: false
@@ -17,14 +17,14 @@
   ansible.builtin.command:
     cmd: >
       om cluster set
-      --kw network#{{ osvc_backend_subnet_name }}.type=routed_bridge
-      --kw network#{{ osvc_backend_subnet_name }}.network={{ osvc_backend_subnet_range }}
-      --kw network#{{ osvc_backend_subnet_name }}.ips_per_node={{ osvc_backend_subnet_ips_per_node }}
-      --kw network#{{ osvc_backend_subnet_name }}.tunnel={{ osvc_backend_tunnel }}
+      --kw network#{{ install_backend_network_subnet }}.type=routed_bridge
+      --kw network#{{ install_backend_network_subnet }}.network={{ install_backend_network_subnet_range }}
+      --kw network#{{ install_backend_network_subnet }}.ips_per_node={{ install_backend_network_subnet_ips_per_node }}
+      --kw network#{{ install_backend_network_subnet }}.tunnel={{ install_backend_network_tunnel }}
   run_once: true
   register: output
   changed_when: output.rc == 0
-  when: osvc_backend_subnet_name not in _osvc_network_list.stdout
+  when: install_backend_network_subnet not in _osvc_network_list.stdout
 
 - name: Display network configuration result
   ansible.builtin.debug:
