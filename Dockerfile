@@ -31,7 +31,7 @@ RUN apk add --update --no-cache ca-certificates \
 WORKDIR /opt
 ADD ansible_collections/opensvc/ /opt/opensvc/
 
-RUN ansible-galaxy collection build --force opensvc/cluster opensvc/app && \
+RUN ansible-galaxy collection build --force opensvc/cluster opensvc/cluster_v3 opensvc/app && \
     for i in *.tar.gz; do ansible-galaxy collection install $i -p /usr/share/ansible/collections; done
 
 WORKDIR /examples
