@@ -47,13 +47,16 @@
     executable: /bin/bash
   changed_when: false
   register: _osvc_drbd_version
-  when: drbd_check.stdout != 'not loaded'
 
-- name: Test DRBD version
+- name: Debug drbd module version
+  ansible.builtin.debug:
+    var: _osvc_drbd_version.stdout
+    verbosity: 2
+
+- name: Test DRBD version >= 9.0.0
   ansible.builtin.assert:
     that:
       - "_osvc_drbd_version.stdout is version('9.0.0', '>=')"
-  when: drbd_check.stdout != 'not loaded'
 
 - name: Flush handlers
   ansible.builtin.meta: flush_handlers
