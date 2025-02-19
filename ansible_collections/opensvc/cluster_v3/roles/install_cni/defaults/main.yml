@@ -16,7 +16,11 @@ _cni_download:
     url: "https://github.com/containernetworking/plugins/releases/download/v0.9.1/cni-plugins-linux-amd64-v0.9.1.tgz"
     dest: "/tmp/cni-plugins-amd64-v0.9.1.tgz"
     checksum: "sha1:4a47eea0a27d1b07c90d5d11080d55e13ba76608"
+  v1.6.2:
+    url: "https://github.com/containernetworking/plugins/releases/download/v1.6.2/cni-plugins-linux-amd64-v1.6.2.tgz"
+    dest: "/tmp/cni-plugins-amd64-v1.6.2.tgz"
+    checksum: "sha1:501d208a15566ce0f6baeb62cb8f53deb3f036e3"
 
-_cni_version: "v0.9.1"
+install_cni_version: "v1.6.2"
 
 cni_download: "{{ _cni_download[_cni_version] }}"
