@@ -1,6 +1,6 @@
 ---
 # opensvc_server package repositories
-osvc_repositories:
+provision_cluster_repositories:
   RedHat:
     default: "https://packages.opensvc.com/rpm/dev-opensvc-v3-rhel9/x86_64/"
     7: "https://packages.opensvc.com/rpm/dev-opensvc-v3-rhel7/x86_64/"
@@ -13,7 +13,7 @@ osvc_repositories:
     default: "https://packages.opensvc.com/rpm/dev-opensvc-v3-sles15/x86_64/"
 
 # variables definition
-nodecount: "{{ ansible_play_hosts | length }}"
-osvc_configure_vip: false
-osvc_configure_webapp: false
-osvc_deploy_docker_daemon_json: false
+provision_cluster_nodecount: "{{ ansible_play_hosts | length }}"
+provision_cluster_configure_vip: false
+provision_cluster_configure_webapp: false
+provision_cluster_deploy_docker_daemon_json: false

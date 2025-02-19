@@ -7,5 +7,5 @@
 
 - name: Restart docker service
   ansible.builtin.service:
-    name: "{{ systemd_docker_unit }}"
+    name: "{{ provision_cluster_systemd_docker_unit }}"
     state: restarted

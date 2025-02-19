@@ -17,9 +17,9 @@
   ansible.builtin.set_fact:
     opensvc_repo_url: >-
       {{
-        osvc_repositories[ansible_distribution]
+        provision_cluster_repositories[ansible_distribution]
           .get(ansible_distribution_major_version,
-               osvc_repositories[ansible_distribution].default)
+               provision_cluster_repositories[ansible_distribution].default)
       }}
 
 - name: Deploy per OS prerequisites and install osvc package
@@ -27,7 +27,7 @@
 
 - name: Debug node count
   ansible.builtin.debug:
-    var: nodecount
+    var: provision_cluster_nodecount
     verbosity: 2
 
 - name: Update /etc/hosts file
@@ -36,7 +36,7 @@
     content: "{{ lookup('template', 'templates/hosts.j2') }}"
     state: present
   when:
-    - osvc_update_etc_hosts | bool
+    - provision_cluster_update_etc_hosts | bool
 
 - name: Enable ssh root access accross cluster nodes
   ansible.builtin.replace:
@@ -45,7 +45,7 @@
     replace: "PermitRootLogin prohibit-password"
   notify: Reload sshd
   when:
-    - osvc_configure_ssh_trust | bool
+    - provision_cluster_configure_ssh_trust | bool
 
 - name: Flush handlers
   ansible.builtin.meta: flush_handlers
@@ -68,7 +68,7 @@
   when: inventory_hostname == ansible_play_hosts[0]
 
 - name: Configure cluster with unicast hb
-  ansible.builtin.command: om cluster set --kw hb#1.type=unicast --kw hb#1.timeout={{ osvc_hb_timeout }}
+  ansible.builtin.command: om cluster set --kw hb#1.type=unicast --kw hb#1.timeout={{ provision_cluster_hb_timeout }}
   register: output
   changed_when: output.rc == 0
   when:
@@ -84,12 +84,12 @@
     - inventory_hostname == ansible_play_hosts[0]
 
 - name: Set cluster name
-  ansible.builtin.command: "om cluster set --kw cluster.name={{ osvc_clustername }}"
+  ansible.builtin.command: "om cluster set --kw cluster.name={{ provision_cluster_clustername }}"
   register: output
   changed_when: output.rc == 0
   when:
     - inventory_hostname == ansible_play_hosts[0]
-    - clustername.stdout != osvc_clustername
+    - clustername.stdout != provision_cluster_clustername
 
 - name: Get cluster token on first node
   ansible.builtin.command: "om daemon auth token --role join"
@@ -110,8 +110,9 @@
   register: clusternodes
   changed_when: false
   failed_when: false
+  run_once: true
   when:
-    - nodecount | int > 1
+    - provision_cluster_nodecount | int > 1
 
 - name: Debug cluster nodes output
   ansible.builtin.debug:
@@ -122,7 +123,7 @@
   ansible.builtin.set_fact:
     joined: "{{ inventory_hostname in clusternodes.stdout.splitlines() }}"
   when:
-    - nodecount | int > 1
+    - provision_cluster_nodecount | int > 1
 
 - name: Debug joined status
   ansible.builtin.debug:
@@ -136,8 +137,9 @@
   poll: 0
   register: join_output
   changed_when: false
+  throttle: 1
   when:
-    - nodecount | int > 1
+    - provision_cluster_nodecount | int > 1
     - inventory_hostname != ansible_play_hosts[0]
     - not joined
 
@@ -163,7 +165,7 @@
   ansible.builtin.debug:
     msg: "Join successful!"
   when:
-    - nodecount | int > 1
+    - provision_cluster_nodecount | int > 1
     - inventory_hostname != ansible_play_hosts[0]
     - not joined
     - job_result is defined
@@ -174,25 +176,24 @@
   register: output
   changed_when: output.rc == 0
   when:
-    - nodecount | int > 1
-    - not joined
+    - provision_cluster_nodecount | int > 1
     - inventory_hostname == ansible_play_hosts[0]
 
 - name: Add mutual root ssh trust
   ansible.builtin.command: 'om node update ssh authorized keys --node "*"'
   register: output
   changed_when: output.rc == 0
+  throttle: 1
   when:
-    - nodecount | int > 1
-    - not joined
-    - osvc_configure_ssh_trust | bool
+    - provision_cluster_nodecount | int > 1
+    - provision_cluster_configure_ssh_trust | bool
 
 - name: Configure cluster vip
   ansible.builtin.include_tasks: "vip.yml"
   when:
-    - osvc_configure_vip | bool
+    - provision_cluster_configure_vip | bool
 
 - name: Disable iptables usage by docker
   ansible.builtin.include_tasks: "docker.yml"
   when:
-    - osvc_deploy_docker_daemon_json | bool
+    - provision_cluster_deploy_docker_daemon_json | bool
