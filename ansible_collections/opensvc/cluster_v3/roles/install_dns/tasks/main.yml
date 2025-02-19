@@ -163,10 +163,13 @@
     - not dns_svc_created
 
 - name: Wait for dns service
-  ansible.builtin.command: | 
-    om node event --wait --filter 'InstanceStatusUpdated,node={{ ansible_play_hosts[0] }},path={{ osvc_dns_service_name }},.instance_status.avail="up",.instance_status.provisioned="true"' 
-    --duration 60s -o json
+  ansible.builtin.command: |
+    om node event --wait --filter {{ osvcfilter }} --duration 60s -o json
   changed_when: false
   run_once: true
+  vars:
+    osvcfilter: >
+      'InstanceStatusUpdated,node={{ ansible_play_hosts[0] }},path={{ install_dns_service_name
+      }},.instance_status.avail="up",.instance_status.provisioned="true"'
   when:
     - not dns_svc_created
