@@ -1,9 +1,9 @@
 ---
 # defaults file for install_pool
-osvc_pool_type: "directory"
+install_pool_type: "directory"
 
-osvc_pool_name: "pool"
+install_pool_name: "pool"
 
-osvc_pool_status_schedule: ""
+install_pool_status_schedule: ""
 
-osvc_pool_network: ""
+install_pool_network: ""

@@ -4,7 +4,7 @@
   ansible.builtin.command:
     cmd: >
       om cluster set
-      --kw pool#{{ osvc_pool_name }}.type={{ osvc_pool_type }}
+      --kw pool#{{ install_pool_name }}.type={{ install_pool_type }}
   run_once: true
   register: output
   changed_when: output.rc == 0
@@ -13,7 +13,7 @@
   ansible.builtin.command:
     cmd: >
       om cluster set
-      --kw pool#{{ osvc_pool_name }}.path={{ osvc_pool_path }}
+      --kw pool#{{ install_pool_name }}.path={{ osvc_pool_path }}
   run_once: true
   register: output
   changed_when: output.rc == 0
