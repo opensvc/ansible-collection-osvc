@@ -60,21 +60,6 @@
 
 ########################## FIRST NODE ##########################
 
-- name: Check hb cluster param exists on first node
-  ansible.builtin.command: om cluster get --kw hb#1.type
-  register: clusterhbtype
-  changed_when: false
-  failed_when: false
-  when: inventory_hostname == ansible_play_hosts[0]
-
-- name: Configure cluster with unicast hb
-  ansible.builtin.command: om cluster set --kw hb#1.type=unicast --kw hb#1.timeout={{ provision_cluster_hb_timeout }}
-  register: output
-  changed_when: output.rc == 0
-  when:
-    - inventory_hostname == ansible_play_hosts[0]
-    - clusterhbtype.stdout == "None"
-
 - name: Get current cluster name
   ansible.builtin.command: om cluster get --kw cluster.name
   register: clustername
