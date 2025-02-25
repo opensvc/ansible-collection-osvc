@@ -70,8 +70,21 @@
     - not vip_created
     - provision_cluster_nodecount|int == 1
 
+- name: Set fact for filter expression
+  ansible.builtin.set_fact:
+    provision_cluster_filter_expression: "'InstanceConfigUpdated,path=system/svc/vip,.instance_config.scope[0]=\"{{ ansible_play_hosts[0] }}\"'"
+  when:
+    - not vip_created
+
+- name: Debug filter expression
+  ansible.builtin.debug:
+    var: provision_cluster_filter_expression
+    verbosity: 2
+  when:
+    - not vip_created
+
 - name: Wait for vip service instance to be spawned
-  ansible.builtin.command: 'sleep 5'
+  ansible.builtin.command: om node event --filter {{ provision_cluster_filter_expression }} --wait --duration 15s
   run_once: true
   changed_when: false
   when:
