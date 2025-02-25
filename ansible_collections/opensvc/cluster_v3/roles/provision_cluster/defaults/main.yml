@@ -26,8 +26,6 @@ provision_cluster_systemd_docker_unit: 'docker.service'
 provision_cluster_configure_vip: false
 provision_cluster_vip_addr: '1.2.3.4'
 provision_cluster_vip_cidr_subnet: '24'
-# vip ip addr will be configured on link vipnic@br-prd (displayed with "ip link list")
-provision_cluster_vip_nic_name: 'vipnic'
 # public fqdn https://vip.domain.com:1215
 provision_cluster_vip_external_fqdn: 'vip.domain.com'
 

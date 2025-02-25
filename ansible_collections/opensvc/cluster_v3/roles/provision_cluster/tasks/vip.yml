@@ -9,16 +9,17 @@
   changed_when: false
   register: svcvip
   run_once: true
+  failed_when: false
 
 - name: Set fact according to actual vip existence
   ansible.builtin.set_fact:
     vip_created: false
   run_once: true
   when:
-    - "'system/svc/vip' not in svcvip.stdout"
+    - svcvip.rc !=0 or "'system/svc/vip' not in svcvip.stdout"
 
 - name: Identify node ip used for production
-  ansible.builtin.shell: set -o pipefail && grep -w {{ ansible_hostname }} /etc/hosts | head -1 | awk '{print $1}'
+  ansible.builtin.shell: set -o pipefail && grep -w "{{ ansible_hostname }}$" /etc/hosts | head -1 | awk '{print $1}'
   args:
     executable: /bin/bash
   changed_when: false
@@ -33,7 +34,7 @@
     - not vip_created
 
 - name: Identify node nic used for production
-  ansible.builtin.shell: set -o pipefail && ip route ls | grep {{ osvc_node_prd_ip }} | head -1 | grep -Po '(?<=dev )(\S+)'
+  ansible.builtin.shell: set -o pipefail && ip route ls | grep -w {{ osvc_node_prd_ip }} | head -1 | grep -Po '(?<=dev )(\S+)'
   args:
     executable: /bin/bash
   register: iproutequery
@@ -47,21 +48,34 @@
   when:
     - not vip_created
 
+- name: Set fact for provision_cluster_vip_network
+  ansible.builtin.set_fact:
+    provision_cluster_vip_network: "{{ provision_cluster_vip_addr }}/{{ provision_cluster_vip_cidr_subnet }}"
+  when:
+    - not vip_created
+
+- name: Set fact for provision_cluster_vip_expression
+  ansible.builtin.set_fact:
+    provision_cluster_vip_expression: "{{ provision_cluster_vip_network }}@{{ provision_cluster_node_prd_nic }}"
+  when:
+    - not vip_created
+
 - name: Add cluster vip
-  ansible.builtin.shell:
-    "om cluster set
-    --kw cluster.vip@{{ ansible_hostname }}={{ provision_cluster_vip_addr }}/{{ provision_cluster_vip_cidr_subnet }}\
-    @{{ provision_cluster_vip_nic_name }}@{{ provision_cluster_node_prd_nic }} && sleep 5"
+  ansible.builtin.shell: "{{ item }}"
   throttle: 1
   register: output
   changed_when: output.rc == 0
+  run_once: true
+  with_items:
+    - om cluster set --kw cluster.vip={{ provision_cluster_vip_expression }}
+    - sleep {{ provision_cluster_opensvc_command_delay }}
   when:
     - not vip_created
     - provision_cluster_nodecount|int > 1
 
 - name: Add cluster vip (single-node)
-  ansible.builtin.command: >-
-    om cluster set --kw cluster.vip@{{ ansible_hostname }}=
+  ansible.builtin.command: >
+    om cluster set --kw cluster.vip=
     {{ provision_cluster_vip_addr }}/{{ provision_cluster_vip_cidr_subnet }}@{{ provision_cluster_node_prd_nic }}
   run_once: true
   register: output
