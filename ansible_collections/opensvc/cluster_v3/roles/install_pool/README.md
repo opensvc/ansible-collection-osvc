@@ -33,7 +33,7 @@ Default value is `/var/lib/opensvc/pool/directory`
 
 Optional. The cluster pool volume group. No default value.
 
-`osvc_pool_zpool`
+`install_pool_zpool`
 
 Optional. The cluster pool zpool. No default value.
 
@@ -76,7 +76,7 @@ The snippet below can be used to configure a drbd pool backed by zfs zpool
           vars:
             install_pool_name: drbdpool
             install_pool_type: drbd
-            osvc_pool_zpool: tank
+            install_pool_zpool: tank
 
 
 

@@ -47,9 +47,9 @@
   ansible.builtin.command:
     cmd: >
       om cluster set
-      --kw pool#{{ install_pool_name }}.zpool={{ osvc_pool_zpool }}
+      --kw pool#{{ install_pool_name }}.zpool={{ install_pool_zpool }}
   run_once: true
   register: output
   changed_when: output.rc == 0
   when:
-    - (osvc_pool_zpool is defined) and (osvc_pool_zpool|length > 0)
+    - (install_pool_zpool is defined) and (install_pool_zpool|length > 0)
