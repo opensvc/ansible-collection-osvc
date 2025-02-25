@@ -4,14 +4,17 @@
 - name: Distribution
   ansible.builtin.debug:
     msg: "{{ ansible_distribution }}"
+    verbosity: 2
 
 - name: Distribution version
   ansible.builtin.debug:
     msg: "{{ ansible_distribution_version }}"
+    verbosity: 2
 
 - name: Distribution major version
   ansible.builtin.debug:
     msg: "{{ ansible_distribution_major_version }}"
+    verbosity: 2
 
 - name: Determine OpenSVC repository URL
   ansible.builtin.set_fact:
