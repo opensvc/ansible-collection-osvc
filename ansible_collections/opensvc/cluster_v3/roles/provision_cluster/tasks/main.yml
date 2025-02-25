@@ -87,11 +87,15 @@
   changed_when: false
   failed_when: clustertoken.rc != 0
   run_once: true
+  when:
+    - provision_cluster_nodecount | int > 1
 
 - name: Debug cluster token
   ansible.builtin.debug:
     msg: "Cluster join token: {{ clustertoken.stdout }}"
     verbosity: 2
+  when:
+    - provision_cluster_nodecount | int > 1
 
 ########################## OTHER NODES ##########################
 
@@ -119,6 +123,8 @@
   ansible.builtin.debug:
     msg: "Joined status: {{ joined }}"
     verbosity: 2
+  when:
+    - provision_cluster_nodecount | int > 1
 
 - name: Join other nodes to the cluster
   ansible.builtin.command: "{{ item }}"
@@ -138,7 +144,9 @@
   ansible.builtin.debug:
     var: join_output
     verbosity: 2
-  when: not joined
+  when:
+    - provision_cluster_nodecount | int > 1
+    - not joined
 
 - name: Unfreeze cluster
   ansible.builtin.command: 'om cluster thaw --wait'

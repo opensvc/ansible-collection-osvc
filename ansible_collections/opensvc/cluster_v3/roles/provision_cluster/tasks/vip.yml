@@ -74,12 +74,13 @@
     - provision_cluster_nodecount|int > 1
 
 - name: Add cluster vip (single-node)
-  ansible.builtin.command: >
-    om cluster set --kw cluster.vip=
-    {{ provision_cluster_vip_addr }}/{{ provision_cluster_vip_cidr_subnet }}@{{ provision_cluster_node_prd_nic }}
+  ansible.builtin.command: "{{ item }}"
   run_once: true
   register: output
   changed_when: output.rc == 0
+  with_items:
+    - om cluster set --kw cluster.vip={{ provision_cluster_vip_expression }}
+    - sleep {{ provision_cluster_opensvc_command_delay }}
   when:
     - not vip_created
     - provision_cluster_nodecount|int == 1
