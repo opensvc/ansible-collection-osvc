@@ -52,7 +52,7 @@
   ansible.builtin.shell: |
     set -o pipefail
     cd {{ install_cni_plugins_dir }}
-    TMP_DIR="`mktemp -d`" && tar -zx -C $TMP_DIR -f {{ cni_download.dest }} && mv $TMP_DIR/* . && rm -rf $TMP_DIR
+    TMP_DIR="`mktemp -d`" && tar -zx -C $TMP_DIR -f {{ install_cni_download_url.dest }} && mv $TMP_DIR/* . && rm -rf $TMP_DIR
   args:
     executable: "/bin/bash"
   register: output
