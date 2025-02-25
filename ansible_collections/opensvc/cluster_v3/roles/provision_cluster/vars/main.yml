@@ -1,22 +1,3 @@
 ---
-# opensvc delay to introduce between commands
-provision_cluster_opensvc_command_delay: 3
-
-# opensvc_server package repositories
-provision_cluster_repositories:
-  RedHat:
-    default: "https://packages.opensvc.com/rpm/dev-opensvc-v3-rhel9/x86_64/"
-    7: "https://packages.opensvc.com/rpm/dev-opensvc-v3-rhel7/x86_64/"
-    8: "https://packages.opensvc.com/rpm/dev-opensvc-v3-rhel7/x86_64/"
-  Debian:
-    default: "https://packages.opensvc.com/apt/debian/"
-  Ubuntu:
-    default: "https://packages.opensvc.com/apt/ubuntu/"
-  Sles:
-    default: "https://packages.opensvc.com/rpm/dev-opensvc-v3-sles15/x86_64/"
-
 # variables definition
 provision_cluster_nodecount: "{{ ansible_play_hosts | length }}"
-provision_cluster_configure_vip: false
-provision_cluster_configure_webapp: false
-provision_cluster_deploy_docker_daemon_json: false

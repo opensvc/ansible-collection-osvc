@@ -1,5 +1,21 @@
 ---
 # defaults file for provision_cluster
+#
+# opensvc delay to introduce between commands
+provision_cluster_opensvc_command_delay: 3
+
+# opensvc_server package repositories
+provision_cluster_repositories:
+  RedHat:
+    default: "https://packages.opensvc.com/rpm/dev-opensvc-v3-rhel9/x86_64/"
+    7: "https://packages.opensvc.com/rpm/dev-opensvc-v3-rhel7/x86_64/"
+    8: "https://packages.opensvc.com/rpm/dev-opensvc-v3-rhel7/x86_64/"
+  Debian:
+    default: "https://packages.opensvc.com/apt/debian/"
+  Ubuntu:
+    default: "https://packages.opensvc.com/apt/ubuntu/"
+  Sles:
+    default: "https://packages.opensvc.com/rpm/dev-opensvc-v3-sles15/x86_64/"
 
 # set to something unique
 provision_cluster_clustername: demo
