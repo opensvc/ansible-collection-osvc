@@ -2,7 +2,7 @@
 # tasks file for unprovision_services
 
 - name: Freeze cluster
-  ansible.builtin.command: "om node freeze"
+  ansible.builtin.command: "om cluster freeze"
   register: output
   changed_when: output.rc == 0
   when:
@@ -51,7 +51,10 @@
     - inventory_hostname == ansible_play_hosts[0]
 
 - name: Check if we actually need to purge something
-  ansible.builtin.command: "om '*/*/*+!*/*/cluster' ls | wc -l"
+  ansible.builtin.shell: |
+    set -o pipefail && om '*/*/*+!*/*/cluster+!system/sec/cert+!system/sec/ca' ls | grep -v ^OBJECT | wc -l
+  args:
+    executable: /bin/bash
   changed_when: false
   failed_when: false
   register: osvc_cluster_svc_count
@@ -63,10 +66,13 @@
     osvc_cluster_need_svc_purge: true
   when:
     - inventory_hostname == ansible_play_hosts[0]
-    - osvc_cluster_svc_count.stdout != '0'
+    - osvc_cluster_svc_count.rc == 0 and osvc_cluster_svc_count.stdout|int > 0
 
 - name: Purge all OpenSVC services
-  ansible.builtin.command: "om '*/*/*+!*/*/cluster' purge --wait --time {{ unprovision_services_purge_wait_time }}"
+  ansible.builtin.shell: |
+    set -o pipefail && om '*/*/*+!*/*/cluster+!system/sec/cert+!system/sec/ca' purge --wait --time {{ unprovision_services_purge_wait_time }}
+  args:
+    executable: /bin/bash
   register: output
   changed_when: output.rc == 0
   failed_when: false
@@ -75,7 +81,10 @@
     - osvc_cluster_need_svc_purge|bool
 
 - name: Check for actual service unprov
-  ansible.builtin.command: "om '*/*/*+!*/*/cluster' ls | wc -l"
+  ansible.builtin.shell: |
+    set -o pipefail && om '*/*/*+!*/*/cluster+!system/sec/cert+!system/sec/ca' ls | grep -v ^OBJECT | wc -l
+  args:
+    executable: /bin/bash
   changed_when: false
   failed_when: false
   register: osvc_cluster_svc_unprov_cmdres
