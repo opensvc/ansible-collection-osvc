@@ -121,13 +121,14 @@
     verbosity: 2
 
 - name: Join other nodes to the cluster
-  ansible.builtin.command: >
-    om daemon join --node {{ hostvars[ansible_play_hosts[0]].ansible_hostname }} --token {{ hostvars[ansible_play_hosts[0]].clustertoken.stdout }}
-  async: 30
-  poll: 0
-  register: join_output
-  changed_when: false
+  ansible.builtin.shell: "{{ item }}"
   throttle: 1
+  register: join_output
+  changed_when: join_output.rc == 0
+  failed_when: join_output.rc != 0
+  with_items:
+    - om daemon join --node {{ hostvars[ansible_play_hosts[0]].ansible_hostname }} --token {{ hostvars[ansible_play_hosts[0]].clustertoken.stdout }}
+    - sleep {{ provision_cluster_opensvc_command_delay }}
   when:
     - provision_cluster_nodecount | int > 1
     - inventory_hostname != ansible_play_hosts[0]
@@ -138,28 +139,6 @@
     var: join_output
     verbosity: 2
   when: not joined
-
-- name: Check async job status for joining node
-  ansible.builtin.async_status:
-    jid: "{{ join_output.ansible_job_id }}"
-  register: job_result
-  until: job_result.finished
-  retries: 10
-  delay: 5
-  when:
-    - join_output is defined
-    - join_output.ansible_job_id is defined
-    - not joined
-
-- name: Check if join command was successful
-  ansible.builtin.debug:
-    msg: "Join successful!"
-  when:
-    - provision_cluster_nodecount | int > 1
-    - inventory_hostname != ansible_play_hosts[0]
-    - not joined
-    - job_result is defined
-    - job_result.rc == 0
 
 - name: Unfreeze cluster
   ansible.builtin.command: 'om cluster thaw --wait'
