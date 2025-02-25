@@ -157,7 +157,7 @@
     - inventory_hostname == ansible_play_hosts[0]
 
 - name: Add mutual root ssh trust
-  ansible.builtin.command: 'om node update ssh authorized keys --node "*"'
+  ansible.builtin.command: 'om node ssh trust --node "*"'
   register: output
   changed_when: output.rc == 0
   throttle: 1
