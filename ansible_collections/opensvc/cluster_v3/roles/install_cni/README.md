@@ -2,6 +2,7 @@ install_cni
 ===========
 
 This role deploys container network interface (https://github.com/containernetworking/cni) plugins binaries to a running OpenSVC cluster
+On modern distributions, this role is not needed, because of native os package availability (containernetworking-plugins on Ubuntu, containernetworking-plugins on RHEL)
 
 Requirements
 ------------
