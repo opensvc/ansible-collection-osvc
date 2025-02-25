@@ -25,6 +25,11 @@
 - name: Deploy per OS prerequisites and install osvc package
   ansible.builtin.include_tasks: "install-{{ ansible_distribution }}.yml"
 
+- name: Wait for monitor to be idle
+  ansible.builtin.command: |
+    om node event --filter 'NodeMonitorUpdated,node={{ inventory_hostname }},node_monitor.state="idle"' --wait --duration 15s
+  changed_when: false
+
 - name: Debug node count
   ansible.builtin.debug:
     var: provision_cluster_nodecount
