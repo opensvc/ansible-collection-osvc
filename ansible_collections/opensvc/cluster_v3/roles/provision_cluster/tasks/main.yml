@@ -106,7 +106,7 @@
 
 - name: Set joined status for nodes
   ansible.builtin.set_fact:
-    joined: "{{ inventory_hostname in clusternodes.stdout.splitlines() }}"
+    joined: "{{ inventory_hostname in clusternodes.stdout }}"
   when:
     - provision_cluster_nodecount | int > 1
 
