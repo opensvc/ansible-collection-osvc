@@ -121,7 +121,7 @@
     verbosity: 2
 
 - name: Join other nodes to the cluster
-  ansible.builtin.shell: "{{ item }}"
+  ansible.builtin.command: "{{ item }}"
   throttle: 1
   register: join_output
   changed_when: join_output.rc == 0
