@@ -5,7 +5,7 @@
     dest: '/etc/docker/daemon.json'
     mode: '0644'
   notify:
-    - restart docker service
+    - Restart docker service
 
 - name: Flush handlers
   ansible.builtin.meta: flush_handlers
