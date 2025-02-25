@@ -66,7 +66,7 @@
     - osvc_cluster_svc_count.stdout != '0'
 
 - name: Purge all OpenSVC services
-  ansible.builtin.command: "om '*/*/*+!*/*/cluster' purge --wait --time {{ osvc_svc_purge_wait_time }}"
+  ansible.builtin.command: "om '*/*/*+!*/*/cluster' purge --wait --time {{ unprovision_services_purge_wait_time }}"
   register: output
   changed_when: output.rc == 0
   failed_when: false
@@ -79,8 +79,8 @@
   changed_when: false
   failed_when: false
   register: osvc_cluster_svc_unprov_cmdres
-  retries: "{{ osvc_svc_purge_retries }}"
-  delay: "{{ osvc_svc_purge_delay }}"
+  retries: "{{ unprovision_services_purge_retries }}"
+  delay: "{{ unprovision_services_purge_delay }}"
   until: osvc_cluster_svc_unprov_cmdres.stdout == '0'
   when:
     - inventory_hostname == ansible_play_hosts[0]

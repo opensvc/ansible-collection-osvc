@@ -2,8 +2,8 @@
 # defaults file for unprovision_services
 
 # Time to wait actual service purge to be done
-osvc_svc_purge_wait_time: 120s
+unprovision_services_purge_wait_time: 120s
 
 # Check 10 times if services are actually purged, and wait 10s between retries
-osvc_svc_purge_retries: 10
-osvc_svc_purge_delay: 10
+unprovision_services_purge_retries: 10
+unprovision_services_purge_delay: 10
