@@ -22,6 +22,9 @@
                provision_cluster_repositories[ansible_distribution].default)
       }}
 
+- name: Include OS variables
+  ansible.builtin.include_vars: "{{ ansible_os_family }}.yml"
+
 - name: Deploy per OS prerequisites and install osvc package
   ansible.builtin.include_tasks: "install-{{ ansible_distribution }}.yml"
 
