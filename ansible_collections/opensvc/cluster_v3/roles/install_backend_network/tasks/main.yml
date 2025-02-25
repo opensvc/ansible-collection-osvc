@@ -1,10 +1,14 @@
 ---
 # tasks file for install_backend_network
+#
+- name: Set fact on network existence
+  set_fact:
+    install_backend_net_created: True
 
 # Check if the backend network is already configured
 - name: Check for backend network configuration
   ansible.builtin.shell:
-    cmd: set -o pipefail && om net ls | grep -w {{ install_backend_network_subnet }}
+    cmd: set -o pipefail && om net ls | grep -w "^{{ install_backend_network_name }} "
   args:
     executable: /bin/bash
   failed_when: false
@@ -12,22 +16,23 @@
   register: _osvc_network_list
   run_once: true
 
+- name: Set fact on actual network existence
+  set_fact:
+    install_backend_net_created: False
+  when:
+    - _osvc_network_list.rc != 0 or install_backend_network_name not in _osvc_network_list.stdout
+
 # Configure backend network if not already present
 - name: Configure backend network if not configured
   ansible.builtin.command:
     cmd: >
       om cluster set
-      --kw network#{{ install_backend_network_subnet }}.type=routed_bridge
-      --kw network#{{ install_backend_network_subnet }}.network={{ install_backend_network_subnet_range }}
-      --kw network#{{ install_backend_network_subnet }}.ips_per_node={{ install_backend_network_subnet_ips_per_node }}
-      --kw network#{{ install_backend_network_subnet }}.tunnel={{ install_backend_network_tunnel }}
+      --kw network#{{ install_backend_network_name }}.type=routed_bridge
+      --kw network#{{ install_backend_network_name }}.network={{ install_backend_network_subnet_range }}
+      --kw network#{{ install_backend_network_name }}.ips_per_node={{ install_backend_network_subnet_ips_per_node }}
+      --kw network#{{ install_backend_network_name }}.tunnel={{ install_backend_network_tunnel }}
   run_once: true
   register: output
   changed_when: output.rc == 0
-  when: install_backend_network_subnet not in _osvc_network_list.stdout
-
-- name: Display network configuration result
-  ansible.builtin.debug:
-    var: _network_is_configured
-  args:
-    verbosity: 2
+  when:
+    - not install_backend_net_created

@@ -1,6 +1,6 @@
 ---
 # defaults file for install_backend_network
-install_backend_network_subnet: "backend"
+install_backend_network_name: "backend"
 
 install_backend_network_subnet_range: "10.100.0.0/16"
 

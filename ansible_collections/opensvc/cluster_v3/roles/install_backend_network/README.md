@@ -45,7 +45,7 @@ The snippet below can be used as a playbook:
         - import_role:
             name: opensvc.cluster.install_backend_network
           vars:
-            install_backend_network_subnet: backendnet
+            install_backend_network_name: backendnet
             install_backend_network_subnet_range: 10.123.0.0/16
             install_backend_network_subnet_ips_per_node: 4096
             install_backend_network_tunnel: auto
