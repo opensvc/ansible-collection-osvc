@@ -28,7 +28,7 @@ Example 1: use default nodes ip addr
 License
 -------
 
-GPL-2.0-or-later
+Apache-2.0
 
 Author Information
 ------------------

@@ -83,7 +83,7 @@ The snippet below can be used to configure a drbd pool backed by zfs zpool
 License
 -------
 
-GPL-2.0-or-later
+Apache-2.0
 
 Author Information
 ------------------
