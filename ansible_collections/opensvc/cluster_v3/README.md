@@ -6,7 +6,7 @@ This collection contains OpenSVC-related ansible objects.
 
 Install this collection locally:
 
-    ansible-galaxy collection install opensvc.clusteri_v3 -p ./collections
+    ansible-galaxy collection install opensvc.cluster_v3 -p ./collections
 
 Then you can use the roles from the collection in your playbooks:
 
