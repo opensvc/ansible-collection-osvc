@@ -26,14 +26,12 @@
   register: grepquery
   when:
     - not vip_created
-    - provision_cluster_vip_dev|length == 0
 
 - name: Set fact according to command result
   ansible.builtin.set_fact:
     osvc_node_prd_ip: "{{ grepquery.stdout }}"
   when:
     - not vip_created
-    - provision_cluster_vip_dev|length == 0
 
 - name: Identify node nic used for production
   ansible.builtin.shell: set -o pipefail && ip route ls | grep -w {{ osvc_node_prd_ip }} | head -1 | grep -Po '(?<=dev )(\S+)'
@@ -43,39 +41,49 @@
   changed_when: false
   when:
     - not vip_created
-    - provision_cluster_vip_dev|length == 0
 
 - name: Set fact according to command result
   ansible.builtin.set_fact:
     provision_cluster_node_prd_nic: "{{ iproutequery.stdout }}"
   when:
     - not vip_created
-    - provision_cluster_vip_dev|length == 0
 
-- name: Set fact according to custom device
+- name: Set fact for provision_cluster_vip_network
   ansible.builtin.set_fact:
-    provision_cluster_node_prd_nic: "{{ provision_cluster_vip_dev }}"
-  when:
-    - not vip_created
-    - provision_cluster_vip_dev|length > 0
-
-- name: Ensure that provision_cluster_node_prd_nic is not empty
-  ansible.builtin.assert:
-    that: "provision_cluster_node_prd_nic|length > 0"
+    provision_cluster_vip_network: "{{ provision_cluster_vip_name }}/{{ provision_cluster_vip_netmask }}"
   when:
     - not vip_created
 
-- name: Deploy vip service from template
-  ansible.builtin.command: |
-    om system/svc/vip deploy --config {{ provision_cluster_vip_template }}
-    --kw ip#0.name={{ provision_cluster_vip_name }}
-    --kw ip#0.netmask={{ provision_cluster_vip_netmask }}
-    --kw ip#0.dev={{ provision_cluster_node_prd_nic }}
+- name: Set fact for provision_cluster_vip_expression
+  ansible.builtin.set_fact:
+    provision_cluster_vip_expression: "{{ provision_cluster_vip_network }}@{{ provision_cluster_node_prd_nic }}"
+  when:
+    - not vip_created
+
+- name: Add cluster vip
+  ansible.builtin.command: "{{ item }}"
+  throttle: 1
   register: output
   changed_when: output.rc == 0
   run_once: true
+  with_items:
+    - om cluster set --kw cluster.vip={{ provision_cluster_vip_expression }}
+    - sleep {{ provision_cluster_opensvc_command_delay }}
   when:
     - not vip_created
+    - provision_cluster_nodecount|int > 1
+
+- name: Add cluster vip (single-node)
+  ansible.builtin.command: "{{ item }}"
+  run_once: true
+  register: output
+  changed_when: output.rc == 0
+  with_items:
+    - om cluster set --kw cluster.vip={{ provision_cluster_vip_expression }}
+    - sleep {{ provision_cluster_opensvc_command_delay }}
+  when:
+    - not vip_created
+    - provision_cluster_nodecount|int == 1
 
 - name: Set fact for filter expression
   ansible.builtin.set_fact:

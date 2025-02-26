@@ -37,13 +37,13 @@ provision_cluster_deploy_docker_daemon_json: false
 provision_cluster_systemd_docker_unit: 'docker.service'
 
 # configure the cluster virtual ip
-# recommended for streched vlans setup
+# recommended for stretched vlans setup
 # clients can connect to webapp/api using this floating ip
 provision_cluster_configure_vip: false
-provision_cluster_vip_addr: '1.2.3.4'
-provision_cluster_vip_cidr_subnet: '24'
-# public fqdn https://vip.domain.com:1215
-provision_cluster_vip_external_fqdn: 'vip.domain.com'
+provision_cluster_vip_name: '1.2.3.4'
+provision_cluster_vip_dev: ''
+provision_cluster_vip_netmask: '24'
+provision_cluster_vip_template: 'https://raw.githubusercontent.com/opensvc/opensvc_templates/refs/heads/main/vip/vip.conf'
 
 # configure cluster ssh trust between nodes
 # must be done either by collection or manually

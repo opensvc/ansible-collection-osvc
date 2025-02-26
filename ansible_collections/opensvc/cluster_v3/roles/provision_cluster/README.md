@@ -49,17 +49,29 @@ It is mandatory to provide other parameters, see below.
 
 Default value is `false`.
 
-`provision_cluster_vip_addr`
+`provision_cluster_vip_name`
 
 Cluster floating ipv4 or ipv6 address. It must be different from node's ips, but reachable once configured on any cluster node.
 
 Default value is `1.2.3.4`.
 
-`provision_cluster_vip_cidr_subnet`
+`provision_cluster_vip_netmask`
 
 CIDR subnet mask associated with the vip address
 
 Default value is `24`.
+
+`provision_cluster_vip_dev`
+
+Optional. It is the network interface (ip link list), on which the ip will be configured.
+
+Default value is empty, and role automatically discover it.
+
+`provision_cluster_vip_template`
+
+Url to vip service template, which will be downloaded and started with custom parameters
+
+Default value is `https://raw.githubusercontent.com/opensvc/opensvc_templates/refs/heads/main/vip/vip.conf`.
 
 Example Playbook
 ----------------
@@ -86,8 +98,8 @@ A more complex cluster playbook:
             provision_cluster_hb_timeout: 25s
             provision_cluster_update_etc_hosts: true
             provision_cluster_configure_vip: true
-            provision_cluster_vip_addr: '1.2.3.4'
-            provision_cluster_vip_cidr_subnet: '24'
+            provision_cluster_vip_name: '1.2.3.4'
+            provision_cluster_vip_netmask: '24'
  
 
 License
