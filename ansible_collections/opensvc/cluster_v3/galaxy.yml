@@ -20,9 +20,9 @@ description: >
 
 # License details for the collection content
 license:
-  - GPL-2.0-or-later
+  - Apache-2.0
 
-license_file: ''
+license_file: 'LICENSE'
 
 # List of tags for indexing/searching purposes
 tags:
