@@ -16,7 +16,7 @@
     vip_created: false
   run_once: true
   when:
-    - svcvip.rc !=0 or "'system/svc/vip' not in svcvip.stdout"
+    - svcvip.rc != 0 or svcvip.stdout is not search('system/svc/vip')
 
 - name: Identify node ip used for production
   ansible.builtin.shell: set -o pipefail && grep -w "{{ ansible_hostname }}$" /etc/hosts | head -1 | awk '{print $1}'
