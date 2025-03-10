@@ -16,14 +16,21 @@
     msg: "{{ ansible_distribution_major_version }}"
     verbosity: 2
 
-- name: Determine OpenSVC repository URL
+- name: Set repository URL based on OS and version
   ansible.builtin.set_fact:
     opensvc_repo_url: >-
-      {{
-        provision_cluster_repositories[ansible_distribution]
-          .get(ansible_distribution_major_version,
-               provision_cluster_repositories[ansible_distribution].default)
-      }}
+      {%- for os, versions in provision_cluster_repositories.items() if os == ansible_distribution -%}
+        {%- for version, url in versions.items() if version|string == ansible_distribution_major_version -%}
+          {{ url }}
+        {%- else -%}
+          {{ versions.default }}
+        {%- endfor -%}
+      {%- endfor -%}
+
+- name: Debug repository url
+  ansible.builtin.debug:
+    msg: "{{ opensvc_repo_url }}"
+    verbosity: 2
 
 - name: Include OS variables
   ansible.builtin.include_vars: "{{ ansible_os_family }}.yml"
