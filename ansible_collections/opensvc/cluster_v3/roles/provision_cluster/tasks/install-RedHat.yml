@@ -5,13 +5,10 @@
     description: OpenSVC Repository
     baseurl: "{{ opensvc_repo_url }}"
     enabled: true
-    gpgcheck: false
+    gpgcheck: true
+    gpgkey: https://packages.opensvc.com/gpg.public.key.asc
     state: present
   when: ansible_os_family == "RedHat"
-
-- name: Update packages list
-  ansible.builtin.package:
-    update_cache: true
 
 - name: Install common packages for RHEL/CentOS/Fedora (ver >= 8)
   ansible.builtin.package:
@@ -59,6 +56,7 @@
 - name: Debug OpenSVC installed package
   ansible.builtin.debug:
     msg: "Installed OpenSVC package: {{ paquets_osvc }}"
+    verbosity: 2
 
 - name: Enable and start opensvc-server.service
   ansible.builtin.service:
