@@ -7,17 +7,17 @@ provision_cluster_opensvc_command_delay: 3
 # opensvc_server package repositories
 provision_cluster_repositories:
   RedHat:
-    default: "https://packages.opensvc.com/rpm/dev-opensvc-v3-rhel9/x86_64/"
-    7: "https://packages.opensvc.com/rpm/dev-opensvc-v3-rhel7/x86_64/"
-    8: "https://packages.opensvc.com/rpm/dev-opensvc-v3-rhel8/x86_64/"
-    9: "https://packages.opensvc.com/rpm/dev-opensvc-v3-rhel9/x86_64/"
+    default: "https://packages.opensvc.com/rpm/uat-opensvc-v3-rhel9/x86_64/"
+    7: "https://packages.opensvc.com/rpm/uat-opensvc-v3-rhel7/x86_64/"
+    8: "https://packages.opensvc.com/rpm/uat-opensvc-v3-rhel8/x86_64/"
+    9: "https://packages.opensvc.com/rpm/uat-opensvc-v3-rhel9/x86_64/"
   Debian:
     default: "https://packages.opensvc.com/apt/debian/"
   Ubuntu:
     default: "https://packages.opensvc.com/apt/ubuntu/"
   Sles:
-    default: "https://packages.opensvc.com/rpm/dev-opensvc-v3-sles15/x86_64/"
-    15: "https://packages.opensvc.com/rpm/dev-opensvc-v3-sles15/x86_64/"
+    default: "https://packages.opensvc.com/rpm/uat-opensvc-v3-sles15/x86_64/"
+    15: "https://packages.opensvc.com/rpm/uat-opensvc-v3-sles15/x86_64/"
 
 provision_cluster_repositories_gpgkey_url: 'https://packages.opensvc.com/gpg.public.key.asc'
 
