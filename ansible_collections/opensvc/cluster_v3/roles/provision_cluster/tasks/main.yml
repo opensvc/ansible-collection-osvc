@@ -170,7 +170,7 @@
     - inventory_hostname == ansible_play_hosts[0]
 
 - name: Add mutual root ssh trust
-  ansible.builtin.command: 'om node ssh trust --node "*"'
+  ansible.builtin.command: 'om cluster ssh trust'
   register: output
   changed_when: output.rc == 0
   throttle: 1
