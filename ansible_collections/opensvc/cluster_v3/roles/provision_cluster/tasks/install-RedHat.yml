@@ -6,7 +6,7 @@
     baseurl: "{{ opensvc_repo_url }}"
     enabled: true
     gpgcheck: true
-    gpgkey: https://packages.opensvc.com/gpg.public.key.asc
+    gpgkey: "{{ provision_cluster_repositories_gpgkey_url }}"
     state: present
   when: ansible_os_family == "RedHat"
 

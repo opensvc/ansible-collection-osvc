@@ -19,6 +19,8 @@ provision_cluster_repositories:
     default: "https://packages.opensvc.com/rpm/dev-opensvc-v3-sles15/x86_64/"
     15: "https://packages.opensvc.com/rpm/dev-opensvc-v3-sles15/x86_64/"
 
+provision_cluster_repositories_gpgkey_url: 'https://packages.opensvc.com/gpg.public.key.asc'
+
 # set to something unique
 provision_cluster_clustername: demo
 
