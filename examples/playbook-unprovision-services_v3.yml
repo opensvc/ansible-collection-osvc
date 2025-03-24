@@ -1,0 +1,5 @@
+- hosts: all
+  tasks:
+    - name: import role unprovision_services
+      import_role:
+        name: opensvc.cluster_v3.unprovision_services

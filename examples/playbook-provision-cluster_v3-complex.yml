@@ -1,0 +1,59 @@
+- hosts: all
+  tasks:
+    - name: import role provision_cluster
+      import_role:
+        name: opensvc.cluster_v3.provision_cluster
+      vars:
+        provision_cluster_clustername: v3complexcluster
+        provision_cluster_hb_timeout: 25s
+        provision_cluster_update_etc_hosts: true
+        provision_cluster_configure_vip: true
+        provision_cluster_vip_name: '10.16.0.20'
+        provision_cluster_vip_netmask: '24'
+        provision_cluster_vip_dev: 'enp1s0'
+
+    - name: import role install_cni
+      import_role:
+        name: opensvc.cluster_v3.install_cni
+      vars:
+        install_cni_plugins_dir: /opt/cni/bin
+        install_cni_config_dir: /var/lib/opensvc/cni/net.d
+
+    - name: import role install_backend_network
+      import_role:
+        name: opensvc.cluster_v3.install_backend_network
+      vars:
+        install_backend_network_name: backendipv4
+        install_backend_network_subnet_range: 10.123.0.0/16
+        install_backend_network_subnet_ips_per_node: 4096
+
+    - name: import role install_backend_network
+      import_role:
+        name: opensvc.cluster_v3.install_backend_network
+      vars:
+        install_backend_network_name: backendipv6
+        install_backend_network_subnet_range: fdfe::/112
+        install_backend_network_subnet_ips_per_node: 1024
+
+    - name: import role install_drbd
+      import_role:
+        name: opensvc.cluster_v3.install_drbd
+
+    - name: import role install_dns
+      import_role:
+        name: opensvc.cluster_v3.install_dns
+
+    - name: configure directory pool
+      import_role:
+        name: opensvc.cluster_v3.install_pool
+      vars:
+        install_pool_name: dirpool
+        install_pool_type: directory
+
+    - name: configure drbd pool backed by lvm vg
+      import_role:
+        name: opensvc.cluster_v3.install_pool
+      vars:
+        install_pool_name: drbdpool
+        install_pool_type: drbd
+        install_pool_vg: data

@@ -1,0 +1,12 @@
+- hosts: all
+  gather_facts: true
+  tasks:
+    - name: import role provision_cluster
+      import_role:
+        name: opensvc.cluster_v3.provision_cluster
+      vars:
+        provision_cluster_clustername: v3testcluster
+        provision_cluster_hb_timeout: 22s
+        provision_cluster_update_etc_hosts: true
+        provision_cluster_configure_ssh_trust: true
+        provision_cluster_deploy_docker_daemon_json: false
