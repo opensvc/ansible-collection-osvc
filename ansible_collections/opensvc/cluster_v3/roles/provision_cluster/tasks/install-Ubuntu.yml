@@ -1,7 +1,7 @@
 ---
 - name: Add OpenSVC repository for Ubuntu-based systems
   ansible.builtin.apt_repository:
-    repo: "deb [trusted=yes] {{ opensvc_repo_url }} dev-opensvc-v3-{{ ansible_facts['lsb']['codename'] }} main"
+    repo: "deb [trusted=yes] {{ opensvc_repo_url }} uat-opensvc-v3-{{ ansible_facts['lsb']['codename'] }} main"
     state: present
   when: ansible_facts['distribution'] == "Ubuntu"
 
