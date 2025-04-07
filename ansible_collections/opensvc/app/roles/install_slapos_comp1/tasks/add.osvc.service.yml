@@ -17,7 +17,7 @@
   ansible.builtin.set_fact:
     slapos_comp1_cfg_created: 'false'
   when:
-    - osvc_slapos_comp1_cfgpath not in slapos_comp1_cfg.stdout
+    - slapos_comp1_cfg.rc != 0 or slapos_comp1_cfg.stdout is not search(osvc_slapos_comp1_cfgpath)
 
 - name: Set re6st launcher filename
   ansible.builtin.set_fact:
@@ -77,7 +77,7 @@
   ansible.builtin.set_fact:
     slapos_comp1_svc_created: 'false'
   when:
-    - osvc_slapos_comp1_svcpath not in slapos_comp1_svc.stdout
+    - slapos_comp1_svc.rc != 0 or slapos_comp1_svc.stdout is not search(osvc_slapos_comp1_svcpath)
 
 - name: Deploy slapos_comp1 opensvc service configuration file
   ansible.builtin.template:
