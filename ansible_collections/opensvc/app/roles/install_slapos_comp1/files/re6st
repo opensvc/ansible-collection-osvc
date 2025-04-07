@@ -18,6 +18,8 @@ function stop {
     wait_for_end_of_tasks
     pkill -15 '^(re6stnet|babeld|openvpn)$'
     sleep 3
+    pkill -9 '^(re6stnet|babeld|openvpn)$'
+    sleep 3
 }
 
 function start {
