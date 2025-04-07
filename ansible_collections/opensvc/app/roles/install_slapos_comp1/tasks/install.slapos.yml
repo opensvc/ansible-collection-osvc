@@ -69,6 +69,10 @@
 - name: Force supervisord.conf to be generated
   ansible.builtin.shell:
     cmd: slapos node instance
+  register: command_result
+  until: command_result.rc == 0
+  retries: 60
+  delay: 10
   args:
     executable: /bin/bash
   when:
