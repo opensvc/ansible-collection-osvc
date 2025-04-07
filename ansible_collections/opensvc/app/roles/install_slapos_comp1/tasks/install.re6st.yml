@@ -17,11 +17,30 @@
     path: /etc/re6stnet/re6stnet.conf
   register: re6stnetcfg
 
-- name: Set fact according to actual re6st cfg existence
+- name: Set fact according to actual re6st cfg existence (n1)
   ansible.builtin.set_fact:
     re6st_is_installed: 'false'
   when:
     - re6stnetcfg.stat.exists is false
+    - inventory_hostname == ansible_play_hosts[0]
+
+- name: Check if re6st has already been installed on (n2)
+  ansible.builtin.shell:
+    cmd: set -o pipefail && systemctl list-units --all | grep re6stnet.service | grep masked
+  args:
+    executable: /bin/bash
+  register: re6st_unit_is_masked
+  failed_when: false
+  changed_when: false
+  when:
+    - inventory_hostname == ansible_play_hosts[1]
+
+- name: Set fact according to actual re6st cfg existence (n2)
+  ansible.builtin.set_fact:
+    re6st_is_installed: 'false'
+  when:
+    - inventory_hostname == ansible_play_hosts[1]
+    - re6st_unit_is_masked.rc != 0
 
 - name: Ensure /etc/systemd is clean on first node
   ansible.builtin.shell:
@@ -144,6 +163,7 @@
   register: output
   changed_when: output.rc == 0
   when:
+    - not re6st_is_installed
     - inventory_hostname == ansible_play_hosts[0]
 
 - name: Wait for service state up on second node
@@ -151,6 +171,7 @@
     cmd: ./files/osvc_wait.sh {{ ansible_hostname }} {{ osvc_slapos_comp1_svcpath }} avail up 300
   changed_when: false
   when:
+    - not re6st_is_installed
     - inventory_hostname == ansible_play_hosts[1]
 
 - name: Wait until the file /etc/re6stnet/re6stnet.conf is present
@@ -215,6 +236,7 @@
   register: output
   changed_when: output.rc == 0
   when:
+    - not re6st_is_installed
     - inventory_hostname == ansible_play_hosts[1]
 
 - name: Wait for service state up on first node
@@ -222,6 +244,7 @@
     cmd: ./files/osvc_wait.sh {{ ansible_hostname }} {{ osvc_slapos_comp1_svcpath }} overall up 600
   changed_when: false
   when:
+    - not re6st_is_installed
     - inventory_hostname == ansible_play_hosts[0]
 
 - name: Wait until the file /etc/re6stnet/re6stnet.conf is present
