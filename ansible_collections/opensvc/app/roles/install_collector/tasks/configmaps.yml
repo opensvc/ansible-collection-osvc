@@ -6,9 +6,9 @@
   run_once: true
 
 - name: Check for environment configmaps existence
-  ansible.builtin.command: om {{ osvc_collector_environ_cfgname }} ls
+  ansible.builtin.command: om {{ install_collector_environ_cfgname }} ls
   changed_when: false
-  register: osvc_collector_environ_cfgname_query
+  register: install_collector_environ_cfgname_query
   run_once: true
 
 - name: Set fact according to actual environment configmaps existence
@@ -17,12 +17,12 @@
   run_once: true
   when:
     - >
-      osvc_collector_environ_cfgname
+      install_collector_environ_cfgname
       not in
-      osvc_collector_environ_cfgname_query.stdout
+      install_collector_environ_cfgname_query.stdout
 
 - name: Create environment configmaps
-  ansible.builtin.command: om {{ osvc_collector_environ_cfgname }} create
+  ansible.builtin.command: om {{ install_collector_environ_cfgname }} create
   run_once: true
   register: output
   changed_when: output.rc == 0
@@ -31,7 +31,7 @@
 
 - name: Load environment configmaps variable
   ansible.builtin.command: >
-           om {{ osvc_collector_environ_cfgname }}
+           om {{ install_collector_environ_cfgname }}
            add --key {{ item.key }} --from {{ item.value }}
   run_once: true
   register: output
@@ -39,7 +39,7 @@
   when:
     - not osvc_collector_environ_cfg_created
   with_items:
-    - {key: "nginx.conf", value: "{{ osvc_collector_nginx_conf_file }}"}
-    - {key: "dbdump.sh", value: "{{ osvc_collector_dbdump_script }}"}
-    - {key: "dbrestore.sh", value: "{{ osvc_collector_dbrestore_script }}"}
-    - {key: "dbdump.tables", value: "{{ osvc_collector_dbtables_list }}"}
+    - {key: "nginx.conf", value: "{{ install_collector_nginx_conf_file }}"}
+    - {key: "dbdump.sh", value: "{{ install_collector_dbdump_script }}"}
+    - {key: "dbrestore.sh", value: "{{ install_collector_dbrestore_script }}"}
+    - {key: "dbdump.tables", value: "{{ install_collector_dbtables_list }}"}

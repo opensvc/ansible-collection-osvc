@@ -2,14 +2,14 @@
 
 
 - name: Network=host remove ip#0 section
-  ansible.builtin.command: om {{ osvc_collector_environ_svcname }} del --rid ip#0
+  ansible.builtin.command: om {{ install_collector_environ_svcname }} del --rid ip#0
   register: output
   changed_when: output.rc == 0
   run_once: true
 
 - name: Network=host connect container#0 to hostns
   ansible.builtin.command: >
-           om {{ osvc_collector_environ_svcname }}
+           om {{ install_collector_environ_svcname }}
            set --kw container#0.netns=host
   register: output
   changed_when: output.rc == 0

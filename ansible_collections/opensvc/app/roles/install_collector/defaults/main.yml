@@ -3,13 +3,13 @@
 #
 #
 # collector service name
-osvc_collector_service_name: "collector"
+install_collector_service_name: "collector"
 
 # environment sec
-osvc_collector_environ_secname: "{{ osvc_collector_namespace }}/sec/{{ osvc_collector_service_name }}"
+install_collector_environ_secname: "{{ install_collector_namespace }}/sec/{{ install_collector_service_name }}"
 
 # environment cfgmap
-osvc_collector_environ_cfgname: "{{ osvc_collector_namespace }}/cfg/{{ osvc_collector_service_name }}"
+install_collector_environ_cfgname: "{{ install_collector_namespace }}/cfg/{{ install_collector_service_name }}"
 
 # environment svcname
-osvc_collector_environ_svcname: "{{ osvc_collector_namespace }}/svc/{{ osvc_collector_service_name }}"
+install_collector_environ_svcname: "{{ install_collector_namespace }}/svc/{{ install_collector_service_name }}"

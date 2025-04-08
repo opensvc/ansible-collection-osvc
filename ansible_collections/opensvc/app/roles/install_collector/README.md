@@ -13,17 +13,17 @@ docker or podman installed
 Role Variables
 --------------
 
-`osvc_collector_namespace`
+`install_collector_namespace`
 
 The cluster namespece where the collector service will be deployed.
 
 Default value is `prod`, so that the service path is `prod/svc/collector`
 
-`osvc_collector_db_password`
+`install_collector_db_password`
 
 The mariadb password for user opensvc.
 
-`osvc_collector_web2py_admin_console_password`
+`install_collector_web2py_admin_console_password`
 
 The web2py admin password. ( https://f.q.d.n/admin )
 
@@ -36,7 +36,7 @@ The password can be changed manually using the procedure below:
 - run the command `python -c "from gluon.main import save_password;save_password(raw_input('admin password: '),443)"`
 - fill in the new password when prompted
 
-`osvc_collector_repo`
+`install_collector_repo`
 
 The git repository from which the collector source code is pulled.
 
@@ -44,37 +44,37 @@ Default value is `https://github.com/opensvc/collector`
 
 Custom private deployments with authentication can set this to `https://username:<personal access token>@host.my.corp/opensvc/collector`
 
-`osvc_collector_nginx_conf_file`
+`install_collector_nginx_conf_file`
 
 Nginx configuration file uri
 
 Default value is `https://raw.githubusercontent.com/opensvc/opensvc_templates/main/collector/nginx.conf`
 
-`osvc_collector_dbdump_script`
+`install_collector_dbdump_script`
 
 Database backup script uri
 
 Default value is `https://raw.githubusercontent.com/opensvc/opensvc_templates/main/collector/scripts/dbdump.sh`
 
-`osvc_collector_dbrestore_script`
+`install_collector_dbrestore_script`
 
 Database backup restore uri
 
 Default value is `https://raw.githubusercontent.com/opensvc/opensvc_templates/main/collector/scripts/dbrestore.sh`
 
-`osvc_collector_dbtables_list`
+`install_collector_dbtables_list`
 
 Database table file. Contains table list to backup with dbdump.sh
 
 Default value is `https://raw.githubusercontent.com/opensvc/opensvc_templates/main/collector/scripts/dbdump.tables`
 
-`osvc_collector_service_config`
+`install_collector_service_config`
 
 Collector service template file
 
 Default value is `https://raw.githubusercontent.com/opensvc/opensvc_templates/main/collector/collector.conf`
 
-`osvc_collector_network_host`
+`install_collector_network_host`
 
 Boolean to enable collector operating in the host network namespace.
 
@@ -104,7 +104,7 @@ Example Playbook
       import_role:
         name: opensvc.app.install_collector
       vars:
-        osvc_collector_network_host: true
+        install_collector_network_host: true
 
 License
 -------

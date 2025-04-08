@@ -6,7 +6,7 @@
   run_once: true
 
 - name: Check for collector svc existence
-  ansible.builtin.command: om {{ osvc_collector_environ_svcname }} ls
+  ansible.builtin.command: om {{ install_collector_environ_svcname }} ls
   changed_when: false
   register: osvc_collector_svcname_query
   run_once: true
@@ -16,12 +16,12 @@
     osvc_collector_svc_created: 'false'
   run_once: true
   when:
-    - osvc_collector_environ_svcname not in osvc_collector_svcname_query.stdout
+    - install_collector_environ_svcname not in osvc_collector_svcname_query.stdout
 
 - name: Create collector service
   ansible.builtin.command: >
-           om {{ osvc_collector_environ_svcname }} create
-           --config {{ osvc_collector_service_config }}
+           om {{ install_collector_environ_svcname }} create
+           --config {{ install_collector_service_config }}
   run_once: true
   register: output
   changed_when: output.rc == 0
@@ -32,11 +32,11 @@
   ansible.builtin.include_tasks: "net.host.yml"
   run_once: true
   when:
-    - osvc_collector_network_host
+    - install_collector_network_host
     - not osvc_collector_svc_created
 
 - name: Provision collector service
-  ansible.builtin.command: "om {{ osvc_collector_environ_svcname }} provision --wait"
+  ansible.builtin.command: "om {{ install_collector_environ_svcname }} provision --wait"
   run_once: true
   register: output
   changed_when: output.rc == 0
