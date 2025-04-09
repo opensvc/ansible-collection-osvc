@@ -9,7 +9,7 @@
     slapos_comp1_cfg_created: 'true'
 
 - name: Check for cfgmap existence
-  ansible.builtin.command: "om {{ osvc_slapos_comp1_cfgpath }} ls"
+  ansible.builtin.command: "om {{ install_slapos_comp1_cfgpath }} ls"
   changed_when: false
   register: slapos_comp1_cfg
 
@@ -17,7 +17,7 @@
   ansible.builtin.set_fact:
     slapos_comp1_cfg_created: 'false'
   when:
-    - slapos_comp1_cfg.rc != 0 or slapos_comp1_cfg.stdout is not search(osvc_slapos_comp1_cfgpath)
+    - slapos_comp1_cfg.rc != 0 or slapos_comp1_cfg.stdout is not search(install_slapos_comp1_cfgpath)
 
 - name: Set re6st launcher filename
   ansible.builtin.set_fact:
@@ -40,7 +40,7 @@
     - inventory_hostname == ansible_play_hosts[0]
 
 - name: Create re6st/slapos cluster configmap
-  ansible.builtin.command: "om {{ osvc_slapos_comp1_cfgpath }} create"
+  ansible.builtin.command: "om {{ install_slapos_comp1_cfgpath }} create"
   register: output
   changed_when: output.rc == 0
   when:
@@ -48,7 +48,7 @@
     - inventory_hostname == ansible_play_hosts[0]
 
 - name: Load app launchers into configmap
-  ansible.builtin.command: "om {{ osvc_slapos_comp1_cfgpath }} add --key {{ item }} --from /tmp/{{ item }}"
+  ansible.builtin.command: "om {{ install_slapos_comp1_cfgpath }} add --key {{ item }} --from /tmp/{{ item }}"
   register: output
   changed_when: output.rc == 0
   with_items:
@@ -62,14 +62,14 @@
 
 - name: Set opensvc service template filename
   ansible.builtin.set_fact:
-    osvc_svc_template: "/tmp/osvc.{{ osvc_slapos_comp1_name }}.conf"
+    osvc_svc_template: "/tmp/osvc.{{ install_slapos_comp1_name }}.conf"
 
 - name: Set fact on slapos_comp1 service creation
   ansible.builtin.set_fact:
     slapos_comp1_svc_created: 'true'
 
 - name: Check for slapos_comp1 service existence
-  ansible.builtin.command: "om {{ osvc_slapos_comp1_svcpath }} ls"
+  ansible.builtin.command: "om {{ install_slapos_comp1_svcpath }} ls"
   changed_when: false
   register: slapos_comp1_svc
 
@@ -77,7 +77,7 @@
   ansible.builtin.set_fact:
     slapos_comp1_svc_created: 'false'
   when:
-    - slapos_comp1_svc.rc != 0 or slapos_comp1_svc.stdout is not search(osvc_slapos_comp1_svcpath)
+    - slapos_comp1_svc.rc != 0 or slapos_comp1_svc.stdout is not search(install_slapos_comp1_svcpath)
 
 - name: Deploy slapos_comp1 opensvc service configuration file
   ansible.builtin.template:
@@ -89,7 +89,7 @@
     - inventory_hostname == ansible_play_hosts[0]
 
 - name: Create slapos_comp1 service
-  ansible.builtin.command: "om {{ osvc_slapos_comp1_svcpath }} create --config {{ osvc_svc_template }}"
+  ansible.builtin.command: "om {{ install_slapos_comp1_svcpath }} create --config {{ osvc_svc_template }}"
   register: output
   changed_when: output.rc == 0
   when:
@@ -97,7 +97,7 @@
     - inventory_hostname == ansible_play_hosts[0]
 
 - name: Provision slapos_comp1 service
-  ansible.builtin.command: "om {{ osvc_slapos_comp1_svcpath }} provision --wait"
+  ansible.builtin.command: "om {{ install_slapos_comp1_svcpath }} provision --wait"
   register: output
   changed_when: output.rc == 0
   when:
@@ -106,7 +106,7 @@
 
 - name: Wait for slapos_comp1 service state up
   ansible.builtin.script:
-    cmd: ./files/osvc_wait.sh {{ ansible_hostname }} {{ osvc_slapos_comp1_svcpath }} avail up 300
+    cmd: ./files/osvc_wait.sh {{ ansible_hostname }} {{ install_slapos_comp1_svcpath }} avail up 300
   changed_when: false
   register: osvcwait
   when:
@@ -122,7 +122,7 @@
     - inventory_hostname == ansible_play_hosts[0]
 
 - name: Force sync#i0 before switching the service
-  ansible.builtin.command: "om {{ osvc_slapos_comp1_svcpath }} sync nodes --rid sync#i0"
+  ansible.builtin.command: "om {{ install_slapos_comp1_svcpath }} sync nodes --rid sync#i0"
   changed_when: false
   when:
     - not slapos_comp1_svc_created

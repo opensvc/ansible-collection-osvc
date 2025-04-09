@@ -27,7 +27,7 @@ Then you can use the roles from the collection in your playbooks:
       import_role:
         name: opensvc.app.install_collector
       vars:
-        osvc_collector_network_host: true
+        install_collector_network_host: true
 
 
 ## Author
