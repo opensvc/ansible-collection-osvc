@@ -12,6 +12,8 @@ install_slapos_comp1_data_size: 2GB
 
 # re6st
 install_slapos_comp1_re6st_installer_url: "https://deploy.erp5.net/gnet/re6st"
+install_slapos_comp1_re6st_registry: "http://re6stnet.gnet.erp5.cn/"
+install_slapos_comp1_re6st_fingerprint: "sha256:41f22e190c7c3e910ffaafd8a9e89f8ad6ea6f4236950a5d8125db37c97c7fac"
 install_slapos_comp1_re6st_token: "notoken"
 install_slapos_comp1_re6st_location: ""
 install_slapos_comp1_re6st_router_advertisement: "no"

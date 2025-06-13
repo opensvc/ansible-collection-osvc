@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 
-GEOIP2_MMDB=/etc/re6stnet/GeoLite2-Country.mmdb
-RE6STETC=/etc/re6stnet
+RE6STETC=/srv/{{ install_slapos_comp1_name }}.{{ install_slapos_comp1_namespace }}.svc.{{ clustername }}/re6st/etc/re6stnet
+GEOIP2_MMDB=/srv/{{ install_slapos_comp1_name }}.{{ install_slapos_comp1_namespace }}.svc.{{ clustername }}/re6st/etc/re6stnet/GeoLite2-Country.mmdb
 
 function status {
     pgrep '^(re6stnet|babeld|openvpn)$' >/dev/null 2>&1

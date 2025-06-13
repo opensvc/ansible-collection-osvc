@@ -4,6 +4,17 @@
     var: hostvars[inventory_hostname]
     verbosity: 3
 
+- name: Get current cluster name
+  ansible.builtin.command: om cluster get --kw cluster.name
+  register: clu
+  changed_when: false
+  run_once: true
+
+- name: set facts on clustername
+  ansible.builtin.set_fact:
+    clustername="{{ clu.stdout }}"
+  run_once: true
+
 - name: Set fact on cfgmap creation
   ansible.builtin.set_fact:
     slapos_comp1_cfg_created: 'true'
@@ -35,6 +46,15 @@
     force: true
   with_fileglob:
     - files/*
+  when:
+    - not slapos_comp1_cfg_created
+    - inventory_hostname == ansible_play_hosts[0]
+
+- name: Deploy slapos_comp1 opensvc service configuration file
+  ansible.builtin.template:
+    src: re6st.j2
+    dest: "/tmp/re6st"
+    mode: '755'
   when:
     - not slapos_comp1_cfg_created
     - inventory_hostname == ansible_play_hosts[0]

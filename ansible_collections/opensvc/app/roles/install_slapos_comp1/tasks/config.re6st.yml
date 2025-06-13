@@ -1,0 +1,71 @@
+---
+
+- name: Ensure service is running on first node
+  ansible.builtin.command: "om {{ install_slapos_comp1_svcpath }} takeover --wait"
+  register: output
+  changed_when: output.rc == 0
+  when:
+    - inventory_hostname == ansible_play_hosts[0]
+
+
+- name: Get fs install root
+  ansible.builtin.command: "om {{ install_slapos_comp1_svcpath }} eval --kw fs#0.mnt"
+  register: output
+  changed_when: output.rc == 0
+  when:
+    - inventory_hostname == ansible_play_hosts[0]
+
+- name: Set fact on re6st existence
+  ansible.builtin.set_fact:
+    re6st_root: "{{ output.stdout }}"
+    re6st_etc: "{{ output.stdout }}/re6st/etc/re6stnet"
+  when:
+    - inventory_hostname == ansible_play_hosts[0]
+
+- name: Check if configuration already exists
+  stat: path="{{ re6st_etc }}/re6stnet.conf"
+  register: re6stnet_conf
+  when:
+    - inventory_hostname == ansible_play_hosts[0]
+
+- name: Configure Re6st with re6st-conf
+  shell: "re6st-conf --registry {{ install_slapos_comp1_re6st_registry }} --fingerprint {{ install_slapos_comp1_re6st_fingerprint }} --token {{ install_slapos_comp1_re6st_token }} -r title {{ install_slapos_comp1_computer_name }} -d {{ re6st_etc }} {{ install_slapos_comp1_re6st_location }}"
+  when:
+    - inventory_hostname == ansible_play_hosts[0]
+    - re6stnet_conf.stat.exists == False
+
+- name: Complete re6st config
+  ansible.builtin.blockinfile:
+    path: "{{ re6st_etc }}/re6stnet.conf"
+    block: |
+      log {{ re6st_root }}/re6st/log
+      run {{ re6st_root }}/re6st/run
+      state {{ re6st_root }}/re6st/state
+    marker: "# required for opensvc failover"
+    insertafter: EOF
+  when:
+    - inventory_hostname == ansible_play_hosts[0]
+    - re6stnet_conf.stat.exists == False
+
+- name: Enable re6st app management with OpenSVC
+  ansible.builtin.command: "om {{ install_slapos_comp1_svcpath }} enable --rid app#0"
+  register: enable
+  changed_when: enable.rc == 0
+  when:
+    - inventory_hostname == ansible_play_hosts[0]
+    - re6stnet_conf.stat.exists == False
+
+- name: Start re6st app management with OpenSVC
+  ansible.builtin.command: "om {{ install_slapos_comp1_svcpath }} start --rid app#0"
+  register: start
+  changed_when: start.rc == 0
+  when:
+    - inventory_hostname == ansible_play_hosts[0]
+    - re6stnet_conf.stat.exists == False
+
+- name: Force status evaluation
+  ansible.builtin.command: "om {{ install_slapos_comp1_svcpath }} print status -r"
+  changed_when: false
+  when:
+    - inventory_hostname == ansible_play_hosts[0]
+    - re6stnet_conf.stat.exists == False

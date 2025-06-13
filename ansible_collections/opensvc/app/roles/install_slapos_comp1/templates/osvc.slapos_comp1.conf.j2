@@ -43,28 +43,7 @@ type = ext4
 dev = {disk#3.exposed_devs[0]}
 mnt = /srv/{fqdn}
 shared = true
-blocking_post_provision = mkdir -p /srv/{fqdn}/re6st/etc/re6stnet /srv/{fqdn}/re6st/var/log/re6stnet /srv/{fqdn}/re6st/var/lib/re6stnet /srv/{fqdn}/slapos/srv/slapgrid /srv/{fqdn}/slapos/etc/opt
-
-[fs#1]
-type = bind
-dev = /srv/{fqdn}/re6st/etc/re6stnet
-mnt = /etc/re6stnet
-shared = true
-subset = binds
-
-[fs#2]
-type = bind
-dev = /srv/{fqdn}/re6st/var/log/re6stnet
-mnt = /var/log/re6stnet
-shared = true
-subset = binds
-
-[fs#3]
-type = bind
-dev = /srv/{fqdn}/re6st/var/lib/re6stnet
-mnt = /var/lib/re6stnet
-shared = true
-subset = binds
+blocking_post_provision = mkdir -p /srv/{fqdn}/re6st/etc/re6stnet /srv/{fqdn}/slapos/srv/slapgrid /srv/{fqdn}/slapos/etc/opt
 
 [fs#4]
 type = bind
