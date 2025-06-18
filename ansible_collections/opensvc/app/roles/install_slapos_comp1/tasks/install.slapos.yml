@@ -1,19 +1,17 @@
 ---
 
-- name: Set fact on slapos existence
-  ansible.builtin.set_fact:
-    slapos_is_installed: 'true'
+- name: Check if slapos has already been installed
+  ansible.builtin.shell:
+    cmd: which slapos
+  args:
+    executable: /bin/bash
+  register: slapos_command
+  failed_when: false
+  changed_when: false
 
-- name: Check for slapos existence
-  ansible.builtin.stat:
-    path: /etc/opt/slapos/slapos.cfg
-  register: slaposcfgfile
-
-- name: Set fact according to actual slapos existence
+- name: Set fact according to slapos existence
   ansible.builtin.set_fact:
-    slapos_is_installed: 'false'
-  when:
-    - not slaposcfgfile.stat.exists
+    slapos_is_installed: "{{ slapos_command.rc == 0 }}"
 
 - name: Download slapos installer
   ansible.builtin.get_url:
@@ -32,192 +30,17 @@
       ANSIBLE_LOG_PATH=~/ansible.slapos.log \g<1>
       --extra-vars slapos_master_url={{ install_slapos_comp1_master_url }}
       --extra-vars slapos_web_master_url={{ install_slapos_comp1_web_master_url }}
-      --extra-vars computer_name={{ install_slapos_comp1_computer_name }}
-      --extra-vars slapostoken={{ install_slapos_comp1_token }}
+      --extra-vars computer_name="noname"
+      --extra-vars slapostoken="notoken"
       --extra-vars interface_name={{ install_slapos_comp1_interface_name }}
       --extra-vars partition_number={{ install_slapos_comp1_partition_number }}
     backrefs: true
   when:
     - not slapos_is_installed
 
-- name: Launch slapos installer on first node
+- name: Launch slapos installer on both nodes
   ansible.builtin.command: /root/slapos.installer
-  register: slaposlogn1
-  changed_when: slaposlogn1.rc == 0
+  register: slaposlog
+  changed_when: slaposlog.rc == 0
   when:
     - not slapos_is_installed
-    - inventory_hostname == ansible_play_hosts[0]
-
-- name: Print return information from the previous task
-  ansible.builtin.debug:
-    var: slaposlogn1.stdout_lines
-    verbosity: 2
-  when:
-    - not slapos_is_installed
-    - inventory_hostname == ansible_play_hosts[0]
-
-- name: Display /etc/cron.d content
-  ansible.builtin.shell:
-    cmd: ls -l /etc/cron.d
-  args:
-    executable: /bin/bash
-  changed_when: false
-  when:
-    - not slapos_is_installed
-    - inventory_hostname == ansible_play_hosts[0]
-
-- name: Force supervisord.conf to be generated
-  ansible.builtin.shell:
-    cmd: slapos node instance
-  register: command_result
-  until: command_result.rc == 0
-  changed_when: command_result.rc == 0
-  retries: 60
-  delay: 10
-  args:
-    executable: /bin/bash
-  when:
-    - not slapos_is_installed
-    - inventory_hostname == ansible_play_hosts[0]
-
-- name: Wait until the file /srv/slapgrid/etc/supervisord.conf is present
-  ansible.builtin.wait_for:
-    path: /srv/slapgrid/etc/supervisord.conf
-  when:
-    - not slapos_is_installed
-    - inventory_hostname == ansible_play_hosts[0]
-
-- name: Ensure slapos is started
-  ansible.builtin.shell:
-    cmd: set -o pipefail && slapos node status | grep -w "^watchdog"
-  args:
-    executable: /bin/bash
-  changed_when: false
-  register: cmd_res
-  retries: 60
-  delay: 5
-  until: "'RUNNING' in cmd_res.stdout"
-  when:
-    - not slapos_is_installed
-    - inventory_hostname == ansible_play_hosts[0]
-
-- name: Stop slapos before failover
-  ansible.builtin.shell:
-    cmd: slapos node stop all && slapos node supervisorctl shutdown
-  args:
-    executable: /bin/bash
-  changed_when: false
-  register: cmd_res
-  when:
-    - not slapos_is_installed
-    - inventory_hostname == ansible_play_hosts[0]
-
-- name: Remove slapos crontab on first node
-  ansible.builtin.file:
-    path: /etc/cron.d/slapos-node
-    state: absent
-  when:
-    - not slapos_is_installed
-    - inventory_hostname == ansible_play_hosts[0]
-
-# slapos is now installed on first node
-# we failover the service on second node to proceed with the install
-
-- name: Switch service to second node
-  ansible.builtin.command: "om {{ install_slapos_comp1_svcpath }} switch --wait"
-  register: output
-  changed_when: output.rc == 0
-  when:
-    - not slapos_is_installed
-    - inventory_hostname == ansible_play_hosts[0]
-
-- name: Wait for service state up on second node
-  ansible.builtin.script:
-    cmd: ./files/osvc_wait.sh {{ ansible_hostname }} {{ install_slapos_comp1_svcpath }} avail up 300
-  changed_when: false
-  when:
-    - not slapos_is_installed
-    - inventory_hostname == ansible_play_hosts[1]
-
-- name: Wait until the file /etc/opt/slapcache.cfg is present
-  ansible.builtin.wait_for:
-    path: /etc/opt/slapcache.cfg
-  when:
-    - not slapos_is_installed
-    - inventory_hostname == ansible_play_hosts[1]
-
-- name: Launch slapos installer on second node
-  ansible.builtin.command: /root/slapos.installer
-  register: output
-  changed_when: output.rc == 0
-  when:
-    - not slapos_is_installed
-    - inventory_hostname == ansible_play_hosts[1]
-
-- name: Ensure slapos is started
-  ansible.builtin.shell:
-    cmd: set -o pipefail && slapos node status | grep -w "^watchdog"
-  args:
-    executable: /bin/bash
-  changed_when: false
-  register: cmd_res
-  retries: 30
-  delay: 2
-  until: "'RUNNING' in cmd_res.stdout"
-  when:
-    - not slapos_is_installed
-    - inventory_hostname == ansible_play_hosts[1]
-
-- name: Remove slapos crontab on second node
-  ansible.builtin.file:
-    path: /etc/cron.d/slapos-node
-    state: absent
-  when:
-    - not slapos_is_installed
-    - inventory_hostname == ansible_play_hosts[1]
-
-- name: Enable slapos app management with OpenSVC
-  ansible.builtin.command: "om {{ install_slapos_comp1_svcpath }} enable --rid app#1"
-  register: output
-  changed_when: output.rc == 0
-  when:
-    - not slapos_is_installed
-    - inventory_hostname == ansible_play_hosts[1]
-
-- name: Force status evaluation
-  ansible.builtin.command: "om {{ install_slapos_comp1_svcpath }} print status -r"
-  changed_when: false
-  when:
-    - not slapos_is_installed
-    - inventory_hostname == ansible_play_hosts[1]
-
-- name: Force sync#i0 before switching the service
-  ansible.builtin.command: "om {{ install_slapos_comp1_svcpath }} sync nodes --rid sync#i0"
-  changed_when: false
-  when:
-    - not slapos_is_installed
-    - inventory_hostname == ansible_play_hosts[1]
-
-- name: Switch service to first node
-  ansible.builtin.command: "om {{ install_slapos_comp1_svcpath }} switch --wait"
-  register: output
-  changed_when: output.rc == 0
-  when:
-    - not slapos_is_installed
-    - inventory_hostname == ansible_play_hosts[1]
-
-- name: Wait for service state up on first node
-  ansible.builtin.script:
-    cmd: ./files/osvc_wait.sh {{ ansible_hostname }} {{ install_slapos_comp1_svcpath }} avail up 300
-  changed_when: false
-  when:
-    - not slapos_is_installed
-    - inventory_hostname == ansible_play_hosts[0]
-
-- name: Enable slapos task management with OpenSVC
-  ansible.builtin.command: "om {{ install_slapos_comp1_svcpath }} enable --rid task"
-  register: output
-  changed_when: output.rc == 0
-  when:
-    - not slapos_is_installed
-    - inventory_hostname == ansible_play_hosts[0]

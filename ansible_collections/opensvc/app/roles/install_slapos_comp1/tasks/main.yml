@@ -9,5 +9,5 @@
 - name: Configure re6st component
   ansible.builtin.include_tasks: "config.re6st.yml"
 
-#- name: Deploy slapos component
-#  ansible.builtin.include_tasks: "install.slapos.yml"
+- name: Deploy slapos component
+  ansible.builtin.include_tasks: "install.slapos.yml"
