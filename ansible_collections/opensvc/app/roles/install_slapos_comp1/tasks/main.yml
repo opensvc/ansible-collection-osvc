@@ -11,3 +11,7 @@
 
 - name: Deploy slapos component
   ansible.builtin.include_tasks: "install.slapos.yml"
+
+- name: Configure slapos component
+  ansible.builtin.include_tasks: "config.slapos.yml"
+
