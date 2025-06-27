@@ -43,21 +43,7 @@ type = ext4
 dev = {disk#3.exposed_devs[0]}
 mnt = /srv/{fqdn}
 shared = true
-blocking_post_provision = mkdir -p /srv/{fqdn}/re6st/etc/re6stnet /srv/{fqdn}/slapos/srv/slapgrid /srv/{fqdn}/slapos/etc/opt
-
-[fs#4]
-type = bind
-dev = /srv/{fqdn}/slapos/srv/slapgrid
-mnt = /srv/slapgrid
-shared = true
-subset = binds
-
-[fs#5]
-type = bind
-dev = /srv/{fqdn}/slapos/etc/opt
-mnt = /etc/opt
-shared = true
-subset = binds
+blocking_post_provision = mkdir -p /srv/{fqdn}/re6st/etc/re6stnet /srv/{fqdn}/slapos/srv/slapgrid /srv/{fqdn}/slapos/etc/opt /srv/{fqdn}/slapos/log
 
 [app#0]
 type = forking
@@ -77,51 +63,57 @@ check = {name}-cfg/slapos status
 subset = slapos
 status_log = true
 disable = true
+environment = SLAPOS_CONFIGURATION=/srv/{fqdn}/slapos/etc/opt/slapos/slapos.cfg
 
 [task#collect]
 type = host
-command = /bin/sh -c '/opt/slapos/bin/slapos node collect >> /opt/slapos/log/slapos-node-collect.log 2>&1'
+command = /bin/sh -c '/opt/slapos/bin/slapos node collect >> /srv/{fqdn}/slapos/log/slapos-node-collect.log 2>&1'
 schedule = @1m
 check = last_run
 subset = admin
 run_requires = app#0(up) app#1(up)
 disable = true
+environment = SLAPOS_CONFIGURATION=/srv/{fqdn}/slapos/etc/opt/slapos/slapos.cfg
 
 [task#software]
 type = host
-command = /opt/slapos/bin/slapos node software --now --maximal_delay=30 --verbose --logfile=/opt/slapos/log/slapos-node-software.log
+command = /opt/slapos/bin/slapos node software --now --maximal_delay=30 --verbose --logfile=/srv/{fqdn}/slapos/log/slapos-node-software.log
 schedule = @1m
 check = last_run
 subset = admin
 run_requires = app#0(up) app#1(up)
 disable = true
+environment = SLAPOS_CONFIGURATION=/srv/{fqdn}/slapos/etc/opt/slapos/slapos.cfg
 
 [task#addpart]
 type = host
-command = /opt/slapos/bin/slapos node instance --now --maximal_delay=20 --promise-timeout 20 --verbose --logfile=/opt/slapos/log/slapos-node-instance.log
+command = /opt/slapos/bin/slapos node instance --now --maximal_delay=20 --promise-timeout 20 --verbose --logfile={slapos_root}/log/slapos-node-instance.log
 schedule = @1m
 check = last_run
 subset = admin
 run_requires = app#0(up) app#1(up)
 disable = true
+environment = SLAPOS_CONFIGURATION=/srv/{fqdn}/slapos/etc/opt/slapos/slapos.cfg
 
 [task#delpart]
 type = host
-command = /opt/slapos/bin/slapos node report --now --maximal_delay=3600 --verbose --logfile=/opt/slapos/log/slapos-node-report.log
+command = /opt/slapos/bin/slapos node report --now --maximal_delay=3600 --verbose --logfile=/srv/{fqdn}/slapos/log/slapos-node-report.log
 schedule = @60m
 check = last_run
 subset = admin
 run_requires = app#0(up) app#1(up)
 disable = true
+environment = SLAPOS_CONFIGURATION=/srv/{fqdn}/slapos/etc/opt/slapos/slapos.cfg
 
 [task#chkaddip]
 type = host
-command = /bin/sh -c '/opt/slapos/bin/slapos node format --now >> /opt/slapos/log/slapos-node-format.log'
+command = /bin/sh -c '/opt/slapos/bin/slapos node format --now >> /srv/{fqdn}/slapos/log/slapos-node-format.log'
 schedule = @60m
 check = last_run
 subset = admin
 run_requires = app#0(up) app#1(up)
 disable = true
+environment = SLAPOS_CONFIGURATION=/srv/{fqdn}/slapos/etc/opt/slapos/slapos.cfg
 
 [subset#task:admin]
 parallel = true
