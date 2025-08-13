@@ -87,7 +87,7 @@ environment = SLAPOS_CONFIGURATION=/srv/{fqdn}/slapos/etc/opt/slapos/slapos.cfg
 
 [task#addpart]
 type = host
-command = /opt/slapos/bin/slapos node instance --now --maximal_delay=20 --promise-timeout 20 --verbose --logfile={slapos_root}/log/slapos-node-instance.log
+command = /opt/slapos/bin/slapos node instance --now --maximal_delay=20 --promise-timeout 20 --verbose --logfile=/srv/{fqdn}/slapos/log/slapos-node-instance.log
 schedule = @1m
 check = last_run
 subset = admin
