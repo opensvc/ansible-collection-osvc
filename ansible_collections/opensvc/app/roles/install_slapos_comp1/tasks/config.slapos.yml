@@ -29,7 +29,7 @@
     - inventory_hostname == ansible_play_hosts[0]
 
 - name: Check if configuration already exists
-  stat: path="{{ slapos_etc }}/slapos.conf"
+  stat: path="{{ slapos_etc }}/slapos.cfg"
   register: slapos_conf
   when:
     - inventory_hostname == ansible_play_hosts[0]
