@@ -23,6 +23,7 @@
   ansible.builtin.set_fact:
     slapos_root: "{{ output.stdout }}/slapos"
     slapos_etc: "{{ output.stdout }}/slapos/etc/opt/slapos"
+    slapos_log: "{{ output.stdout }}/slapos/log"
     slapos_soft: "{{ output.stdout }}/slapos/opt/slapgrid"
     slapos_inst: "{{ output.stdout }}/slapos/srv/slapgrid"
   when:
@@ -40,20 +41,18 @@
     - inventory_hostname == ansible_play_hosts[0]
     - slapos_conf.stat.exists == False
 
-      #- name: Complete slapos config
-      #  ansible.builtin.blockinfile:
-      #    path: "{{ slapos_etc }}/slapos.conf"
-      #    block: |
-      #      log {{ slapos_root }}/slapos/log
-      #      run {{ slapos_root }}/slapos/run
-      #      state {{ slapos_root }}/slapos/state
-      #    marker: "# required for opensvc failover"
-      #    insertafter: EOF
-      #  when:
-      #    - inventory_hostname == ansible_play_hosts[0]
-      #    - slapos_conf.stat.exists == False
-      #
-      #
+- name: Complete slapos config
+  ansible.builtin.shell:
+    cmd: |
+      sed -i 's/computer_xml = /opt/slapos/slapos.xml@computer_xml = {{ slapos_root }}/slapos.xml@' {{ slapos_etc }}/slapos.cfg
+      sed -i 's@/opt/slapos/log@{{ slapos_log }}@' {{ slapos_etc }}/slapos.cfg
+      sed -i 's@pid_folder = /srv/slapgrid/var/run@pid_folder = {{ slapos_inst }}/var/run@' {{ slapos_etc }}/slapos.cfg
+  args:
+    executable: /bin/bash
+  register: slapos_cfg_command
+  when:
+    - inventory_hostname == ansible_play_hosts[0]
+    - slapos_conf.stat.exists == False
 
 - name: Enable slapos app management with OpenSVC
   ansible.builtin.command: "om {{ install_slapos_comp1_svcpath }} enable --rid app#1"
@@ -72,6 +71,29 @@
     - slapos_conf.stat.exists == False
 
 - name: Force status evaluation
+  ansible.builtin.command: "om {{ install_slapos_comp1_svcpath }} print status -r"
+  changed_when: false
+  when:
+    - inventory_hostname == ansible_play_hosts[0]
+    - slapos_conf.stat.exists == False
+
+- name: Wait for service state up on first node
+  ansible.builtin.script:
+    cmd: ./files/osvc_wait.sh {{ ansible_hostname }} {{ install_slapos_comp1_svcpath }} avail up 300
+  changed_when: false
+  when:
+    - inventory_hostname == ansible_play_hosts[0]
+    - slapos_conf.stat.exists == False
+
+- name: Enable slapos task management with OpenSVC
+  ansible.builtin.command: "om {{ install_slapos_comp1_svcpath }} enable --rid task"
+  register: output
+  changed_when: output.rc == 0
+  when:
+    - inventory_hostname == ansible_play_hosts[0]
+    - slapos_conf.stat.exists == False
+
+- name: Display final service state
   ansible.builtin.command: "om {{ install_slapos_comp1_svcpath }} print status -r"
   changed_when: false
   when:
