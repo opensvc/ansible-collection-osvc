@@ -43,7 +43,7 @@ type = ext4
 dev = {disk#3.exposed_devs[0]}
 mnt = /srv/{fqdn}
 shared = true
-blocking_post_provision = mkdir -p /srv/{fqdn}/re6st/etc/re6stnet /srv/{fqdn}/slapos/srv/slapgrid /srv/{fqdn}/slapos/etc/opt /srv/{fqdn}/slapos/log
+blocking_post_provision = mkdir -p /srv/{fqdn}/re6st/etc/re6stnet /srv/{fqdn}/slapos/srv/slapgrid /srv/{fqdn}/slapos/etc/opt /srv/{fqdn}/slapos/log /srv/{fqdn}/slapos/opt/slapgrid
 
 [app#0]
 type = forking
