@@ -16,10 +16,22 @@
     state: present
   vars:
     packages:
-      - podman
       - psmisc
       - sg3_utils
   when:
+    - ansible_distribution_major_version | int >= 8
+
+- name: Check if docker is present
+  command: which docker
+  register: docker_check
+  ignore_errors: true
+
+- name: Installer Podman (RHEL/CentOS/Fedora)
+  dnf:
+    name: podman
+    state: present
+  when:
+    - docker_check.rc != 0
     - ansible_distribution_major_version | int >= 8
 
 - name: Install jq if not present
