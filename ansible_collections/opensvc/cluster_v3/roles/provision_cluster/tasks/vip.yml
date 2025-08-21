@@ -71,6 +71,7 @@
     --kw ip#0.name={{ provision_cluster_vip_name }}
     --kw ip#0.netmask={{ provision_cluster_vip_netmask }}
     --kw ip#0.dev={{ provision_cluster_node_prd_nic }}
+    --wait
   register: output
   changed_when: output.rc == 0
   run_once: true
@@ -98,7 +99,7 @@
     - not vip_created
 
 - name: Unfreeze vip service
-  ansible.builtin.command: 'om system/svc/vip thaw'
+  ansible.builtin.command: 'om system/svc/vip thaw --wait'
   run_once: true
   register: output
   changed_when: output.rc == 0
