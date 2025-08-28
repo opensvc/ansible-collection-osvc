@@ -1,0 +1,122 @@
+---
+- hosts: all
+  gather_facts: false
+  vars:
+    # DRBD variables
+    drbd_svcname: 'demo/svc/drbd'
+    drbd_ids: [2, 3, 4]
+    loop_file_size: '200M'
+    lv_size: '64M'
+    mnt_root: '/srv'
+    status_schedule: '@1'
+
+  tasks:
+    - name: Assume DRBD service already exists
+      ansible.builtin.set_fact:
+        drbd_created: true
+      run_once: true
+
+    - name: Check DRBD service existence
+      ansible.builtin.command: "om {{ drbd_svcname }} ls"
+      changed_when: false
+      register: drbd_cmd_res
+      failed_when: false
+      run_once: true
+
+    - name: Set DRBD service as not created if missing
+      ansible.builtin.set_fact:
+        drbd_created: false
+      when: >
+        drbd_cmd_res.rc != 0
+        or (drbd_cmd_res.stdout is not search(drbd_svcname))
+      run_once: true
+
+    - name: Create empty DRBD service
+      ansible.builtin.command: "om {{ drbd_svcname }} create --wait"
+      when: not drbd_created
+      run_once: true
+
+    - name: Set service cluster-wide
+      ansible.builtin.command: >
+        om {{ drbd_svcname }} set
+        --kw nodes={clusternodes}
+      when: not drbd_created
+      run_once: true
+
+    # Storage stack: loopback -> VG -> LV -> DRBD -> FS
+    - name: Add loopback disk image (disk#0)
+      ansible.builtin.command: >
+        om {{ drbd_svcname }} set
+        --kw disk#0.type=loop
+        --kw disk#0.file=/opt/{fqdn}.img
+        --kw disk#0.size={{ loop_file_size }}
+        --kw disk#0.standby=true
+      when: not drbd_created
+      run_once: true
+
+    - name: Add LVM VG on loopback (disk#1)
+      ansible.builtin.command: >
+        om {{ drbd_svcname }} set
+        --kw disk#1.type=vg
+        --kw disk#1.pvs={disk#0.file}
+        --kw disk#1.name={fqdn}
+        --kw disk#1.standby=true
+      when: not drbd_created
+      run_once: true
+
+    - name: Add LVs, DRBD resources and filesystems
+      ansible.builtin.shell: |
+        set -e
+        id="{{ item }}"
+        lv_rid="disk#lv${id}"
+        drbd_rid="disk#slv${id}"
+        fs_rid="fs#${id}"
+
+        # LV
+        om {{ drbd_svcname }} set \
+          --kw ${lv_rid}.type=lv \
+          --kw ${lv_rid}.name=drbd_lv_${id} \
+          --kw ${lv_rid}.vg={disk#1.name} \
+          --kw ${lv_rid}.size={{ lv_size }} \
+          --kw ${lv_rid}.standby=true
+
+        # DRBD
+        om {{ drbd_svcname }} set \
+          --kw ${drbd_rid}.type=drbd \
+          --kw ${drbd_rid}.res=drbdres${id} \
+          --kw ${drbd_rid}.disk=/dev/{disk#1.name}/{${lv_rid}.name} \
+          --kw ${drbd_rid}.standby=true
+
+        # Filesystem
+        om {{ drbd_svcname }} set \
+          --kw ${fs_rid}.type=ext4 \
+          --kw ${fs_rid}.dev={${drbd_rid}.exposed_devs[0]} \
+          --kw ${fs_rid}.mnt={{ mnt_root }}/drbd_${id} \
+          --kw ${fs_rid}.shared=true \
+          --kw ${fs_rid}.user=root \
+          --kw ${fs_rid}.group=root \
+          --kw ${fs_rid}.perm=755
+      args:
+        executable: /bin/bash
+      loop: "{{ drbd_ids }}"
+      when: not drbd_created
+      run_once: true
+
+    - name: Disable default sync#i0
+      ansible.builtin.command: >
+        om {{ drbd_svcname }} set
+        --kw sync#i0.disable=true
+      when: not drbd_created
+      run_once: true
+
+    - name: Tune status evaluation schedule
+      ansible.builtin.command: >
+        om {{ drbd_svcname }} set
+        --kw status_schedule={{ status_schedule }}
+      when: not drbd_created
+      run_once: true
+
+    - name: Provision the DRBD service
+      ansible.builtin.command: "om {{ drbd_svcname }} provision --wait"
+      when: not drbd_created
+      run_once: true

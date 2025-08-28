@@ -1,0 +1,138 @@
+---
+- hosts: all
+  gather_facts: false
+  vars:
+    haproxy_svc: "system/svc/haproxy"
+    haproxy_sec: "system/sec/haproxy"
+    haproxy_cfg: "system/cfg/haproxy"
+    haproxy_ip: "10.20.0.2"
+    haproxy_netmask: "24"
+    haproxy_dev: "br-prd"
+    haproxy_cfg_acme_head_url: "https://raw.githubusercontent.com/opensvc/opensvc_templates/main/igw_haproxy/acme-config-split/acme-split-cfg-haproxy-head.cfg"
+    haproxy_cfg_gencfg_url: "https://raw.githubusercontent.com/opensvc/opensvc_templates/main/igw_haproxy/acme-config-split/gencfg.sh"
+    haproxy_cfg_acme_webroot_url: "https://raw.githubusercontent.com/opensvc/opensvc_templates/main/igw_haproxy/common/acme-http01-webroot.lua"
+    haproxy_cfg_url: "https://raw.githubusercontent.com/opensvc/opensvc_templates/main/igw_haproxy/acme-config-split/acme-svc-split-config.conf"
+
+  tasks:
+    - name: Check if HAProxy service exists
+      ansible.builtin.command: "om {{ haproxy_svc }} ls"
+      changed_when: false
+      register: haproxy_service_check
+      failed_when: false
+      run_once: true
+
+    - name: Set HAProxy service created fact
+      ansible.builtin.set_fact:
+        haproxy_service_created: "{{ haproxy_service_check.rc == 0 }}"
+      run_once: true
+
+    - name: Create HAProxy security object if missing
+      ansible.builtin.command: "om {{ haproxy_sec }} create --wait"
+      when: not haproxy_service_created
+      run_once: true
+
+    - name: Configure HAProxy CA
+      ansible.builtin.command: >
+        om {{ haproxy_sec }} set
+        --kw cn='haproxy {clustername} certificate'
+        --kw c='FR' --kw l='Paris'
+        --kw o='OpenSVC'
+        --kw ou=haproxy-{clustername}
+        --kw email='haproxy-{clustername}@opensvc.com'
+      when: not haproxy_service_created
+      run_once: true
+
+    - name: Generate HAProxy certificate if missing
+      ansible.builtin.command: "om {{ haproxy_sec }} certificate create"
+      when: not haproxy_service_created
+      run_once: true
+
+    - name: Set HAProxy pool
+      ansible.builtin.command: >
+        om cluster set --kw pool#sys.type=drbd
+        --kw pool#sys.status_schedule=@1
+        --kw pool#sys.vg=data
+      when: not haproxy_service_created
+      run_once: true
+
+    - name: Check if HAProxy cfg exists
+      ansible.builtin.command: "om {{ haproxy_cfg }} ls"
+      changed_when: false
+      register: haproxy_cfg_check
+      failed_when: false
+      run_once: true
+
+    - name: Create HAProxy cfg object if missing
+      ansible.builtin.command: "om {{ haproxy_cfg }} create --wait"
+      when: haproxy_cfg_check.rc != 0
+      run_once: true
+
+    - name: Add haproxy.cfg
+      ansible.builtin.command: "om {{ haproxy_cfg }} add --key haproxy.cfg"
+      when: haproxy_cfg_check.rc != 0
+      run_once: true
+
+    - name: Add haproxy.cfg.temp
+      ansible.builtin.command: "om {{ haproxy_cfg }} add --key haproxy.cfg.temp"
+      when: haproxy_cfg_check.rc != 0
+      run_once: true
+
+    - name: Add haproxy.cfg.head
+      ansible.builtin.command: >
+        om {{ haproxy_cfg }} add
+        --key haproxy.cfg.head
+        --from {{ haproxy_cfg_acme_head_url }}
+      when: haproxy_cfg_check.rc != 0
+      run_once: true
+
+    - name: Add haproxy gencfg.sh
+      ansible.builtin.command: >
+        om {{ haproxy_cfg }} add
+        --key gencfg.sh
+        --from {{ haproxy_cfg_gencfg_url }}
+      when: not haproxy_service_created
+      run_once: true
+
+    - name: Add haproxy acme webroot
+      ansible.builtin.command: >
+        om {{ haproxy_cfg }} add
+        --key acme-http01-webroot.lua
+        --from {{ haproxy_cfg_acme_webroot_url }}
+      when: not haproxy_service_created
+      run_once: true
+
+    - name: Create haproxy svc
+      ansible.builtin.command:
+        argv:
+          - om
+          - "system/svc/haproxy"
+          - create
+          - --config
+          - "{{ haproxy_cfg_url }}"
+          - --env
+          - "public_interface={{ haproxy_dev }}"
+          - --env
+          - "public_ipaddr={{ haproxy_ip }}"
+          - --env
+          - "public_netmask={{ haproxy_netmask }}"
+          - --env
+          - "backendnet=backendipv4"
+      when: not haproxy_service_created
+      run_once: true
+
+    - name: Set HAProxy public ip
+      ansible.builtin.command: >
+        om {{ haproxy_svc }} set
+        --kw ip#1.netns=container#0
+        --kw ip#1.ipname={env.public_ipaddr}
+        --kw ip#1.netmask={env.public_netmask}
+        --kw ip#1.ipdev={env.public_interface}
+        --kw ip#1.shared=true
+        --kw ip#1.type=netns
+        --kw container#0.start_timeout=1m
+        --kw container#1.start_timeout=1m
+
+    - name: Provision HAProxy svc
+      ansible.builtin.command: "om {{ haproxy_svc }} provision --wait"
+      when: not haproxy_service_created
+      run_once: true

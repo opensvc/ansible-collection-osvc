@@ -1,0 +1,83 @@
+---
+- hosts: all
+  tasks:
+    - name: import role provision_cluster
+      import_role:
+        name: opensvc.cluster_v3.provision_cluster
+      vars:
+        provision_cluster_clustername: v3democluster
+        provision_cluster_hb_timeout: 25s
+        provision_cluster_update_etc_hosts: true
+        provision_cluster_configure_vip: true
+        provision_cluster_vip_name: '10.20.0.20'
+        provision_cluster_vip_netmask: '24'
+        provision_cluster_vip_dev: 'br-prd'
+        provision_cluster_configure_ssh_trust: true
+        provision_cluster_repoenv: 'dev'
+
+    - name: import role install_cni
+      import_role:
+        name: opensvc.cluster_v3.install_cni
+      vars:
+        install_cni_plugins_dir: /opt/cni/bin
+        install_cni_config_dir: /var/lib/opensvc/cni/net.d
+
+    - name: import role install_backend_network
+      import_role:
+        name: opensvc.cluster_v3.install_backend_network
+      vars:
+        install_backend_network_name: backendipv4
+        install_backend_network_subnet_range: 10.123.0.0/16
+        install_backend_network_subnet_ips_per_node: 4096
+
+    - name: import role install_backend_network
+      import_role:
+        name: opensvc.cluster_v3.install_backend_network
+      vars:
+        install_backend_network_name: backendipv6
+        install_backend_network_subnet_range: fdfe::/112
+        install_backend_network_subnet_ips_per_node: 8192
+
+    - name: import role install_dns
+      import_role:
+        name: opensvc.cluster_v3.install_dns
+
+    - name: download webapp
+      ansible.builtin.command: |
+        curl -L -o /usr/share/opensvc/html/index.html
+        https://github.com/opensvc/om3-webapp/releases/download/v0.0.0-alpha21/index.html
+
+    - name: add user
+      ansible.builtin.command: |
+        om system/usr/demo create --kw grant=root
+      run_once: true
+
+    - name: set password
+      ansible.builtin.command: |
+        om system/usr/demo add --key password --value demo
+      run_once: true
+
+    - name: configure resolver dns servers
+      ansible.builtin.command: |
+        nmcli con mod br-prd ipv4.dns "10.20.0.20 10.20.0.11 10.20.0.12"
+
+    - name: configure resolver search domains
+      ansible.builtin.command: |
+        nmcli con mod br-prd ipv4.dns-search
+        "svc.v3democluster vdc.opensvc.com opensvc.com"
+
+    - name: configure resolver apply config
+      ansible.builtin.command: |
+        nmcli con up br-prd
+
+    - name: configure mpathpersist
+      ansible.builtin.command: |
+        cp /etc/multipath.conf.mpathpersist /etc/multipath.conf
+
+    - name: restart multipathd
+      ansible.builtin.command: |
+        systemctl restart multipathd
+
+    - name: rescan capabilities
+      ansible.builtin.command: |
+        om node capabilities scan
