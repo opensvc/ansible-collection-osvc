@@ -80,7 +80,7 @@
 
 - name: Set fact for filter expression
   ansible.builtin.set_fact:
-    provision_cluster_filter_expression: "'InstanceConfigUpdated,path=system/svc/vip,node={{ ansible_play_hosts[0] }},instance_status.overall=\"up\"'"
+    provision_cluster_filter_expression: "'InstanceStatusUpdated,path=system/svc/vip,node={{ ansible_play_hosts[0] }},instance_status.overall=\"up\"'"
   when:
     - not vip_created
 
