@@ -43,7 +43,7 @@
 
 - name: Install opensvc-server package
   ansible.builtin.dnf:
-    name: opensvc-server
+    name: "{{ provision_cluster_package_name }}"
     state: present
     update_cache: true
     enablerepo: opensvc

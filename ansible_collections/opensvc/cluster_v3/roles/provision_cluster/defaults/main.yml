@@ -23,6 +23,8 @@ provision_cluster_repositories:
 
 provision_cluster_repositories_gpgkey_url: 'https://packages.opensvc.com/gpg.public.key.asc'
 
+provision_cluster_package_name: "opensvc-server"
+
 # set to something unique
 provision_cluster_clustername: demo
 

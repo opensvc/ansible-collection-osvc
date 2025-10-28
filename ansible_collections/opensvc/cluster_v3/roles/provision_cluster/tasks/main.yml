@@ -32,6 +32,11 @@
     msg: "{{ opensvc_repo_url }}"
     verbosity: 2
 
+- name: Debug package name
+  ansible.builtin.debug:
+    msg: "{{ provision_cluster_package_name }}"
+    verbosity: 2
+
 - name: Include OS variables
   ansible.builtin.include_vars: "{{ ansible_os_family }}.yml"
 
