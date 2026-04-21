@@ -1,4 +1,4 @@
-FROM python:3.13-alpine
+FROM python:3.14-alpine
 
 LABEL maintainer="OpenSVC Ansible Team <ansible@opensvc.com>"
 LABEL vendor1="OpenSVC"

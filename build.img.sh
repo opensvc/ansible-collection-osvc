@@ -1,6 +1,6 @@
 #!/bin/bash
 
-ANSIBLE_VERSIONS="8.0 9.0 10.0 11.1.0"
+ANSIBLE_VERSIONS="8.0 9.0 10.0 11.1.0 13.5.0 14.0.0a2"
 
 function title()
 {
