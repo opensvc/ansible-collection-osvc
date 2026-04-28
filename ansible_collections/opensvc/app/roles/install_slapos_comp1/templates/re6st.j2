@@ -24,7 +24,8 @@ function stop {
 
 function start {
     [ -r $GEOIP2_MMDB ] && export GEOIP2_MMDB
-    cd $RE6STETC && nohup re6stnet @re6stnet.conf >> /dev/null 2>&1 &
+    cd $RE6STETC || return 1
+    nohup re6stnet @re6stnet.conf > /dev/null 2>&1 </dev/null &
 }
 
 function wait_for_end_of_tasks {
