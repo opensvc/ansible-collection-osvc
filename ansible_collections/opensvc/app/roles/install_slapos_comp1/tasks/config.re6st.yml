@@ -7,7 +7,6 @@
   when:
     - inventory_hostname == ansible_play_hosts[0]
 
-
 - name: Get fs install root
   ansible.builtin.command: "om {{ install_slapos_comp1_svcpath }} eval --kw fs#0.mnt"
   register: output
@@ -69,3 +68,14 @@
   when:
     - inventory_hostname == ansible_play_hosts[0]
     - re6stnet_conf.stat.exists == False
+    - opensvc_major is defined and opensvc_major | int == 2
+  ignore_errors: true
+
+- name: Force status evaluation (v3 flat output)
+  ansible.builtin.command: "om {{ install_slapos_comp1_svcpath }} print status --output flat"
+  changed_when: false
+  when:
+    - inventory_hostname == ansible_play_hosts[0]
+    - re6stnet_conf.stat.exists == False
+    - opensvc_major is defined and opensvc_major | int == 3
+  ignore_errors: true

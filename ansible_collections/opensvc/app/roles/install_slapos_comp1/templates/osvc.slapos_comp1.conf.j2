@@ -47,19 +47,19 @@ blocking_post_provision = mkdir -p /srv/{fqdn}/re6st/etc/re6stnet /srv/{fqdn}/sl
 
 [app#0]
 type = forking
-start = {name}-cfg/re6st start
-stop = {name}-cfg/re6st stop
-check = {name}-cfg/re6st status
+start = {volume#0.mnt}/re6st start
+stop  = {volume#0.mnt}/re6st stop
+check = {volume#0.mnt}/re6st status
 subset = re6st
 status_log = true
 disable = true
 
 [app#1]
 type = forking
-start = {name}-cfg/slapos start
+start = {volume#0.mnt}/slapos start
 start_timeout = 600
-stop = {name}-cfg/slapos stop
-check = {name}-cfg/slapos status
+stop = {volume#0.mnt}/slapos stop
+check = {volume#0.mnt}/slapos status
 subset = slapos
 status_log = true
 disable = true
