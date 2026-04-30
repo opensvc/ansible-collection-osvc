@@ -1,4 +1,4 @@
-ansible~=13.5.0
+ansible~=11.13.0
 pylint
 pyyaml
 ansible-lint
