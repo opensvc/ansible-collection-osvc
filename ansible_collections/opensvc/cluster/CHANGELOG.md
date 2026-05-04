@@ -1,3 +1,9 @@
+## 1.3.0
+
+- Bump to Ansible Core 2.16 and Python 3.12 minimum version
+- Fix variable definition
+- Fix /etc/hosts file build
+
 ## 1.2.1
 
 - Fix command-instead-of-shell warning during galaxy import
