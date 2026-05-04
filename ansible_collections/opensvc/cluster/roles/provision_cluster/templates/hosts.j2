@@ -1,4 +1,6 @@
 {% for item in play_hosts %}
-{% set short_name = item.split('.') %}
-{{ hostvars[item]['ansible_host'] }}  {{ item }} {{ short_name[0] }}
+{% set short_name = item.split('.')[0] %}
+{% set ip_v4 = hostvars[item]['ansible_default_ipv4']['address'] | default(none) %}
+{% set ip_v6 = hostvars[item]['ansible_default_ipv6']['address'] | default(none) %}
+{{ ip_v4 | default(ip_v6, true) | default('127.0.0.1', true) }} {{ item }} {{ short_name }}
 {% endfor %}
