@@ -2,7 +2,7 @@
 
 - name: Set facts on environment configmaps creation
   ansible.builtin.set_fact:
-    osvc_collector_environ_cfg_created: 'true'
+    install_collector_osvc_collector_environ_cfg_created: 'true'
   run_once: true
 
 - name: Check for environment configmaps existence
@@ -13,7 +13,7 @@
 
 - name: Set fact according to actual environment configmaps existence
   ansible.builtin.set_fact:
-    osvc_collector_environ_cfg_created: 'false'
+    install_collector_osvc_collector_environ_cfg_created: 'false'
   run_once: true
   when:
     - >
@@ -24,20 +24,20 @@
 - name: Create environment configmaps
   ansible.builtin.command: om {{ install_collector_environ_cfgname }} create
   run_once: true
-  register: output
-  changed_when: output.rc == 0
+  register: install_collector_output
+  changed_when: install_collector_output.rc == 0
   when:
-    - not osvc_collector_environ_cfg_created
+    - not install_collector_osvc_collector_environ_cfg_created
 
 - name: Load environment configmaps variable
   ansible.builtin.command: >
            om {{ install_collector_environ_cfgname }}
            add --key {{ item.key }} --from {{ item.value }}
   run_once: true
-  register: output
-  changed_when: output.rc == 0
+  register: install_collector_output
+  changed_when: install_collector_output.rc == 0
   when:
-    - not osvc_collector_environ_cfg_created
+    - not install_collector_osvc_collector_environ_cfg_created
   with_items:
     - {key: "nginx.conf", value: "{{ install_collector_nginx_conf_file }}"}
     - {key: "dbdump.sh", value: "{{ install_collector_dbdump_script }}"}
