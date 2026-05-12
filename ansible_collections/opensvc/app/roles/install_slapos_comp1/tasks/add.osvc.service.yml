@@ -232,20 +232,11 @@
     - inventory_hostname == ansible_play_hosts[0]
     - install_slapos_comp1_opensvc_major | int == 2
 
-# - name: Remove obsolete sync#i0 resource (v3)
-#  block:
-#    - name: Delete sync#i0 via config update
-#      ansible.builtin.command: "om {{ install_slapos_comp1_svcpath }} config update --delete sync#i0"
-#      register: del_res
-#      failed_when: false
-#      changed_when: del_res.rc == 0
-#
-#    - name: Sync service after deletion
-#      ansible.builtin.command: "om {{ install_slapos_comp1_svcpath }} sync full"
-#      when: del_res.rc == 0
-#      changed_when: false
-#
-#  when: install_slapos_comp1_opensvc_major | int == 3
-#  run_once: true
-#  delegate_to: "{{ groups['all'][0] }}"
-#  ignore_errors: true
+- name: Delete sync#i0 via config update (v3)
+  ansible.builtin.command: "om {{ install_slapos_comp1_svcpath }} config update --delete sync#i0"
+  register: install_slapos_comp1_del_res
+  failed_when: install_slapos_comp1_del_res.rc != 0
+  changed_when: install_slapos_comp1_del_res.rc == 0
+  when:
+    - inventory_hostname == ansible_play_hosts[0]
+    - install_slapos_comp1_opensvc_major | int == 3
