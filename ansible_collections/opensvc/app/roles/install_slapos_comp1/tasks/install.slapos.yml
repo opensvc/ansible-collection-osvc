@@ -5,13 +5,13 @@
     cmd: which slapos
   args:
     executable: /bin/bash
-  register: slapos_command
+  register: install_slapos_comp1_slapos_command
   failed_when: false
   changed_when: false
 
 - name: Set fact according to slapos existence
   ansible.builtin.set_fact:
-    slapos_is_installed: "{{ slapos_command.rc == 0 }}"
+    install_slapos_comp1_slapos_is_installed: "{{ install_slapos_comp1_slapos_command.rc == 0 }}"
 
 - name: Download slapos installer
   ansible.builtin.get_url:
@@ -20,7 +20,7 @@
     mode: '0750'
     force: true
   when:
-    - not slapos_is_installed
+    - not install_slapos_comp1_slapos_is_installed
 
 - name: Add extra_vars to avoid being prompted for playbook variables
   ansible.builtin.lineinfile:
@@ -36,11 +36,11 @@
       --extra-vars partition_number={{ install_slapos_comp1_partition_number }}
     backrefs: true
   when:
-    - not slapos_is_installed
+    - not install_slapos_comp1_slapos_is_installed
 
 - name: Launch slapos installer on both nodes
   ansible.builtin.command: /root/slapos.installer
-  register: slaposlog
-  changed_when: slaposlog.rc == 0
+  register: install_slapos_comp1_slaposlog
+  changed_when: install_slapos_comp1_slaposlog.rc == 0
   when:
-    - not slapos_is_installed
+    - not install_slapos_comp1_slapos_is_installed

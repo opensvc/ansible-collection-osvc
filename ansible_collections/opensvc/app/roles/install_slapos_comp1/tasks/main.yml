@@ -14,4 +14,3 @@
 
 - name: Configure slapos component
   ansible.builtin.include_tasks: "config.slapos.yml"
-

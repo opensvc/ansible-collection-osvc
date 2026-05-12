@@ -5,15 +5,15 @@
     cmd: which re6stnet
   args:
     executable: /bin/bash
-  register: re6stnet_command
+  register: install_slapos_comp1_re6stnet_command
   failed_when: false
   changed_when: false
 
 - name: Set fact according to actual re6st cfg existence
   ansible.builtin.set_fact:
-    re6st_is_installed: "{{ re6stnet_command.rc == 0 }}"
+    install_slapos_comp1_re6st_is_installed: "{{ install_slapos_comp1_re6stnet_command.rc == 0 }}"
 #  when:
-#    - re6stnet_command.rc != 0
+#    - install_slapos_comp1_re6stnet_command.rc != 0
 
 - name: Ensure /etc/systemd is clean
   ansible.builtin.shell:
@@ -23,10 +23,10 @@
   args:
     executable: /bin/bash
   failed_when: false
-  register: find_command
-  changed_when: find_command.rc == 0
+  register: install_slapos_comp1_find_command
+  changed_when: install_slapos_comp1_find_command.rc == 0
   when:
-    - not re6st_is_installed
+    - not install_slapos_comp1_re6st_is_installed
 
 - name: Download re6st installer
   ansible.builtin.get_url:
@@ -35,7 +35,7 @@
     mode: '0750'
     force: true
   when:
-    - not re6st_is_installed
+    - not install_slapos_comp1_re6st_is_installed
 
 - name: Add extra_vars to avoid being prompted for re6st token and router adv
   ansible.builtin.lineinfile:
@@ -48,35 +48,35 @@
       --extra-vars enable_router_advertisement={{ install_slapos_comp1_re6st_router_advertisement }}
     backrefs: true
   when:
-    - not re6st_is_installed
+    - not install_slapos_comp1_re6st_is_installed
 
 - name: Launch re6st installer
   ansible.builtin.command: /root/re6st.installer
-  register: re6stlog
-  changed_when: re6stlog.rc == 0
+  register: install_slapos_comp1_re6stlog
+  changed_when: install_slapos_comp1_re6stlog.rc == 0
   when:
-    - not re6st_is_installed
+    - not install_slapos_comp1_re6st_is_installed
 
 - name: Print return information from the previous task
   ansible.builtin.debug:
-    var: re6stlog.stdout_lines
+    var: install_slapos_comp1_re6stlog.stdout_lines
     verbosity: 2
   when:
-    - not re6st_is_installed
+    - not install_slapos_comp1_re6st_is_installed
 
 - name: Get Service Status
   ansible.builtin.systemd:
     name: "re6stnet.service"
-  register: re6st_service_status
+  register: install_slapos_comp1_re6st_service_status
   when:
-    - not re6st_is_installed
+    - not install_slapos_comp1_re6st_is_installed
 
 - name: Print systemd service status
   ansible.builtin.debug:
-    var: re6st_service_status.status.ActiveState
+    var: install_slapos_comp1_re6st_service_status.status.ActiveState
     verbosity: 2
   when:
-    - not re6st_is_installed
+    - not install_slapos_comp1_re6st_is_installed
 
 - name: Disable and mask re6stnet.service systemd unit
   ansible.builtin.systemd:
