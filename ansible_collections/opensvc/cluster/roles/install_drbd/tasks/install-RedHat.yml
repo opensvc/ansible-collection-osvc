@@ -1,6 +1,6 @@
 ---
 - name: Install elrepo channels for version 7
-  ansible.builtin.yum:
+  ansible.builtin.dnf:
     name: https://www.elrepo.org/elrepo-release-7.el7.elrepo.noarch.rpm
     state: present
     disable_gpg_check: true
@@ -8,7 +8,7 @@
     - ansible_distribution_major_version|int == 7
 
 - name: Install elrepo channels for version 8
-  ansible.builtin.yum:
+  ansible.builtin.dnf:
     name: https://www.elrepo.org/elrepo-release-8.el8.elrepo.noarch.rpm
     state: present
     disable_gpg_check: true
@@ -16,7 +16,7 @@
     - ansible_distribution_major_version|int == 8
 
 - name: Install elrepo channels for version 9
-  ansible.builtin.yum:
+  ansible.builtin.dnf:
     name: https://www.elrepo.org/elrepo-release-9.el9.elrepo.noarch.rpm
     state: present
     disable_gpg_check: true
@@ -24,7 +24,7 @@
     - ansible_distribution_major_version|int == 9
 
 - name: Install drbd packages
-  ansible.builtin.yum:
+  ansible.builtin.dnf:
     name: "{{ item }}"
     state: present
     disable_gpg_check: true
@@ -35,7 +35,7 @@
     - ansible_distribution_major_version|int <= 8
 
 - name: Install drbd packages
-  ansible.builtin.yum:
+  ansible.builtin.dnf:
     name: "{{ item }}"
     state: present
     disable_gpg_check: true

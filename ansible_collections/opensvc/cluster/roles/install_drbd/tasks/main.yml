@@ -27,12 +27,12 @@
   args:
     executable: /bin/bash
   changed_when: false
-  register: _osvc_drbd_version
+  register: install_drbd_osvc_drbd_version
 
 - name: Test drbd version
   ansible.builtin.assert:
     that:
-      - "_osvc_drbd_version.stdout is version('9.0.0', '>=')"
+      - "install_drbd_osvc_drbd_version.stdout is version('9.0.0', '>=')"
 
 - name: Flush handlers
   ansible.builtin.meta: flush_handlers
