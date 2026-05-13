@@ -9,16 +9,17 @@
   failed_when: false
 
 - name: Retrieve process list
-  ansible.builtin.command: "ps afx | grep [o]svcd.py"
-  register: osvc_daemon_ps
+  ansible.builtin.command: |
+    ps afx | grep -E "[o]svcd.py|[o]pensvc.daemon"
+  register: unprovision_cluster_osvc_daemon_ps
   changed_when: false
   failed_when: false
 
 - name: Stop OpenSVC daemon
   ansible.builtin.command: "om daemon shutdown"
-  register: output
-  changed_when: output.rc == 0
-  when: osvc_daemon_ps.rc == 0
+  register: unprovision_cluster_output
+  changed_when: unprovision_cluster_output.rc == 0
+  when: unprovision_cluster_osvc_daemon_ps.rc == 0
 
 - name: Remove OpenSVC package
   ansible.builtin.package:
