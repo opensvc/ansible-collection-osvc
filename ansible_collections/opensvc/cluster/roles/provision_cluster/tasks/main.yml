@@ -21,22 +21,22 @@
 
 - name: Debug node count
   ansible.builtin.debug:
-    var: nodecount
+    var: provision_cluster_nodecount
     verbosity: 2
 
 - name: Gather the package facts
   ansible.builtin.package_facts:
     manager: auto
 
-- name: Debug osvc_repo_url
+- name: Debug provision_cluster_osvc_repo_url
   ansible.builtin.debug:
-    var: osvc_repo_url
+    var: provision_cluster_osvc_repo_url
     verbosity: 2
 
 - name: Download OpenSVC agent latest package
   ansible.builtin.get_url:
-    url: "{{ osvc_repo_url }}"
-    dest: "{{ osvc_pkg_dl_path }}"
+    url: "{{ provision_cluster_osvc_repo_url }}"
+    dest: "{{ provision_cluster_osvc_pkg_dl_path }}"
     force: true
     mode: '0600'
   when: "'opensvc' not in ansible_facts.packages"
@@ -47,7 +47,7 @@
 
 - name: Remove package file from /tmp
   ansible.builtin.file:
-    path: "{{ osvc_pkg_dl_path }}"
+    path: "{{ provision_cluster_osvc_pkg_dl_path }}"
     state: absent
   when: "'opensvc' not in ansible_facts.packages"
 
@@ -63,7 +63,7 @@
     content: "{{ lookup('template', 'templates/hosts.j2') }}"
     state: present
   when:
-    - osvc_update_etc_hosts | bool
+    - provision_cluster_osvc_update_etc_hosts | bool
 
 - name: Enable ssh root access accross cluster nodes
   ansible.builtin.replace:
@@ -87,85 +87,85 @@
 
 - name: Check hb cluster param exists on first node
   ansible.builtin.command: om cluster get --kw hb#1.type
-  register: clusterhbtype
+  register: provision_cluster_clusterhbtype
   changed_when: false
   failed_when: false
   when: inventory_hostname == ansible_play_hosts[0]
 
 - name: Configure cluster with unicast hb
-  ansible.builtin.command: om cluster set --kw hb#1.type=unicast --kw hb#1.timeout={{ osvc_hb_timeout }}
-  register: output
-  changed_when: output.rc == 0
+  ansible.builtin.command: om cluster set --kw hb#1.type=unicast --kw hb#1.timeout={{ provision_cluster_osvc_hb_timeout }}
+  register: provision_cluster_output
+  changed_when: provision_cluster_output.rc == 0
   when:
     - inventory_hostname == ansible_play_hosts[0]
-    - clusterhbtype.stdout == "None"
+    - provision_cluster_clusterhbtype.stdout == "None"
 
 - name: Get current cluster name
   ansible.builtin.command: om cluster get --kw cluster.name
-  register: clustername
+  register: provision_cluster_clustername
   changed_when: false
   failed_when: false
   when:
     - inventory_hostname == ansible_play_hosts[0]
 
 - name: Set cluster name
-  ansible.builtin.command: "om cluster set --kw cluster.name={{ osvc_clustername }}"
-  register: output
-  changed_when: output.rc == 0
+  ansible.builtin.command: "om cluster set --kw cluster.name={{ provision_cluster_osvc_clustername }}"
+  register: provision_cluster_output
+  changed_when: provision_cluster_output.rc == 0
   when:
     - inventory_hostname == ansible_play_hosts[0]
-    - clustername.stdout != osvc_clustername
+    - provision_cluster_clustername.stdout != provision_cluster_osvc_clustername
 
 - name: Get cluster secret on first node
   ansible.builtin.command: om cluster get --kw cluster.secret
-  register: clustersecret
+  register: provision_cluster_clustersecret
   changed_when: false
   failed_when: false
   when:
     - inventory_hostname == ansible_play_hosts[0]
-    - nodecount | int > 1
+    - provision_cluster_nodecount | int > 1
 
 ########################## OTHER NODES ##########################
 
 - name: Check other nodes are joined to a cluster
   ansible.builtin.command: om cluster get --kw cluster.nodes
-  register: clusternodes
+  register: provision_cluster_clusternodes
   changed_when: false
   failed_when: false
   when:
-    - nodecount | int > 1
+    - provision_cluster_nodecount | int > 1
 
 - name: Consider that we have join the cluster
   ansible.builtin.set_fact:
-    joined: 'true'
+    provision_cluster_joined: 'true'
   when:
-    - nodecount | int > 1
+    - provision_cluster_nodecount | int > 1
 
 - name: Check if we are actually joined
   ansible.builtin.set_fact:
-    joined: 'false'
+    provision_cluster_joined: 'false'
   when:
-    - nodecount | int > 1
-    - clusternodes.stdout == ansible_hostname
+    - provision_cluster_nodecount | int > 1
+    - provision_cluster_clusternodes.stdout == ansible_hostname
     - inventory_hostname != ansible_play_hosts[0]
 
 - name: Join other nodes to the cluster
   ansible.builtin.command: >
     om daemon join
-    --secret {{ hostvars[ansible_play_hosts[0]].clustersecret.stdout }}
+    --secret {{ hostvars[ansible_play_hosts[0]].provision_cluster_clustersecret.stdout }}
     --node {{ hostvars[ansible_play_hosts[0]].ansible_hostname }}
-  register: output
-  changed_when: output.rc == 0
+  register: provision_cluster_output
+  changed_when: provision_cluster_output.rc == 0
   when:
-    - nodecount | int > 1
-    - not joined
+    - provision_cluster_nodecount | int > 1
+    - not provision_cluster_joined
 
 - name: Wait for join to be terminated
   ansible.builtin.command: 'om node wait --duration 20s --filter monitor.nodes.{{ ansible_hostname }}.monitor.status=idle'
   changed_when: false
   when:
-    - nodecount | int > 1
-    - not joined
+    - provision_cluster_nodecount | int > 1
+    - not provision_cluster_joined
 
 - name: Pause for 5 seconds for agent cache update
   ansible.builtin.pause:
@@ -173,42 +173,43 @@
 
 - name: Add mutual root ssh trust
   ansible.builtin.command: 'om node update ssh authorized keys --node "*"'
-  register: output
-  changed_when: output.rc == 0
+  register: provision_cluster_output
+  changed_when: provision_cluster_output.rc == 0
   when:
-    - nodecount | int > 1
+    - provision_cluster_nodecount | int > 1
 
 - name: Print to console
   ansible.builtin.debug:
-    msg: "{{ output.stdout }}"
+    msg: "{{ provision_cluster_output.stdout }}"
     verbosity: 2
   when:
-    - nodecount | int > 1
+    - provision_cluster_nodecount | int > 1
 
 - name: Get content of root authorized_keys
   ansible.builtin.command: cat /root/.ssh/authorized_keys
-  register: command_output
+  register: provision_cluster_command_output
+  changed_when: false
   when:
-    - nodecount | int > 1
+    - provision_cluster_nodecount | int > 1
 
 - name: Print to console
   ansible.builtin.debug:
-    msg: "{{ command_output.stdout_lines }}"
+    msg: "{{ provision_cluster_command_output.stdout_lines }}"
     verbosity: 2
   when:
-    - nodecount | int > 1
+    - provision_cluster_nodecount | int > 1
 
 - name: Configure cluster vip
   ansible.builtin.include_tasks: "vip.yml"
   when:
-    - osvc_configure_vip | bool
+    - provision_cluster_osvc_configure_vip | bool
 
 - name: Configure webapp/api access
   ansible.builtin.include_tasks: "webapp.yml"
   when:
-    - osvc_configure_webapp | bool
+    - provision_cluster_osvc_configure_webapp | bool
 
 - name: Disable iptables usage by docker
   ansible.builtin.include_tasks: "docker.yml"
   when:
-    - osvc_deploy_docker_daemon_json | bool
+    - provision_cluster_osvc_deploy_docker_daemon_json | bool

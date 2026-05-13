@@ -1,157 +1,157 @@
 ---
 - name: Get cluster name
   ansible.builtin.command: "om cluster get --kw cluster.name"
-  register: clustername
+  register: provision_cluster_clustername
   changed_when: false
   failed_when: false
   run_once: true
 
 - name: Set fact on certificate creation
   ansible.builtin.set_fact:
-    ca_cert_created: true
+    provision_cluster_ca_cert_created: true
   run_once: true
 
 - name: Check for ca certificate existence
-  ansible.builtin.command: "om system/sec/ca-{{ clustername.stdout }} ls"
+  ansible.builtin.command: "om system/sec/ca-{{ provision_cluster_clustername.stdout }} ls"
   changed_when: false
-  register: ca_certificate
+  register: provision_cluster_ca_certificate
   run_once: true
 
 - name: Set fact according to actual ca cert existence
   ansible.builtin.set_fact:
-    ca_cert_created: false
+    provision_cluster_ca_cert_created: false
   run_once: true
   when:
-    - clustername.stdout not in ca_certificate.stdout
+    - provision_cluster_clustername.stdout not in provision_cluster_ca_certificate.stdout
 
 - name: Create ca certificate
-  ansible.builtin.command: "om system/sec/ca-{{ clustername.stdout }} create"
+  ansible.builtin.command: "om system/sec/ca-{{ provision_cluster_clustername.stdout }} create"
   run_once: true
-  register: output
-  changed_when: output.rc == 0
+  register: provision_cluster_output
+  changed_when: provision_cluster_output.rc == 0
   when:
-    - not ca_cert_created
+    - not provision_cluster_ca_cert_created
 
 - name: Set ca certificate parameters
   ansible.builtin.command: >-
-    om system/sec/ca-{{ clustername.stdout }} set
-    --kw cn='{{ osvc_ca_cert_name }}'
-    --kw c='{{ osvc_ca_cert_country }}'
-    --kw o='{{ osvc_ca_cert_org }}'
+    om system/sec/ca-{{ provision_cluster_clustername.stdout }} set
+    --kw cn='{{ provision_cluster_osvc_ca_cert_name }}'
+    --kw c='{{ provision_cluster_osvc_ca_cert_country }}'
+    --kw o='{{ provision_cluster_osvc_ca_cert_org }}'
   run_once: true
-  register: output
-  changed_when: output.rc == 0
+  register: provision_cluster_output
+  changed_when: provision_cluster_output.rc == 0
   when:
-    - not ca_cert_created
+    - not provision_cluster_ca_cert_created
 
 - name: Generate ca certificate
-  ansible.builtin.command: "om system/sec/ca-{{ clustername.stdout }} gen cert"
+  ansible.builtin.command: "om system/sec/ca-{{ provision_cluster_clustername.stdout }} gen cert"
   run_once: true
-  register: output
-  changed_when: output.rc == 0
+  register: provision_cluster_output
+  changed_when: provision_cluster_output.rc == 0
   when:
-    - not ca_cert_created
+    - not provision_cluster_ca_cert_created
 
 ########################## CREATE CLUSTER LISTENER CERTIFICATE ##########################
 
 - name: Set fact on listener certificate creation
   ansible.builtin.set_fact:
-    listener_cert_created: true
+    provision_cluster_listener_cert_created: true
   run_once: true
 
 - name: Check for listener certificate existence
-  ansible.builtin.command: "om system/sec/cert-{{ clustername.stdout }} ls"
+  ansible.builtin.command: "om system/sec/cert-{{ provision_cluster_clustername.stdout }} ls"
   changed_when: false
   run_once: true
-  register: listener_certificate
+  register: provision_cluster_listener_certificate
 
 - name: Set fact according to actual listener cert existence
   ansible.builtin.set_fact:
-    listener_cert_created: false
+    provision_cluster_listener_cert_created: false
   run_once: true
   when:
-    - clustername.stdout not in listener_certificate.stdout
+    - provision_cluster_clustername.stdout not in provision_cluster_listener_certificate.stdout
 
 - name: Create listener certificate
-  ansible.builtin.command: "om system/sec/cert-{{ clustername.stdout }} create"
+  ansible.builtin.command: "om system/sec/cert-{{ provision_cluster_clustername.stdout }} create"
   run_once: true
-  register: output
-  changed_when: output.rc == 0
+  register: provision_cluster_output
+  changed_when: provision_cluster_output.rc == 0
   when:
-    - not listener_cert_created
+    - not provision_cluster_listener_cert_created
 
 - name: Set listener certificate parameters
   ansible.builtin.command: >-
-    om system/sec/cert-{{ clustername.stdout }} set
-    --kw ca='system/sec/ca-{{ clustername.stdout }}'
-    --kw alt_names='{{ osvc_vip_external_fqdn }}'
+    om system/sec/cert-{{ provision_cluster_clustername.stdout }} set
+    --kw ca='system/sec/ca-{{ provision_cluster_clustername.stdout }}'
+    --kw alt_names='{{ provision_cluster_osvc_vip_external_fqdn }}'
   run_once: true
-  register: output
-  changed_when: output.rc == 0
+  register: provision_cluster_output
+  changed_when: provision_cluster_output.rc == 0
   when:
-    - not listener_cert_created
+    - not provision_cluster_listener_cert_created
 
 - name: Generate listener certificate
-  ansible.builtin.command: "om system/sec/cert-{{ clustername.stdout }} gen cert"
+  ansible.builtin.command: "om system/sec/cert-{{ provision_cluster_clustername.stdout }} gen cert"
   run_once: true
-  register: output
-  changed_when: output.rc == 0
+  register: provision_cluster_output
+  changed_when: provision_cluster_output.rc == 0
   when:
-    - not listener_cert_created
+    - not provision_cluster_listener_cert_created
 
 ########################## CREATE WEB GUI USER ##########################
 
 - name: Set fact on web user
   ansible.builtin.set_fact:
-    web_user_created: true
+    provision_cluster_web_user_created: true
   run_once: true
 
 - name: Check for user existence
-  ansible.builtin.command: "om system/usr/{{ osvc_webapp_user }} ls"
+  ansible.builtin.command: "om system/usr/{{ provision_cluster_osvc_webapp_user }} ls"
   changed_when: false
-  register: user_list
+  register: provision_cluster_user_list
   run_once: true
 
 - name: Set fact according to actual listener cert existence
   ansible.builtin.set_fact:
-    web_user_created: 'false'
+    provision_cluster_web_user_created: 'false'
   run_once: true
   when:
-    - osvc_webapp_user not in user_list.stdout
+    - provision_cluster_osvc_webapp_user not in provision_cluster_user_list.stdout
 
 - name: Create web user
-  ansible.builtin.command: "om system/usr/{{ osvc_webapp_user }} create"
+  ansible.builtin.command: "om system/usr/{{ provision_cluster_osvc_webapp_user }} create"
   run_once: true
-  register: output
-  changed_when: output.rc == 0
+  register: provision_cluster_output
+  changed_when: provision_cluster_output.rc == 0
   when:
-    - not web_user_created
+    - not provision_cluster_web_user_created
 
 - name: Set user password
-  ansible.builtin.command: "om system/usr/{{ osvc_webapp_user }} add --key password --value {{ osvc_webapp_password }}"
+  ansible.builtin.command: "om system/usr/{{ provision_cluster_osvc_webapp_user }} add --key password --value {{ provision_cluster_osvc_webapp_password }}"
   run_once: true
-  register: output
-  changed_when: output.rc == 0
+  register: provision_cluster_output
+  changed_when: provision_cluster_output.rc == 0
   when:
-    - not web_user_created
+    - not provision_cluster_web_user_created
 
 - name: Set user grant
-  ansible.builtin.command: "om system/usr/{{ osvc_webapp_user }} set --kw grant=root"
+  ansible.builtin.command: "om system/usr/{{ provision_cluster_osvc_webapp_user }} set --kw grant=root"
   run_once: true
-  register: output
-  changed_when: output.rc == 0
+  register: provision_cluster_output
+  changed_when: provision_cluster_output.rc == 0
   when:
-    - not web_user_created
+    - not provision_cluster_web_user_created
 
 - name: Restart opensvc daemon
   ansible.builtin.command: "om daemon restart"
-  register: output
-  changed_when: output.rc == 0
+  register: provision_cluster_output
+  changed_when: provision_cluster_output.rc == 0
   when:
-    - not web_user_created
+    - not provision_cluster_web_user_created
 
 - name: Wait for restart to be terminated
   ansible.builtin.command: 'om node wait --duration 120s --filter monitor.nodes.{{ ansible_hostname }}.monitor.status=idle'
   changed_when: false
   when:
-    - not web_user_created
+    - not provision_cluster_web_user_created

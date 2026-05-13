@@ -1,7 +1,7 @@
 ---
 
-- name: Install common packages for rhel/centos/fedora (ver < 8)
-  ansible.builtin.dnf:
+- name: Install common packages for sles
+  community.general.zypper:
     name: "{{ packages }}"
     state: present
   vars:
@@ -13,19 +13,22 @@
       - sg3_utils
       - psmisc
   when:
-    - (ansible_distribution_major_version|int < 8)
+    - (ansible_distribution_major_version|int < 15)
 
-- name: Install common packages for rhel/centos/fedora (ver > 8)
-  ansible.builtin.dnf:
+- name: Install common packages for sles (ver >= 15)
+  community.general.zypper:
     name: "{{ packages }}"
     state: present
   vars:
     packages:
-      - podman
+      - docker
       - psmisc
       - python3
       - python3-requests
       - python3-cryptography
+      - python311
+      - python311-requests
+      - python311-cryptography
       - sg3_utils
   when:
-    - (ansible_distribution_major_version|int >= 8)
+    - (ansible_distribution_major_version|int >= 15)

@@ -1,7 +1,7 @@
 ---
 
 - name: Install OpenSVC agent package
-  ansible.builtin.dnf:
+  community.general.zypper:
     name: "{{ provision_cluster_osvc_pkg_dl_path }}"
     state: present
     disable_gpg_check: true

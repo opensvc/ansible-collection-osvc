@@ -1,2 +1,2 @@
 ---
-systemd_ssh_unit: sshd
+provision_cluster_systemd_ssh_unit: sshd
