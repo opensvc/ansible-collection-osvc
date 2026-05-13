@@ -4,18 +4,18 @@
   ansible.builtin.command:
     cmd: >
       om cluster set
-      --kw pool#{{ osvc_pool_name }}.type={{ osvc_pool_type }}
+      --kw pool#{{ install_pool_osvc_pool_name }}.type={{ install_pool_osvc_pool_type }}
   run_once: true
-  register: output
-  changed_when: output.rc == 0
+  register: install_pool_output
+  changed_when: install_pool_output.rc == 0
 
 - name: Configure directory pool path
   ansible.builtin.command:
     cmd: >
       om cluster set
-      --kw pool#{{ osvc_pool_name }}.path={{ osvc_pool_path }}
+      --kw pool#{{ install_pool_osvc_pool_name }}.path={{ osvc_pool_path }}
   run_once: true
-  register: output
-  changed_when: output.rc == 0
+  register: install_pool_output
+  changed_when: install_pool_output.rc == 0
   when:
     - (osvc_pool_path is defined) and (osvc_pool_path|length > 0)

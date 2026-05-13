@@ -3,51 +3,51 @@
 
 - name: Set fact according to actual pool config
   ansible.builtin.set_fact:
-    _pool_is_configured: 'true'
+    install_pool_pool_is_configured: 'true'
   run_once: true
 
 - name: Check for actual pool config
   ansible.builtin.shell:
-    cmd: set -o pipefail && om pool ls | grep -w {{ osvc_pool_name }}
+    cmd: set -o pipefail && om pool ls | grep -w {{ install_pool_osvc_pool_name }}
   args:
     executable: /bin/bash
   failed_when: false
   changed_when: false
-  register: _osvc_pool_list
+  register: install_pool_osvc_pool_list
   run_once: true
 
 - name: Set fact according to actual pool existence
   ansible.builtin.set_fact:
-    _pool_is_configured: 'false'
+    install_pool_pool_is_configured: 'false'
   run_once: true
   when:
-    - osvc_pool_name not in _osvc_pool_list.stdout
+    - install_pool_osvc_pool_name not in install_pool_osvc_pool_list.stdout
 
 - name: Display pool existence flag
   ansible.builtin.debug:
-    var: _pool_is_configured
+    var: install_pool_pool_is_configured
     verbosity: 2
 
 - name: Configure directory pool
   ansible.builtin.include_tasks: "directory.yml"
   when:
-    - not _pool_is_configured
-    - osvc_pool_type == "directory"
+    - not install_pool_pool_is_configured
+    - install_pool_osvc_pool_type == "directory"
 
 - name: Configure drbd pool
   ansible.builtin.include_tasks: "drbd.yml"
   when:
-    - not _pool_is_configured
-    - osvc_pool_type == "drbd"
+    - not install_pool_pool_is_configured
+    - install_pool_osvc_pool_type == "drbd"
 
 - name: Configure pool schedule
   ansible.builtin.command:
     cmd: >
       om cluster set
-      --kw pool#{{ osvc_pool_name }}.status_schedule={{ osvc_pool_status_schedule }}
+      --kw pool#{{ install_pool_osvc_pool_name }}.status_schedule={{ install_pool_osvc_pool_status_schedule }}
   run_once: true
-  register: output
-  changed_when: output.rc == 0
+  register: install_pool_output
+  changed_when: install_pool_output.rc == 0
   when:
-    - not _pool_is_configured
-    - ( osvc_pool_status_schedule | length ) > 0
+    - not install_pool_pool_is_configured
+    - ( install_pool_osvc_pool_status_schedule | length ) > 0
