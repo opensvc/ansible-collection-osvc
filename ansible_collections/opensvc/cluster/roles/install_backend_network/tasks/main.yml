@@ -3,41 +3,41 @@
 
 - name: Set fact according to actual network config
   ansible.builtin.set_fact:
-    _network_is_configured: 'true'
+    install_backend_network_is_configured: 'true'
   run_once: true
 
 - name: Check for actual network config
   ansible.builtin.shell:
-    cmd: set -o pipefail && om net ls | grep -w {{ osvc_backend_subnet_name }}
+    cmd: set -o pipefail && om net ls | grep -w {{ install_backend_network_osvc_backend_subnet_name }}
   args:
     executable: /bin/bash
   failed_when: false
   changed_when: false
-  register: _osvc_network_list
+  register: install_backend_network_list
   run_once: true
 
 - name: Set fact according to actual network existence
   ansible.builtin.set_fact:
-    _network_is_configured: 'false'
+    install_backend_network_is_configured: 'false'
   run_once: true
   when:
-    - osvc_backend_subnet_name not in _osvc_network_list.stdout
+    - install_backend_network_osvc_backend_subnet_name not in install_backend_network_list.stdout
 
 - name: Display network existence flag
   ansible.builtin.debug:
-    var: _network_is_configured
+    var: install_backend_network_is_configured
     verbosity: 2
 
 - name: Configure backend network
   ansible.builtin.command:
     cmd: >
       om cluster set
-      --kw network#{{ osvc_backend_subnet_name }}.type=routed_bridge
-      --kw network#{{ osvc_backend_subnet_name }}.network={{ osvc_backend_subnet_range }}
-      --kw network#{{ osvc_backend_subnet_name }}.ips_per_node={{ osvc_backend_subnet_ips_per_node }}
-      --kw network#{{ osvc_backend_subnet_name }}.tunnel={{ osvc_backend_tunnel }}
+      --kw network#{{ install_backend_network_osvc_backend_subnet_name }}.type=routed_bridge
+      --kw network#{{ install_backend_network_osvc_backend_subnet_name }}.network={{ install_backend_network_osvc_backend_subnet_range }}
+      --kw network#{{ install_backend_network_osvc_backend_subnet_name }}.ips_per_node={{ install_backend_network_osvc_backend_subnet_ips_per_node }}
+      --kw network#{{ install_backend_network_osvc_backend_subnet_name }}.tunnel={{ install_backend_network_osvc_backend_tunnel }}
   run_once: true
-  register: output
-  changed_when: output.rc == 0
+  register: install_backend_network_output
+  changed_when: install_backend_network_output.rc == 0
   when:
-    - not _network_is_configured
+    - not install_backend_network_is_configured
