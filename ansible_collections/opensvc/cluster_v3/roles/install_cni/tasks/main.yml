@@ -3,24 +3,24 @@
 
 - name: Set fact according to binary deployment
   ansible.builtin.set_fact:
-    _cni_bin_is_installed: 'false'
+    install_cni_bin_is_installed: 'false'
 
 - name: Check if cni bin exists
   ansible.builtin.stat:
     path: "{{ install_cni_plugins_dir }}/{{ item }}"
   with_items: "{{ install_cni_plugin_binaries | flatten }}"
-  register: cni_check_result
+  register: install_cni_check_result
 
 - name: Set fact according to actual cni binary existence
   ansible.builtin.set_fact:
-    _cni_bin_is_installed: 'true'
+    install_cni_bin_is_installed: 'true'
   when:
     - item.stat.exists
-  loop: "{{ cni_check_result.results }}"
+  loop: "{{ install_cni_check_result.results }}"
 
 - name: Display cni binary install flag
   ansible.builtin.debug:
-    var: _cni_bin_is_installed
+    var: install_cni_bin_is_installed
     verbosity: 2
 
 - name: Deploy cni plugins
@@ -32,10 +32,10 @@
     mode: '0440'
   loop:
     - "{{ install_cni_download_url }}"
-  register: get_url_result
-  until: get_url_result is succeeded
+  register: install_cni_get_url_result
+  until: install_cni_get_url_result is succeeded
   when:
-    - not _cni_bin_is_installed
+    - not install_cni_bin_is_installed
 
 - name: Create directory if it does not exist
   ansible.builtin.file:
@@ -46,7 +46,7 @@
     - "{{ install_cni_plugins_dir }}"
     - "{{ install_cni_config_dir }}"
   when:
-    - not _cni_bin_is_installed
+    - not install_cni_bin_is_installed
 
 - name: Unarchive package
   ansible.builtin.shell: |
@@ -55,26 +55,26 @@
     TMP_DIR="`mktemp -d`" && tar -zx -C $TMP_DIR -f {{ install_cni_download_url.dest }} && mv $TMP_DIR/* . && rm -rf $TMP_DIR
   args:
     executable: "/bin/bash"
-  register: output
-  changed_when: output.rc == 0
+  register: install_cni_output
+  changed_when: install_cni_output.rc == 0
   when:
-    - not _cni_bin_is_installed
-    - get_url_result is changed
+    - not install_cni_bin_is_installed
+    - install_cni_get_url_result is changed
 
 - name: Get CNI paths for OpenSVC cluster
   ansible.builtin.command: om cluster get --kw cni.plugins
-  register: cnipluginspath
+  register: install_cni_plugins_path
   failed_when: false
   changed_when: false
   run_once: true
   when:
-    - not _cni_bin_is_installed
+    - not install_cni_bin_is_installed
 
 - name: Set CNI paths for OpenSVC cluster
   ansible.builtin.command: om cluster set --kw cni.plugins={{ install_cni_plugins_dir }} --kw cni.config={{ install_cni_config_dir }}
   run_once: true
-  register: output
-  changed_when: output.rc == 0
+  register: install_cni_output
+  changed_when: install_cni_output.rc == 0
   when:
-    - not _cni_bin_is_installed
-    - install_cni_plugins_dir != cnipluginspath.stdout
+    - not install_cni_bin_is_installed
+    - install_cni_plugins_dir != install_cni_plugins_path.stdout
