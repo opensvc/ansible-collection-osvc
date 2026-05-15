@@ -8,21 +8,21 @@
     executable: /bin/bash
   failed_when: false
   changed_when: false
-  register: _osvc_pool_list
+  register: install_pool_list
   run_once: true
 
 - name: Set pool configuration flag
   ansible.builtin.set_fact:
-    _pool_is_configured: "{{ install_pool_name in _osvc_pool_list.stdout }}"
+    install_pool_is_configured: "{{ install_pool_name in install_pool_list.stdout }}"
   run_once: true
 
 - name: Display pool existence flag
   ansible.builtin.debug:
-    var: _pool_is_configured
+    var: install_pool_is_configured
     verbosity: 2
 
 - name: Configure pool based on type
-  when: not _pool_is_configured
+  when: not install_pool_is_configured
   block:
     - name: Configure directory pool
       when: install_pool_type == "directory"
@@ -39,5 +39,5 @@
           om cluster set
           --kw pool#{{ install_pool_name }}.status_schedule={{ install_pool_status_schedule }}
       run_once: true
-      register: output
-      changed_when: output.rc == 0
+      register: install_pool_output
+      changed_when: install_pool_output.rc == 0

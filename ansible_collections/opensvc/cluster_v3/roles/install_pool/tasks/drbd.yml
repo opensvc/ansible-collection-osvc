@@ -7,8 +7,8 @@
       om cluster set
       --kw pool#{{ install_pool_name }}.type={{ install_pool_type }}
   run_once: true
-  register: output
-  changed_when: output.rc == 0
+  register: install_pool_output
+  changed_when: install_pool_output.rc == 0
 
 - name: Configure drbd pool backed by path
   ansible.builtin.command:
@@ -16,8 +16,8 @@
       om cluster set
       --kw pool#{{ install_pool_name }}.path={{ osvc_pool_path }}
   run_once: true
-  register: output
-  changed_when: output.rc == 0
+  register: install_pool_output
+  changed_when: install_pool_output.rc == 0
   when:
     - (osvc_pool_path is defined) and (osvc_pool_path|length > 0)
 
@@ -27,8 +27,8 @@
       om cluster set
       --kw pool#{{ install_pool_name }}.vg={{ osvc_pool_vg }}
   run_once: true
-  register: output
-  changed_when: output.rc == 0
+  register: install_pool_output
+  changed_when: install_pool_output.rc == 0
   when:
     - (osvc_pool_vg is defined) and (osvc_pool_vg|length > 0)
 
@@ -38,8 +38,8 @@
       om cluster set
       --kw pool#{{ install_pool_name }}.network={{ install_pool_network }}
   run_once: true
-  register: output
-  changed_when: output.rc == 0
+  register: install_pool_output
+  changed_when: install_pool_output.rc == 0
   when:
     - (install_pool_network is defined) and (install_pool_network|length > 0)
 
@@ -49,7 +49,7 @@
       om cluster set
       --kw pool#{{ install_pool_name }}.zpool={{ install_pool_zpool }}
   run_once: true
-  register: output
-  changed_when: output.rc == 0
+  register: install_pool_output
+  changed_when: install_pool_output.rc == 0
   when:
     - (install_pool_zpool is defined) and (install_pool_zpool|length > 0)
