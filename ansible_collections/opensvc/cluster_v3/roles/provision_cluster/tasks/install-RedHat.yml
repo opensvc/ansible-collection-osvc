@@ -3,7 +3,7 @@
   ansible.builtin.yum_repository:
     name: opensvc
     description: OpenSVC Repository
-    baseurl: "{{ opensvc_repo_url }}"
+    baseurl: "{{ provision_cluster_opensvc_repo_url }}"
     enabled: true
     gpgcheck: true
     gpgkey: "{{ provision_cluster_repositories_gpgkey_url }}"
@@ -22,16 +22,17 @@
     - ansible_distribution_major_version | int >= 8
 
 - name: Check if docker is present
-  command: which docker
-  register: docker_check
-  ignore_errors: true
+  ansible.builtin.command: which docker
+  register: provision_cluster_docker_check
+  failed_when: false
+  changed_when: false
 
 - name: Installer Podman (RHEL/CentOS/Fedora)
-  dnf:
+  ansible.builtin.dnf:
     name: podman
     state: present
   when:
-    - docker_check.rc != 0
+    - provision_cluster_docker_check.rc != 0
     - ansible_distribution_major_version | int >= 8
 
 - name: Install jq if not present
@@ -56,11 +57,11 @@
 
 - name: List opensvc packages
   ansible.builtin.set_fact:
-    paquets_osvc: "{{ ansible_facts.packages | dict2items | selectattr('key', 'search', 'opensvc') | list }}"
+    provision_cluster_paquets_osvc: "{{ ansible_facts.packages | dict2items | selectattr('key', 'search', 'opensvc') | list }}"
 
 - name: Debug OpenSVC installed package
   ansible.builtin.debug:
-    msg: "Installed OpenSVC package: {{ paquets_osvc }}"
+    msg: "Installed OpenSVC package: {{ provision_cluster_paquets_osvc }}"
     verbosity: 2
 
 - name: Enable and start opensvc-server.service

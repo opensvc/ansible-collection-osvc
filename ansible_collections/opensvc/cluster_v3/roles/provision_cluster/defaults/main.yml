@@ -10,10 +10,10 @@ provision_cluster_repoarch: "x86_64"
 provision_cluster_repositories:
   RedHat:
     default: "https://packages.opensvc.com/rpm/{{ provision_cluster_repoenv }}-opensvc-v3-rhel9/{{ provision_cluster_repoarch }}/"
-    7: "https://packages.opensvc.com/rpm/{{ provision_cluster_repoenv }}-opensvc-v3-rhel7/{{ provision_cluster_repoarch  }}/"
-    8: "https://packages.opensvc.com/rpm/{{ provision_cluster_repoenv }}-opensvc-v3-rhel8/{{ provision_cluster_repoarch  }}/"
-    9: "https://packages.opensvc.com/rpm/{{ provision_cluster_repoenv }}-opensvc-v3-rhel9/{{ provision_cluster_repoarch  }}/"
-    10: "https://packages.opensvc.com/rpm/{{ provision_cluster_repoenv }}-opensvc-v3-rhel10/{{ provision_cluster_repoarch  }}/"
+    7: "https://packages.opensvc.com/rpm/{{ provision_cluster_repoenv }}-opensvc-v3-rhel7/{{ provision_cluster_repoarch }}/"
+    8: "https://packages.opensvc.com/rpm/{{ provision_cluster_repoenv }}-opensvc-v3-rhel8/{{ provision_cluster_repoarch }}/"
+    9: "https://packages.opensvc.com/rpm/{{ provision_cluster_repoenv }}-opensvc-v3-rhel9/{{ provision_cluster_repoarch }}/"
+    10: "https://packages.opensvc.com/rpm/{{ provision_cluster_repoenv }}-opensvc-v3-rhel10/{{ provision_cluster_repoarch }}/"
   Debian:
     default: "https://packages.opensvc.com/apt/debian/"
   Ubuntu:

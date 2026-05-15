@@ -18,7 +18,7 @@
 
 - name: Set repository URL based on OS and version
   ansible.builtin.set_fact:
-    opensvc_repo_url: >-
+    provision_cluster_opensvc_repo_url: >-
       {%- for os, versions in provision_cluster_repositories.items() if os == ansible_distribution -%}
         {%- for version, url in versions.items() if version|string == ansible_distribution_major_version -%}
           {{ url }}
@@ -29,7 +29,7 @@
 
 - name: Debug repository url
   ansible.builtin.debug:
-    msg: "{{ opensvc_repo_url }}"
+    msg: "{{ provision_cluster_opensvc_repo_url }}"
     verbosity: 2
 
 - name: Debug package name
@@ -85,7 +85,7 @@
 
 - name: Get current cluster name
   ansible.builtin.command: om cluster get --kw cluster.name
-  register: clustername
+  register: provision_cluster_name
   changed_when: false
   failed_when: false
   when:
@@ -93,24 +93,24 @@
 
 - name: Set cluster name
   ansible.builtin.command: "om cluster set --kw cluster.name={{ provision_cluster_clustername }}"
-  register: output
-  changed_when: output.rc == 0
+  register: provision_cluster_output
+  changed_when: provision_cluster_output.rc == 0
   when:
     - inventory_hostname == ansible_play_hosts[0]
-    - clustername.stdout != provision_cluster_clustername
+    - provision_cluster_name.stdout != provision_cluster_clustername
 
 - name: Get cluster token on first node
   ansible.builtin.command: "om daemon auth token --role join"
-  register: clustertoken
+  register: provision_cluster_token
   changed_when: false
-  failed_when: clustertoken.rc != 0
+  failed_when: provision_cluster_token.rc != 0
   run_once: true
   when:
     - provision_cluster_nodecount | int > 1
 
 - name: Debug cluster token
   ansible.builtin.debug:
-    msg: "Cluster join token: {{ clustertoken.stdout }}"
+    msg: "Cluster join token: {{ provision_cluster_token.stdout }}"
     verbosity: 2
   when:
     - provision_cluster_nodecount | int > 1
@@ -119,27 +119,27 @@
 
 - name: Check other nodes are joined to a cluster
   ansible.builtin.command: om cluster get --kw cluster.nodes
-  register: clusternodes
+  register: provision_cluster_clusternodes
   changed_when: false
   failed_when: false
   run_once: true
   when:
     - provision_cluster_nodecount | int > 1
 
-- name: Debug cluster nodes output
+- name: Debug cluster nodes provision_cluster_output
   ansible.builtin.debug:
-    var: clusternodes.stdout
+    var: provision_cluster_clusternodes.stdout
     verbosity: 2
 
 - name: Set joined status for nodes
   ansible.builtin.set_fact:
-    joined: "{{ inventory_hostname in clusternodes.stdout }}"
+    provision_cluster_joined: "{{ inventory_hostname in provision_cluster_clusternodes.stdout }}"
   when:
     - provision_cluster_nodecount | int > 1
 
 - name: Debug joined status
   ansible.builtin.debug:
-    msg: "Joined status: {{ joined }}"
+    msg: "Joined status: {{ provision_cluster_joined }}"
     verbosity: 2
   when:
     - provision_cluster_nodecount | int > 1
@@ -147,37 +147,37 @@
 - name: Join other nodes to the cluster
   ansible.builtin.command: "{{ item }}"
   throttle: 1
-  register: join_output
-  changed_when: join_output.rc == 0
-  failed_when: join_output.rc != 0
+  register: provision_cluster_output
+  changed_when: provision_cluster_output.rc == 0
+  failed_when: provision_cluster_output.rc != 0
   with_items:
-    - om daemon join --node {{ hostvars[ansible_play_hosts[0]].ansible_hostname }} --token {{ hostvars[ansible_play_hosts[0]].clustertoken.stdout }}
+    - om daemon join --node {{ hostvars[ansible_play_hosts[0]].ansible_hostname }} --token {{ hostvars[ansible_play_hosts[0]].provision_cluster_token.stdout }}
     - sleep {{ provision_cluster_opensvc_command_delay }}
   when:
     - provision_cluster_nodecount | int > 1
     - inventory_hostname != ansible_play_hosts[0]
-    - not joined
+    - not provision_cluster_joined
 
-- name: Debug join_output
+- name: Debug provision_cluster_output
   ansible.builtin.debug:
-    var: join_output
+    var: provision_cluster_output
     verbosity: 2
   when:
     - provision_cluster_nodecount | int > 1
-    - not joined
+    - not provision_cluster_joined
 
 - name: Unfreeze cluster
   ansible.builtin.command: 'om cluster thaw --wait'
-  register: output
-  changed_when: output.rc == 0
+  register: provision_cluster_output
+  changed_when: provision_cluster_output.rc == 0
   when:
     - provision_cluster_nodecount | int > 1
     - inventory_hostname == ansible_play_hosts[0]
 
 - name: Add mutual root ssh trust
   ansible.builtin.command: 'om cluster ssh trust'
-  register: output
-  changed_when: output.rc == 0
+  register: provision_cluster_output
+  changed_when: provision_cluster_output.rc == 0
   throttle: 1
   when:
     - provision_cluster_nodecount | int > 1
