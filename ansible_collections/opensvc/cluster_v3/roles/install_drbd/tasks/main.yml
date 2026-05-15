@@ -18,25 +18,25 @@
       lsmod | grep -q drbd || echo 'not loaded'
   args:
     executable: /bin/bash
-  register: drbd_check
+  register: install_drbd_check
   changed_when: false
 
 - name: Skip DRBD installation if module is loaded
   ansible.builtin.debug:
     msg: "DRBD module already loaded, skipping installation."
-  when: drbd_check.stdout != 'not loaded'
+  when: install_drbd_check.stdout != 'not loaded'
 
 - name: Load DRBD module if not loaded
   ansible.builtin.command: modprobe drbd
-  changed_when: load_drbd.rc == 0
-  when: drbd_check.stdout == 'not loaded'
-  register: load_drbd
-  failed_when: load_drbd.rc != 0  # Fail if the module cannot be loaded
+  changed_when: install_drbd_load.rc == 0
+  when: install_drbd_check.stdout == 'not loaded'
+  register: install_drbd_load
+  failed_when: install_drbd_load.rc != 0  # Fail if the module cannot be loaded
 
 - name: Fail if DRBD module is not found
   ansible.builtin.fail:
     msg: "The DRBD module is not present on this system."
-  when: drbd_check.stdout == 'not loaded' and load_drbd.rc != 0
+  when: install_drbd_check.stdout == 'not loaded' and install_drbd_load.rc != 0
 
 - name: Check for DRBD module version
   ansible.builtin.shell:
@@ -46,17 +46,17 @@
   args:
     executable: /bin/bash
   changed_when: false
-  register: _osvc_drbd_version
+  register: install_drbd_version
 
 - name: Debug drbd module version
   ansible.builtin.debug:
-    var: _osvc_drbd_version.stdout
+    var: install_drbd_version.stdout
     verbosity: 2
 
 - name: Test DRBD version >= 9.0.0
   ansible.builtin.assert:
     that:
-      - "_osvc_drbd_version.stdout is version('9.0.0', '>=')"
+      - "install_drbd_version.stdout is version('9.0.0', '>=')"
 
 - name: Flush handlers
   ansible.builtin.meta: flush_handlers
