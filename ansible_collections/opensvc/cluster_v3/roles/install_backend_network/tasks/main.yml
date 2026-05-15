@@ -3,7 +3,7 @@
 #
 - name: Set fact on network existence
   ansible.builtin.set_fact:
-    install_backend_net_created: true
+    install_backend_network_created: true
 
 # Check if the backend network is already configured
 - name: Check for backend network configuration
@@ -13,14 +13,14 @@
     executable: /bin/bash
   failed_when: false
   changed_when: false
-  register: _osvc_network_list
+  register: install_backend_network_list
   run_once: true
 
 - name: Set fact on actual network existence
   ansible.builtin.set_fact:
-    install_backend_net_created: false
+    install_backend_network_created: false
   when:
-    - _osvc_network_list.rc != 0 or install_backend_network_name not in _osvc_network_list.stdout
+    - install_backend_network_list.rc != 0 or install_backend_network_name not in install_backend_network_list.stdout
 
 # Configure backend network if not already present
 - name: Configure backend network if not configured
@@ -32,7 +32,7 @@
       --kw network#{{ install_backend_network_name }}.ips_per_node={{ install_backend_network_subnet_ips_per_node }}
       --kw network#{{ install_backend_network_name }}.tunnel={{ install_backend_network_tunnel }}
   run_once: true
-  register: output
-  changed_when: output.rc == 0
+  register: install_backend_network_output
+  changed_when: install_backend_network_output.rc == 0
   when:
-    - not install_backend_net_created
+    - not install_backend_network_created
