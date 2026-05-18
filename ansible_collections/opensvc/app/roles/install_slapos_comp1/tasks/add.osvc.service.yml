@@ -11,8 +11,10 @@
   run_once: true
 
 - name: Get OpenSVC major version
-  ansible.builtin.shell: |
-    set -o pipefail && om node --version 2>/dev/null | grep -oP '^\d+' || echo "2"
+  ansible.builtin.shell:
+    cmd: set -o pipefail && om node --version 2>/dev/null | grep -oP '^\d+' || echo "2"
+  args:
+    executable: /bin/bash
   register: install_slapos_comp1_om_version
   changed_when: false
   run_once: true
