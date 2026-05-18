@@ -1,3 +1,10 @@
+## 2.0.0
+
+- Breaking change: role variable names now comply with Ansible linter
+- Red Hat Ansible Automation Platform is ending support for Ansible Core 2.15 and Python 3.11.
+- Fix linting and sanity errors
+- Set minimum ansible version to 2.16.0
+
 ## 1.3.0
 
 - Bump to Ansible Core 2.16 and Python 3.12 minimum version
