@@ -3,7 +3,7 @@
 
 - name: Set fact on dns cfgmap creation
   ansible.builtin.set_fact:
-    install_dns_cfg_created: 'true'
+    install_dns_cfg_created: true
   run_once: true
 
 - name: Check for dns cfgmap existence
@@ -15,7 +15,7 @@
 
 - name: Set fact according to actual dns cfgmap existence
   ansible.builtin.set_fact:
-    install_dns_cfg_created: 'false'
+    install_dns_cfg_created: false
   run_once: true
   when:
     - install_dns_cfgmap_name not in install_dns_cfgmap_query.stdout
@@ -74,7 +74,7 @@
 
 - name: Set fact on dns service creation
   ansible.builtin.set_fact:
-    install_dns_svc_created: 'true'
+    install_dns_svc_created: true
   run_once: true
 
 - name: Check for dns svc existence
@@ -86,7 +86,7 @@
 
 - name: Set fact according to actual dns svc existence
   ansible.builtin.set_fact:
-    install_dns_svc_created: 'false'
+    install_dns_svc_created: false
   run_once: true
   when:
     - install_dns_service_name not in install_dns_svc_query.stdout
@@ -96,7 +96,7 @@
     install_dns_ipv4_dict: "{{ dict(ansible_play_hosts | zip(_ipv4)) }}"
   vars:
     _ipv4: "{{ ansible_play_hosts |
-               map('extract', hostvars, ['ansible_default_ipv4', 'address']) |
+               map('extract', hostvars, ['ansible_facts', 'default_ipv4', 'address']) |
                list }}"
   run_once: true
   when:
@@ -107,7 +107,7 @@
   ansible.builtin.set_fact:
     install_dns_ipv4_dict: "{{ dict(ansible_play_hosts | zip(_ipv4)) }}"
   vars:
-    _ipv4: "{{ ansible_play_hosts | map('extract', hostvars, 'ansible_host') | list }}"
+    _ipv4: "{{ ansible_play_hosts | map('extract', hostvars, 'ansible_facts', 'host') | list }}"
   run_once: true
   when:
     - install_dns_use_ip_from_ansible_host

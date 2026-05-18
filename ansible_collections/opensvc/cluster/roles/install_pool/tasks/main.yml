@@ -3,7 +3,7 @@
 
 - name: Set fact according to actual pool config
   ansible.builtin.set_fact:
-    install_pool_pool_is_configured: 'true'
+    install_pool_pool_is_configured: true
   run_once: true
 
 - name: Check for actual pool config
@@ -18,7 +18,7 @@
 
 - name: Set fact according to actual pool existence
   ansible.builtin.set_fact:
-    install_pool_pool_is_configured: 'false'
+    install_pool_pool_is_configured: false
   run_once: true
   when:
     - install_pool_osvc_pool_name not in install_pool_osvc_pool_list.stdout

@@ -3,7 +3,7 @@
 
 - name: Set fact on dns cfgmap creation
   ansible.builtin.set_fact:
-    install_dns_cfg_created: 'true'
+    install_dns_cfg_created: true
   run_once: true
 
 - name: Check for dns cfgmap existence
@@ -14,7 +14,7 @@
 
 - name: Set fact according to actual dns cfgmap existence
   ansible.builtin.set_fact:
-    install_dns_cfg_created: 'false'
+    install_dns_cfg_created: false
   run_once: true
   when:
     - install_dns_osvc_dns_cfgmap_name not in install_dns_osvc_dns_cfgmap_query.stdout
@@ -73,7 +73,7 @@
 
 - name: Set fact on dns service creation
   ansible.builtin.set_fact:
-    install_dns_svc_created: 'true'
+    install_dns_svc_created: true
   run_once: true
 
 - name: Check for dns svc existence
@@ -84,7 +84,7 @@
 
 - name: Set fact according to actual dns svc existence
   ansible.builtin.set_fact:
-    install_dns_svc_created: 'false'
+    install_dns_svc_created: false
   run_once: true
   when:
     - install_dns_osvc_dns_service_name not in install_dns_osvc_dns_svc_query.stdout

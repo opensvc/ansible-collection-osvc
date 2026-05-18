@@ -19,7 +19,8 @@
     - provision_cluster_svcvip.rc != 0 or provision_cluster_svcvip.stdout is not search('system/svc/vip')
 
 - name: Identify node ip used for production
-  ansible.builtin.shell: set -o pipefail && grep -w "{{ ansible_hostname }}$" /etc/hosts | head -1 | awk '{print $1}'
+  ansible.builtin.shell: |
+    set -o pipefail && grep -w "{{ ansible_facts['hostname'] }}$" /etc/hosts | head -1 | awk '{print $1}'
   args:
     executable: /bin/bash
   changed_when: false

@@ -2,7 +2,7 @@
 
 - name: Set facts on environment configmaps creation
   ansible.builtin.set_fact:
-    install_collector_osvc_collector_environ_cfg_created: 'true'
+    install_collector_osvc_collector_environ_cfg_created: true
   run_once: true
 
 - name: Check for environment configmaps existence
@@ -13,7 +13,7 @@
 
 - name: Set fact according to actual environment configmaps existence
   ansible.builtin.set_fact:
-    install_collector_osvc_collector_environ_cfg_created: 'false'
+    install_collector_osvc_collector_environ_cfg_created: false
   run_once: true
   when:
     - >

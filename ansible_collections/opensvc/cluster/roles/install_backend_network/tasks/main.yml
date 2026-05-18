@@ -3,7 +3,7 @@
 
 - name: Set fact according to actual network config
   ansible.builtin.set_fact:
-    install_backend_network_is_configured: 'true'
+    install_backend_network_is_configured: true
   run_once: true
 
 - name: Check for actual network config
@@ -18,7 +18,7 @@
 
 - name: Set fact according to actual network existence
   ansible.builtin.set_fact:
-    install_backend_network_is_configured: 'false'
+    install_backend_network_is_configured: false
   run_once: true
   when:
     - install_backend_network_osvc_backend_subnet_name not in install_backend_network_list.stdout

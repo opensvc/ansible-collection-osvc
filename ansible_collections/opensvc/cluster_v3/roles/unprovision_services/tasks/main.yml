@@ -38,7 +38,7 @@
     - inventory_hostname == ansible_play_hosts[0]
 
 - name: Unconfigure cluster vip (scoped entries)
-  ansible.builtin.command: "om cluster unset --kw cluster.vip@{{ ansible_hostname }}"
+  ansible.builtin.command: "om cluster unset --kw cluster.vip@{{ ansible_facts['hostname'] }}"
   register: unprovision_services_output
   changed_when: unprovision_services_output.rc == 0
   when:

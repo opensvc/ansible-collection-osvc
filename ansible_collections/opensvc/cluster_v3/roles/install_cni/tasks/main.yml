@@ -3,7 +3,7 @@
 
 - name: Set fact according to binary deployment
   ansible.builtin.set_fact:
-    install_cni_bin_is_installed: 'false'
+    install_cni_bin_is_installed: false
 
 - name: Check if cni bin exists
   ansible.builtin.stat:
@@ -13,7 +13,7 @@
 
 - name: Set fact according to actual cni binary existence
   ansible.builtin.set_fact:
-    install_cni_bin_is_installed: 'true'
+    install_cni_bin_is_installed: true
   when:
     - item.stat.exists
   loop: "{{ install_cni_check_result.results }}"

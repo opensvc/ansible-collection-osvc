@@ -114,7 +114,7 @@
 
 - name: Set fact according to actual listener cert existence
   ansible.builtin.set_fact:
-    provision_cluster_web_user_created: 'false'
+    provision_cluster_web_user_created: false
   run_once: true
   when:
     - provision_cluster_osvc_webapp_user not in provision_cluster_user_list.stdout
@@ -151,7 +151,8 @@
     - not provision_cluster_web_user_created
 
 - name: Wait for restart to be terminated
-  ansible.builtin.command: 'om node wait --duration 120s --filter monitor.nodes.{{ ansible_hostname }}.monitor.status=idle'
+  ansible.builtin.command: |
+    om node wait --duration 120s --filter monitor.nodes.{{ ansible_facts['hostname'] }}.monitor.status=idle
   changed_when: false
   when:
     - not provision_cluster_web_user_created

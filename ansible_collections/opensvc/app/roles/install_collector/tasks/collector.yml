@@ -2,7 +2,7 @@
 
 - name: Set facts on collector service creation
   ansible.builtin.set_fact:
-    install_collector_osvc_collector_svc_created: 'true'
+    install_collector_osvc_collector_svc_created: true
   run_once: true
 
 - name: Check for collector svc existence
@@ -13,7 +13,7 @@
 
 - name: Set fact according to actual collector svc existence
   ansible.builtin.set_fact:
-    install_collector_osvc_collector_svc_created: 'false'
+    install_collector_osvc_collector_svc_created: false
   run_once: true
   when:
     - install_collector_environ_svcname not in install_collector_osvc_collector_svcname_query.stdout

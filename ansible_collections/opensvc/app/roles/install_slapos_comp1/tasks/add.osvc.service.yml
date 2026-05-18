@@ -224,7 +224,7 @@
 
 - name: Wait for service state up
   ansible.builtin.script:
-    cmd: ./files/object_wait_status.sh {{ ansible_hostname }} {{ install_slapos_comp1_svcpath }} avail up 300s
+    cmd: ./files/object_wait_status.sh {{ ansible_facts['hostname'] }} {{ install_slapos_comp1_svcpath }} avail up 300s
   changed_when: false
   register: install_slapos_comp1_wait_loop
   failed_when: install_slapos_comp1_wait_loop.rc != 0

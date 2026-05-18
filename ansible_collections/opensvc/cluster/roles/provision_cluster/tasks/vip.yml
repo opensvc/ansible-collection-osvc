@@ -18,7 +18,8 @@
     - "'system/svc/vip' not in provision_cluster_svcvip.stdout"
 
 - name: Identify node ip used for production
-  ansible.builtin.shell: set -o pipefail && grep -w {{ ansible_hostname }} /etc/hosts | head -1 | awk '{print $1}'
+  ansible.builtin.shell: |
+    set -o pipefail && grep -w {{ ansible_facts['hostname'] }} /etc/hosts | head -1 | awk '{print $1}'
   args:
     executable: /bin/bash
   changed_when: false
@@ -50,7 +51,7 @@
 - name: Add cluster vip
   ansible.builtin.shell:
     "om cluster set
-    --kw cluster.vip@{{ ansible_hostname }}={{ provision_cluster_osvc_cluster_vip_addr }}/{{ provision_cluster_osvc_cluster_vip_cidr_subnet }}\
+    --kw cluster.vip@{{ ansible_facts['hostname'] }}={{ provision_cluster_osvc_cluster_vip_addr }}/{{ provision_cluster_osvc_cluster_vip_cidr_subnet }}\
     @{{ provision_cluster_osvc_cluster_vip_nic_name }}@{{ provision_cluster_osvc_node_prd_nic }} && sleep 5"
   throttle: 1
   register: provision_cluster_output
@@ -61,7 +62,7 @@
 
 - name: Add cluster vip (single-node)
   ansible.builtin.command: >-
-    om cluster set --kw cluster.vip@{{ ansible_hostname }}=
+    om cluster set --kw cluster.vip@{{ ansible_facts['hostname'] }}=
     {{ provision_cluster_osvc_cluster_vip_addr }}/{{ provision_cluster_osvc_cluster_vip_cidr_subnet }}@{{ provision_cluster_osvc_node_prd_nic }}
   run_once: true
   register: provision_cluster_output

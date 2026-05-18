@@ -3,7 +3,7 @@
 
 - name: Set fact on envoy cfgmap creation
   ansible.builtin.set_fact:
-    install_envoy_envoy_cfg_created: 'true'
+    install_envoy_envoy_cfg_created: true
   run_once: true
 
 - name: Check for envoy cfgmap existence
@@ -14,7 +14,7 @@
 
 - name: Set fact according to actual envoy cfgmap existence
   ansible.builtin.set_fact:
-    install_envoy_envoy_cfg_created: 'false'
+    install_envoy_envoy_cfg_created: false
   run_once: true
   when:
     - install_envoy_osvc_envoy_cfgmap_name not in install_envoy_osvc_envoy_cfgmap_query.stdout
@@ -37,7 +37,7 @@
 
 - name: Set fact on envoy service creation
   ansible.builtin.set_fact:
-    install_envoy_envoy_svc_created: 'true'
+    install_envoy_envoy_svc_created: true
   run_once: true
 
 - name: Check for envoy svc existence
@@ -48,7 +48,7 @@
 
 - name: Set fact according to actual envoy svc existence
   ansible.builtin.set_fact:
-    install_envoy_envoy_svc_created: 'false'
+    install_envoy_envoy_svc_created: false
   run_once: true
   when:
     - install_envoy_osvc_envoy_service_name not in install_envoy_osvc_envoy_svc_query.stdout

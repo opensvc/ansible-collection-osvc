@@ -6,6 +6,7 @@
   changed_when: install_drbd_output.rc == 0
 
 - name: Wait for restart to be terminated
-  ansible.builtin.command: 'om node wait --duration 120s --filter monitor.nodes.{{ ansible_hostname }}.monitor.status=idle'
+  ansible.builtin.command: |
+    om node wait --duration 120s --filter monitor.nodes.{{ ansible_facts['hostname'] }}.monitor.status=idle
   register: install_drbd_output
   changed_when: install_drbd_output.rc == 0

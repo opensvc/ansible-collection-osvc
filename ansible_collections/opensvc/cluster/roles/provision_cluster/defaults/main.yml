@@ -48,5 +48,5 @@ provision_cluster_osvc_ca_cert_country: 'US'
 provision_cluster_osvc_ca_cert_org: 'ACME Company'
 
 # opensvc repository
-provision_cluster_osvc_repo_url: "https://repo.opensvc.com/{{ 'deb' if ansible_os_family == 'Debian' else 'rpms' }}/current"
-provision_cluster_osvc_pkg_dl_path: "/tmp/opensvc.latest.{{ 'deb' if ansible_os_family == 'Debian' else 'rpm' }}"
+provision_cluster_osvc_repo_url: "https://repo.opensvc.com/{{ 'deb' if ansible_facts['os_family'] == 'Debian' else 'rpms' }}/current"
+provision_cluster_osvc_pkg_dl_path: "/tmp/opensvc.latest.{{ 'deb' if ansible_facts['os_family'] == 'Debian' else 'rpm' }}"

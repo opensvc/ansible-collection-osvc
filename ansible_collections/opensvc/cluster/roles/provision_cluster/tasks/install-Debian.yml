@@ -22,7 +22,7 @@
       - python-cryptography
       - python-requests
   when: (ansible_facts['distribution'] == "Ubuntu" ) and
-        ansible_distribution_major_version|int < 20
+        ansible_facts['distribution_major_version']|int < 20
 
 - name: Install package for ubuntu 20.04
   ansible.builtin.apt:
@@ -32,7 +32,7 @@
     packages:
       - python-is-python3
   when: (ansible_facts['distribution'] == "Ubuntu" ) and
-        (ansible_distribution_major_version|int >= 20)
+        (ansible_facts['distribution_major_version']|int >= 20)
 
 - name: Install python crypto for ubuntu < 22
   ansible.builtin.apt:
@@ -43,7 +43,7 @@
       - python3-crypto
       - python3-cryptography
   when: (ansible_facts['distribution'] == "Ubuntu" ) and
-        ansible_distribution_major_version|int < 22
+        ansible_facts['distribution_major_version']|int < 22
 
 - name: Install python crypto for ubuntu >= 22
   ansible.builtin.apt:
@@ -53,4 +53,4 @@
     packages:
       - python3-pycryptodome
   when: (ansible_facts['distribution'] == "Ubuntu" ) and
-        ansible_distribution_major_version|int >= 22
+        ansible_facts['distribution_major_version']|int >= 22

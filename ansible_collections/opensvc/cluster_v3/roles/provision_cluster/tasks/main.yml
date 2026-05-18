@@ -3,24 +3,24 @@
 
 - name: Distribution
   ansible.builtin.debug:
-    msg: "{{ ansible_distribution }}"
+    msg: "{{ ansible_facts['distribution'] }}"
     verbosity: 2
 
 - name: Distribution version
   ansible.builtin.debug:
-    msg: "{{ ansible_distribution_version }}"
+    msg: "{{ ansible_facts['distribution_version'] }}"
     verbosity: 2
 
 - name: Distribution major version
   ansible.builtin.debug:
-    msg: "{{ ansible_distribution_major_version }}"
+    msg: "{{ ansible_facts['distribution_major_version'] }}"
     verbosity: 2
 
 - name: Set repository URL based on OS and version
   ansible.builtin.set_fact:
     provision_cluster_opensvc_repo_url: >-
-      {%- for os, versions in provision_cluster_repositories.items() if os == ansible_distribution -%}
-        {%- for version, url in versions.items() if version|string == ansible_distribution_major_version -%}
+      {%- for os, versions in provision_cluster_repositories.items() if os == ansible_facts['distribution'] -%}
+        {%- for version, url in versions.items() if version|string == ansible_facts['distribution_major_version'] -%}
           {{ url }}
         {%- else -%}
           {{ versions.default }}
@@ -38,10 +38,10 @@
     verbosity: 2
 
 - name: Include OS variables
-  ansible.builtin.include_vars: "{{ ansible_os_family }}.yml"
+  ansible.builtin.include_vars: "{{ ansible_facts['os_family'] }}.yml"
 
 - name: Deploy per OS prerequisites and install osvc package
-  ansible.builtin.include_tasks: "install-{{ ansible_distribution }}.yml"
+  ansible.builtin.include_tasks: "install-{{ ansible_facts['distribution'] }}.yml"
 
 - name: Wait for monitor to be idle
   ansible.builtin.command: |
@@ -151,7 +151,7 @@
   changed_when: provision_cluster_output.rc == 0
   failed_when: provision_cluster_output.rc != 0
   with_items:
-    - om daemon join --node {{ hostvars[ansible_play_hosts[0]].ansible_hostname }} --token {{ hostvars[ansible_play_hosts[0]].provision_cluster_token.stdout }}
+    - om cluster join --node {{ hostvars[ansible_play_hosts[0]].ansible_facts['hostname'] }} --token {{ hostvars[ansible_play_hosts[0]].provision_cluster_token.stdout }}
     - sleep {{ provision_cluster_opensvc_command_delay }}
   when:
     - provision_cluster_nodecount | int > 1
