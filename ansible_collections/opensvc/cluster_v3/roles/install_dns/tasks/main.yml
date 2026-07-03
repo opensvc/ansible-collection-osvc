@@ -101,7 +101,6 @@
   run_once: true
   when:
     - not install_dns_use_ip_from_ansible_host
-    - not install_dns_svc_created
 
 - name: Build dict with ansible_host ip addr
   ansible.builtin.set_fact:
@@ -111,7 +110,6 @@
   run_once: true
   when:
     - install_dns_use_ip_from_ansible_host
-    - not install_dns_svc_created
 
 - name: Debug dns dict
   ansible.builtin.debug:
@@ -120,39 +118,91 @@
   when:
     - not install_dns_svc_created
 
-- name: Concatenate the ip addr
+- name: Check if vip is present
+  ansible.builtin.command: om system/svc/vip config eval --kw ip#0.name
+  failed_when: false
+  changed_when: false
+  register: check_vip_output
+  when: not install_dns_svc_created
+
+- name: Set cluster_has_vip based on check_vip_output.stdout
   ansible.builtin.set_fact:
-    install_dns_list: "{{ install_dns_ipv4_dict.values() | join(' ') }}"
-  run_once: true
+    cluster_has_vip: "{{ (check_vip_output.stdout | default('')) | length > 0 }}"
+  when: check_vip_output is defined
+
+- name: Set default cluster_has_vip if not defined
+  ansible.builtin.set_fact:
+    cluster_has_vip: false
+  when: cluster_has_vip is not defined
+
+- name: Debug cluster_has_vip
+  ansible.builtin.debug:
+    msg: "VIP is present in the output."
+  when: cluster_has_vip | bool
+  run_once: false
+
+- name: Generate DNS resolvers list for each node (with vip)
+  ansible.builtin.set_fact:
+    install_dns_list: >
+      {{
+        [check_vip_output.stdout] +
+        [install_dns_ipv4_dict[inventory_hostname]] +
+        (install_dns_ipv4_dict.values() | list | reject('equalto', install_dns_ipv4_dict[inventory_hostname]) | list)
+      }}
+  run_once: false
   when:
-    - not install_dns_svc_created
+    - cluster_has_vip
+
+- name: Generate DNS resolvers list for each node (without vip)
+  ansible.builtin.set_fact:
+    install_dns_list: >
+      {{
+        [install_dns_ipv4_dict[inventory_hostname]] +
+        (install_dns_ipv4_dict.values() | list | reject('equalto', install_dns_ipv4_dict[inventory_hostname]) | list)
+      }}
+  run_once: false
+  when:
+    - not cluster_has_vip
+
+- name: Convert DNS resolvers list to a space-separated string
+  ansible.builtin.set_fact:
+    install_dns_list_string: "{{ install_dns_list | join(' ') }}"
+  run_once: false
 
 - name: Debug dns list
   ansible.builtin.debug:
-    var: install_dns_list
-  run_once: true
+    var: install_dns_list_string
+  run_once: false
   when:
     - not install_dns_svc_created
 
 - name: Configure cluster dns thread
-  ansible.builtin.command: om cluster set --kw 'cluster.dns={{ install_dns_list }}'
+  ansible.builtin.shell:
+    cmd: |
+      om cluster config update --set 'cluster.dns@{{ ansible_hostname }}={{ install_dns_list_string }}'
+      sleep 5
+  args:
+    executable: /bin/bash
   register: install_dns_output
   changed_when: install_dns_output.rc == 0
-  run_once: true
+  run_once: false
+  throttle: 1
   when:
     - not install_dns_svc_created
 
 - name: Check for dns.cluster propagation before provisioning service
-  ansible.builtin.command: om cluster get --kw cluster.dns
+  ansible.builtin.shell: |
+    set -o pipefail && om cluster config eval --kw cluster.dns -o json | jq -r '.items[0].evaluated | join(" ")'
+  args:
+    executable: /bin/bash
   changed_when: false
   register: install_dns_command_result
   retries: 20
   delay: 2
-  until: install_dns_list in install_dns_command_result.stdout
+  until: install_dns_list_string in install_dns_command_result.stdout
   when:
     - install_dns_nodecount|int > 1
     - not install_dns_svc_created
-    - inventory_hostname != ansible_play_hosts[0]
 
 - name: Deploy dns service
   ansible.builtin.command: om {{ install_dns_service_name }} deploy --config {{ install_dns_svc_template }}
