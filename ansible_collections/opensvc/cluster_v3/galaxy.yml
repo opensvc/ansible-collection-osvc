@@ -15,7 +15,7 @@ authors:
 # OPTIONAL but strongly recommended
 
 description: >
-  Ansible facilities for OpenSVC Cluster management, 
+  Ansible facilities for OpenSVC Cluster management,
   including high availability, orchestrator configuration, and container management support.
 
 # License details for the collection content

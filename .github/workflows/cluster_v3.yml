@@ -1,0 +1,71 @@
+---
+# Red Hat partner certification: collections must support ansible-core 2.16
+# as minimum, be tested with python 3.12, and pass ansible-test sanity.
+name: opensvc.cluster_v3
+
+on:
+  push:
+    paths:
+      - "ansible_collections/opensvc/cluster_v3/**"
+      - ".github/workflows/cluster_v3.yml"
+  pull_request:
+    paths:
+      - "ansible_collections/opensvc/cluster_v3/**"
+      - ".github/workflows/cluster_v3.yml"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  sanity:
+    name: sanity (ansible-core ${{ matrix.ansible }}, python ${{ matrix.python }})
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        ansible: ["2.16", "2.20"]
+        python: ["3.12"]
+    defaults:
+      run:
+        # ansible-test needs the ansible_collections/<namespace>/<name> path
+        working-directory: ansible_collections/opensvc/cluster_v3
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: ${{ matrix.python }}
+
+      - name: Install ansible-core
+        run: pip install "ansible-core~=${{ matrix.ansible }}.0"
+
+      - name: Run ansible-test sanity
+        run: ansible-test sanity --python ${{ matrix.python }} --color yes
+
+  lint:
+    name: lint (ansible-core ${{ matrix.ansible }}, python ${{ matrix.python }})
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        ansible: ["2.16", "2.20"]
+        python: ["3.12"]
+    defaults:
+      run:
+        working-directory: ansible_collections/opensvc/cluster_v3
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: ${{ matrix.python }}
+
+      - name: Install ansible-core and ansible-lint
+        run: pip install "ansible-core~=${{ matrix.ansible }}.0" ansible-lint
+
+      - name: Run ansible-lint
+        # lets the roles tests/test.yml playbooks resolve their role by short name
+        env:
+          ANSIBLE_ROLES_PATH: ${{ github.workspace }}/ansible_collections/opensvc/cluster_v3/roles
+        run: ansible-lint --profile production
