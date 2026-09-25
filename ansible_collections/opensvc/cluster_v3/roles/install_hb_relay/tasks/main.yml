@@ -1,0 +1,119 @@
+---
+# tasks file for install_hb_relay
+
+- name: Check mandatory relay parameters
+  ansible.builtin.assert:
+    that:
+      - install_hb_relay_addr | length > 0
+      - install_hb_relay_user | length > 0
+      - install_hb_relay_password | length > 0
+      - install_hb_relay_password != "changeme"
+    fail_msg: >-
+      install_hb_relay_addr, install_hb_relay_user and install_hb_relay_password
+      must be set, and install_hb_relay_password must not be "changeme"
+    quiet: true
+
+########################## PASSWORD SECRET ##########################
+
+# rc 2 means the secret object does not exist
+- name: Check for relay secret existence
+  ansible.builtin.command: "om {{ install_hb_relay_secret }} ls"
+  register: install_hb_relay_secret_ls
+  changed_when: false
+  failed_when: install_hb_relay_secret_ls.rc not in [0, 2]
+  run_once: true
+
+- name: Create relay secret
+  ansible.builtin.command: "om {{ install_hb_relay_secret }} create"
+  register: install_hb_relay_secret_create
+  changed_when: install_hb_relay_secret_create.rc == 0
+  run_once: true
+  when: install_hb_relay_secret_ls.rc != 0
+
+- name: Get current relay password
+  ansible.builtin.command: "om {{ install_hb_relay_secret }} key decode --name {{ install_hb_relay_secret_key }}"
+  register: install_hb_relay_password_current
+  changed_when: false
+  failed_when: false
+  no_log: true
+  run_once: true
+
+# the password is read from stdin to keep it out of the process list
+- name: Store relay password in secret
+  ansible.builtin.command:
+    cmd: >-
+      om {{ install_hb_relay_secret }} key
+      {{ 'change' if install_hb_relay_password_current.rc == 0 else 'add' }}
+      --name {{ install_hb_relay_secret_key }} --from /dev/stdin
+    stdin: "{{ install_hb_relay_password }}"
+    stdin_add_newline: false
+  register: install_hb_relay_password_output
+  changed_when: install_hb_relay_password_output.rc == 0
+  no_log: true
+  run_once: true
+  when: >-
+    install_hb_relay_password_current.rc != 0
+    or install_hb_relay_password_current.stdout != install_hb_relay_password
+
+########################## HEARTBEAT CONFIG ##########################
+
+- name: Set desired relay heartbeat keywords
+  ansible.builtin.set_fact:
+    install_hb_relay_keywords: >-
+      {{ dict(install_hb_relay_keywords_all.keys()
+              | map('regex_replace', '^', 'hb#' ~ install_hb_relay_rid ~ '.')
+              | zip(install_hb_relay_keywords_all.values()))
+         | dict2items | rejectattr('value', 'equalto', '') | items2dict }}
+  vars:
+    install_hb_relay_keywords_all:
+      type: relay
+      relay: "{{ install_hb_relay_addr }}"
+      username: "{{ install_hb_relay_user }}"
+      password: "from {{ install_hb_relay_secret }} key {{ install_hb_relay_secret_key }}"
+      timeout: "{{ install_hb_relay_timeout }}"
+      interval: "{{ install_hb_relay_interval }}"
+      insecure: "{{ install_hb_relay_insecure | bool | string | lower }}"
+  run_once: true
+
+- name: Get current relay heartbeat config
+  ansible.builtin.command:
+    argv: "{{ ['om', 'cluster', 'config', 'get', '-o', 'json'] + (install_hb_relay_keywords.keys() | map('regex_replace', '^', '--kw=') | list) }}"
+  register: install_hb_relay_config_current
+  changed_when: false
+  run_once: true
+
+# compare "keyword=value" strings, keep the desired ones not already set
+- name: Compute relay heartbeat keywords to update
+  ansible.builtin.set_fact:
+    install_hb_relay_updates: >-
+      {{ install_hb_relay_keywords.items() | map('join', '=') | list
+         | difference(install_hb_relay_current | map(attribute='keyword')
+                      | zip(install_hb_relay_current | map(attribute='value'))
+                      | map('join', '=') | list) }}
+  vars:
+    install_hb_relay_current: "{{ (install_hb_relay_config_current.stdout | from_json)['items'] }}"
+  run_once: true
+
+- name: Configure relay heartbeat
+  ansible.builtin.command:
+    argv: "{{ ['om', 'cluster', 'config', 'update'] + (install_hb_relay_updates | map('regex_replace', '^', '--set=') | list) }}"
+  register: install_hb_relay_config_output
+  changed_when: install_hb_relay_config_output.rc == 0
+  run_once: true
+  when: install_hb_relay_updates | length > 0
+
+########################## CHECK ##########################
+
+- name: Wait for relay heartbeat to beat
+  ansible.builtin.command: om daemon hb status -o json
+  register: install_hb_relay_status
+  changed_when: false
+  retries: "{{ (install_hb_relay_wait_timeout | int / 5) | round(0, 'ceil') | int }}"
+  delay: 5
+  until: >-
+    install_hb_relay_status.rc == 0 and
+    (install_hb_relay_status.stdout | from_json
+     | selectattr('id', 'match', 'hb#' ~ install_hb_relay_rid ~ '\.')
+     | rejectattr('is_beating') | list | length == 0) and
+    (install_hb_relay_status.stdout | from_json
+     | selectattr('id', 'match', 'hb#' ~ install_hb_relay_rid ~ '\.') | list | length > 0)

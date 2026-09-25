@@ -32,13 +32,76 @@
     msg: "{{ provision_cluster_opensvc_repo_url }}"
     verbosity: 2
 
+- name: Debug repository path
+  ansible.builtin.debug:
+    msg: "{{ provision_cluster_repopath }}"
+    verbosity: 2
+
 - name: Debug package name
   ansible.builtin.debug:
     msg: "{{ provision_cluster_package_name }}"
     verbosity: 2
 
+# the client is pinned too, as the server only recommends an unversioned client
+- name: Set opensvc packages to install
+  ansible.builtin.set_fact:
+    provision_cluster_packages: >-
+      {{ [provision_cluster_package_name] if provision_cluster_version | length == 0
+         else [provision_cluster_package_name, 'opensvc-client']
+              | map('regex_replace', '$', ('=' if ansible_facts['os_family'] == 'Debian' else '-')
+                    ~ provision_cluster_version ~ '*')
+              | list }}
+
+- name: Debug opensvc packages
+  ansible.builtin.debug:
+    msg: "{{ provision_cluster_packages }}"
+    verbosity: 2
+
 - name: Include OS variables
   ansible.builtin.include_vars: "{{ ansible_facts['os_family'] }}.yml"
+
+########################## DOWNGRADE FREEZE ##########################
+
+- name: Get installed packages before install
+  ansible.builtin.package_facts:
+    manager: auto
+  when: provision_cluster_version | length > 0
+
+# compare without the git hash and distribution suffix,
+# ex: 3.0.0~rc41.0.g7d8c7d905+ubuntu26.04 is compared as 3.0.0~rc41.0
+- name: Detect opensvc downgrade on this node
+  ansible.builtin.set_fact:
+    provision_cluster_downgrade: >-
+      {{ provision_cluster_version | length > 0
+         and 'opensvc-server' in ansible_facts.packages | default({})
+         and (ansible_facts.packages['opensvc-server'][0].version | regex_replace('\\.g[0-9a-f]+.*$', '')
+              is version(provision_cluster_version | regex_replace('\\.g[0-9a-f]+.*$', ''), '>')) }}
+
+# checked here, as the dnf module downgrades despite allow_downgrade=false
+# when the package name holds a version glob
+- name: Refuse downgrade unless allowed
+  ansible.builtin.assert:
+    that:
+      - not provision_cluster_downgrade | bool or provision_cluster_allow_downgrade | bool
+    fail_msg: >-
+      installed opensvc-server {{ ansible_facts.packages['opensvc-server'][0].version | default('') }}
+      is newer than provision_cluster_version {{ provision_cluster_version }},
+      set provision_cluster_allow_downgrade to true to downgrade
+    quiet: true
+
+- name: Detect opensvc downgrade in the cluster
+  ansible.builtin.set_fact:
+    provision_cluster_downgrade_cluster: >-
+      {{ ansible_play_hosts | map('extract', hostvars, 'provision_cluster_downgrade')
+         | select | list | length > 0 }}
+
+- name: Freeze cluster before downgrade
+  ansible.builtin.command: 'om cluster freeze --wait'
+  register: provision_cluster_freeze_output
+  changed_when: provision_cluster_freeze_output.rc == 0
+  when:
+    - provision_cluster_downgrade_cluster | bool
+    - inventory_hostname == ansible_play_hosts[0]
 
 - name: Deploy per OS prerequisites and install osvc package
   ansible.builtin.include_tasks: "install-{{ ansible_facts['distribution'] }}.yml"
@@ -104,6 +167,7 @@
   register: provision_cluster_token
   changed_when: false
   failed_when: provision_cluster_token.rc != 0
+  no_log: "{{ ansible_verbosity < 2 }}"
   run_once: true
   when:
     - provision_cluster_nodecount | int > 1
@@ -150,8 +214,10 @@
   register: provision_cluster_output
   changed_when: provision_cluster_output.rc == 0
   failed_when: provision_cluster_output.rc != 0
+  environment:
+    OSVC_JOIN_TOKEN: "{{ hostvars[ansible_play_hosts[0]].provision_cluster_token.stdout }}"
   with_items:
-    - om cluster join --node {{ hostvars[ansible_play_hosts[0]].ansible_facts['hostname'] }} --token {{ hostvars[ansible_play_hosts[0]].provision_cluster_token.stdout }}
+    - om cluster join --node {{ hostvars[ansible_play_hosts[0]].ansible_facts['hostname'] }}
     - sleep {{ provision_cluster_opensvc_command_delay }}
   when:
     - provision_cluster_nodecount | int > 1
@@ -166,22 +232,78 @@
     - provision_cluster_nodecount | int > 1
     - not provision_cluster_joined
 
+# after a downgrade, the cluster stays frozen if a node did not rejoin
+- name: Wait for all nodes to rejoin the cluster after downgrade
+  ansible.builtin.command: 'om cluster status -o json'
+  register: provision_cluster_rejoin_status
+  changed_when: false
+  retries: "{{ (provision_cluster_rejoin_timeout | int / 5) | round(0, 'ceil') | int }}"
+  delay: 5
+  until: >-
+    provision_cluster_rejoin_status.rc == 0 and
+    ((provision_cluster_rejoin_status.stdout | from_json).cluster.config.nodes
+     | difference((provision_cluster_rejoin_status.stdout | from_json).cluster.node | dict2items
+                  | selectattr('value.monitor.state', 'equalto', 'idle')
+                  | map(attribute='key') | list)
+     | length == 0)
+  when:
+    - provision_cluster_downgrade_cluster | bool
+    - inventory_hostname == ansible_play_hosts[0]
+
+- name: Get cluster status
+  ansible.builtin.command: 'om cluster status -o json'
+  register: provision_cluster_status
+  changed_when: false
+  when:
+    - provision_cluster_nodecount | int > 1 or provision_cluster_downgrade_cluster | bool
+    - inventory_hostname == ansible_play_hosts[0]
+
+# a zero frozen_at timestamp means the node is not frozen
 - name: Unfreeze cluster
   ansible.builtin.command: 'om cluster thaw --wait'
   register: provision_cluster_output
   changed_when: provision_cluster_output.rc == 0
   when:
-    - provision_cluster_nodecount | int > 1
+    - provision_cluster_nodecount | int > 1 or provision_cluster_downgrade_cluster | bool
     - inventory_hostname == ansible_play_hosts[0]
+    - (provision_cluster_status.stdout | from_json).cluster.node.values()
+      | map(attribute='status.frozen_at') | reject('match', '0001-01-01') | list | length > 0
 
-- name: Add mutual root ssh trust
-  ansible.builtin.command: 'om cluster ssh trust'
-  register: provision_cluster_output
-  changed_when: provision_cluster_output.rc == 0
-  throttle: 1
+# om cluster ssh trust only appends missing entries, so compare file
+# checksums to report whether it actually changed something
+- name: Configure mutual root ssh trust
   when:
     - provision_cluster_nodecount | int > 1
     - provision_cluster_configure_ssh_trust | bool
+  vars:
+    provision_cluster_ssh_trust_files:
+      - /root/.ssh/authorized_keys
+      - /root/.ssh/known_hosts
+  block:
+    - name: Get ssh trust files state before trust
+      ansible.builtin.stat:
+        path: "{{ item }}"
+      loop: "{{ provision_cluster_ssh_trust_files }}"
+      register: provision_cluster_ssh_trust_before
+
+    - name: Add mutual root ssh trust
+      ansible.builtin.command: 'om cluster ssh trust'
+      changed_when: false
+      run_once: true
+
+    - name: Get ssh trust files state after trust
+      ansible.builtin.stat:
+        path: "{{ item }}"
+      loop: "{{ provision_cluster_ssh_trust_files }}"
+      register: provision_cluster_ssh_trust_after
+
+    - name: Report ssh trust changes
+      ansible.builtin.debug:
+        msg: "ssh trust files updated"
+        verbosity: 1
+      changed_when: >-
+        provision_cluster_ssh_trust_before.results | map(attribute='stat.checksum', default='')
+        != provision_cluster_ssh_trust_after.results | map(attribute='stat.checksum', default='')
 
 - name: Configure cluster vip
   ansible.builtin.include_tasks: "vip.yml"
@@ -192,3 +314,20 @@
   ansible.builtin.include_tasks: "docker.yml"
   when:
     - provision_cluster_deploy_docker_daemon_json | bool
+
+- name: Get current hb timeout
+  ansible.builtin.command: 'om cluster config get --kw hb#1.timeout'
+  register: provision_cluster_hb_timeout_current
+  changed_when: false
+  run_once: true
+  when:
+    - provision_cluster_nodecount | int > 1
+
+- name: Set hb timeout to {{ provision_cluster_hb_timeout }}
+  ansible.builtin.command: 'om cluster config update --set hb#1.timeout={{ provision_cluster_hb_timeout }}'
+  register: provision_cluster_hb_output
+  changed_when: provision_cluster_hb_output.rc == 0
+  run_once: true
+  when:
+    - provision_cluster_nodecount | int > 1
+    - provision_cluster_hb_timeout_current.stdout | trim != provision_cluster_hb_timeout

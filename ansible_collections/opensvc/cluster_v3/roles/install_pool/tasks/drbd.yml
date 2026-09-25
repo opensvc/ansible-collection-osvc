@@ -4,8 +4,8 @@
 - name: Configure drbd pool
   ansible.builtin.command:
     cmd: >
-      om cluster set
-      --kw pool#{{ install_pool_name }}.type={{ install_pool_type }}
+      om cluster config update
+      --set pool#{{ install_pool_name }}.type={{ install_pool_type }}
   run_once: true
   register: install_pool_output
   changed_when: install_pool_output.rc == 0
@@ -13,30 +13,30 @@
 - name: Configure drbd pool backed by path
   ansible.builtin.command:
     cmd: >
-      om cluster set
-      --kw pool#{{ install_pool_name }}.path={{ osvc_pool_path }}
+      om cluster config update
+      --set pool#{{ install_pool_name }}.path={{ install_pool_path }}
   run_once: true
   register: install_pool_output
   changed_when: install_pool_output.rc == 0
   when:
-    - (osvc_pool_path is defined) and (osvc_pool_path|length > 0)
+    - (install_pool_path is defined) and (install_pool_path|length > 0)
 
 - name: Configure drbd pool backed by vg
   ansible.builtin.command:
     cmd: >
-      om cluster set
-      --kw pool#{{ install_pool_name }}.vg={{ osvc_pool_vg }}
+      om cluster config update
+      --set pool#{{ install_pool_name }}.vg={{ install_pool_vg }}
   run_once: true
   register: install_pool_output
   changed_when: install_pool_output.rc == 0
   when:
-    - (osvc_pool_vg is defined) and (osvc_pool_vg|length > 0)
+    - (install_pool_vg is defined) and (install_pool_vg|length > 0)
 
 - name: Configure drbd pool replicating through backend network
   ansible.builtin.command:
     cmd: >
-      om cluster set
-      --kw pool#{{ install_pool_name }}.network={{ install_pool_network }}
+      om cluster config update
+      --set pool#{{ install_pool_name }}.network={{ install_pool_network }}
   run_once: true
   register: install_pool_output
   changed_when: install_pool_output.rc == 0
@@ -46,8 +46,8 @@
 - name: Configure drbd pool backed by zpool
   ansible.builtin.command:
     cmd: >
-      om cluster set
-      --kw pool#{{ install_pool_name }}.zpool={{ install_pool_zpool }}
+      om cluster config update
+      --set pool#{{ install_pool_name }}.zpool={{ install_pool_zpool }}
   run_once: true
   register: install_pool_output
   changed_when: install_pool_output.rc == 0

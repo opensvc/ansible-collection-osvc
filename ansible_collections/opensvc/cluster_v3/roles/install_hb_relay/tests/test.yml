@@ -1,0 +1,6 @@
+---
+- name: Test install_hb_relay playbook
+  hosts: localhost
+  remote_user: root
+  roles:
+    - install_hb_relay

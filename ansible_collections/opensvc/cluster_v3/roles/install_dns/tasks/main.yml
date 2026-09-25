@@ -122,36 +122,36 @@
   ansible.builtin.command: om system/svc/vip config eval --kw ip#0.name
   failed_when: false
   changed_when: false
-  register: check_vip_output
+  register: install_dns_check_vip_output
   when: not install_dns_svc_created
 
-- name: Set cluster_has_vip based on check_vip_output.stdout
+- name: Set install_dns_cluster_has_vip based on install_dns_check_vip_output.stdout
   ansible.builtin.set_fact:
-    cluster_has_vip: "{{ (check_vip_output.stdout | default('')) | length > 0 }}"
-  when: check_vip_output is defined
+    install_dns_cluster_has_vip: "{{ (install_dns_check_vip_output.stdout | default('')) | length > 0 }}"
+  when: install_dns_check_vip_output is defined
 
-- name: Set default cluster_has_vip if not defined
+- name: Set default install_dns_cluster_has_vip if not defined
   ansible.builtin.set_fact:
-    cluster_has_vip: false
-  when: cluster_has_vip is not defined
+    install_dns_cluster_has_vip: false
+  when: install_dns_cluster_has_vip is not defined
 
-- name: Debug cluster_has_vip
+- name: Debug install_dns_cluster_has_vip
   ansible.builtin.debug:
     msg: "VIP is present in the output."
-  when: cluster_has_vip | bool
+  when: install_dns_cluster_has_vip | bool
   run_once: false
 
 - name: Generate DNS resolvers list for each node (with vip)
   ansible.builtin.set_fact:
     install_dns_list: >
       {{
-        [check_vip_output.stdout] +
+        [install_dns_check_vip_output.stdout] +
         [install_dns_ipv4_dict[inventory_hostname]] +
         (install_dns_ipv4_dict.values() | list | reject('equalto', install_dns_ipv4_dict[inventory_hostname]) | list)
       }}
   run_once: false
   when:
-    - cluster_has_vip
+    - install_dns_cluster_has_vip
 
 - name: Generate DNS resolvers list for each node (without vip)
   ansible.builtin.set_fact:
@@ -162,7 +162,7 @@
       }}
   run_once: false
   when:
-    - not cluster_has_vip
+    - not install_dns_cluster_has_vip
 
 - name: Convert DNS resolvers list to a space-separated string
   ansible.builtin.set_fact:

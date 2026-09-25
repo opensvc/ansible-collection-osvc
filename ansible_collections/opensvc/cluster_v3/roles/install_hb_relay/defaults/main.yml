@@ -1,0 +1,26 @@
+---
+# defaults file for install_hb_relay
+
+# heartbeat section id, configured as hb#<rid>
+install_hb_relay_rid: "relay"
+
+# relay server uri, ex: https://relay.acme.com:1215 (port defaults to 1215)
+install_hb_relay_addr: ""
+
+# relay user account, created on the relay with grant=heartbeat
+install_hb_relay_user: "relay"
+install_hb_relay_password: ""
+
+# cluster secret object and key holding the relay password
+install_hb_relay_secret: "system/sec/relay"
+install_hb_relay_secret_key: "password"
+
+# optional durations, empty means opensvc default
+install_hb_relay_timeout: ""
+install_hb_relay_interval: ""
+
+# disable the relay certificate verification (testing only)
+install_hb_relay_insecure: false
+
+# seconds to wait for the relay heartbeat to beat on every node
+install_hb_relay_wait_timeout: 60

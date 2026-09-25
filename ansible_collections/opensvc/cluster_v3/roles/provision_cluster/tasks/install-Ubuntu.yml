@@ -1,30 +1,41 @@
 ---
-- name: Add OpenSVC repository for Ubuntu-based systems
-  ansible.builtin.apt_repository:
-    repo: "deb [trusted=yes] {{ provision_cluster_opensvc_repo_url }} uat-opensvc-v3-{{ ansible_facts['lsb']['codename'] }} main"
-    state: present
+
+- name: Add repo using key from URL
+  ansible.builtin.deb822_repository:
+    name: opensvc
+    types: deb
+    uris: "{{ provision_cluster_opensvc_repo_url }}"
+    suites: "{{ provision_cluster_repopath }}"
+    components: "{{ provision_cluster_repocomponents }}"
+    architectures: "{{ provision_cluster_repoarch }}"
+    signed_by: "{{ provision_cluster_repositories_gpgkey_url }}"
+  register: provision_cluster_apt_repo
   when: ansible_facts['distribution'] == "Ubuntu"
 
+# refresh when the repository just changed, else only when the cache is old
 - name: Update packages list
   ansible.builtin.apt:
     update_cache: true
+    cache_valid_time: "{{ 0 if provision_cluster_apt_repo is changed else 3600 }}"
 
 - name: Install common packages for Ubuntu
   ansible.builtin.apt:
     name: "{{ packages }}"
     state: present
-    update_cache: true
+    update_cache: false
   vars:
     packages:
       - docker.io
+      - jq
       - runc
       - sg3-utils
 
 - name: Install opensvc-server package
   ansible.builtin.apt:
-    name: "{{ provision_cluster_package_name }}"
+    name: "{{ provision_cluster_packages }}"
     state: present
-    update_cache: true
+    allow_downgrade: "{{ provision_cluster_allow_downgrade | bool }}"
+    update_cache: false
 
 - name: Enable opensvc-server.service unit file
   ansible.builtin.service:

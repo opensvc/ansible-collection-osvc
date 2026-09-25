@@ -6,7 +6,27 @@ provision_cluster_opensvc_command_delay: 3
 
 # opensvc_server package repositories
 provision_cluster_repoenv: "prod"
-provision_cluster_repoarch: "x86_64"
+provision_cluster_repoarch: >-
+  {%
+    if ansible_facts['distribution'] in ['Ubuntu', 'Debian']
+    %}amd64{%
+    else
+    %}x86_64{%
+    endif
+  %}
+provision_cluster_repocomponents: "main"
+provision_cluster_repopath: >-
+  {%
+    if ansible_facts['distribution'] in ['Ubuntu', 'Debian']
+    %}{{ provision_cluster_repoenv }}-opensvc-v3-{{ ansible_facts['distribution_release'] | trim }}{%
+    elif ansible_facts['distribution'] in ['RedHat', 'CentOS']
+    %}{{ provision_cluster_repoenv }}-opensvc-v3-rhel{{ ansible_facts['distribution_major_version'] | trim }}{%
+    elif ansible_facts['distribution'] == 'SLES'
+    %}{{ provision_cluster_repoenv }}-opensvc-v3-sles{{ ansible_facts['distribution_major_version'] | trim }}{%
+    else
+    %}{{ provision_cluster_repoenv }}-opensvc-v3{%
+    endif
+  %}
 provision_cluster_repositories:
   RedHat:
     default: "https://packages.opensvc.com/rpm/{{ provision_cluster_repoenv }}-opensvc-v3-rhel9/{{ provision_cluster_repoarch }}/"
@@ -25,6 +45,17 @@ provision_cluster_repositories:
 provision_cluster_repositories_gpgkey_url: 'https://packages.opensvc.com/gpg.public.key.asc'
 
 provision_cluster_package_name: "opensvc-server"
+
+# opensvc version to install, ex: 3.0.0~rc40.0.g2bb1b2a8a
+# empty value installs the latest version available in the repository
+provision_cluster_version: ""
+
+# allow installing an older version than the one already installed
+provision_cluster_allow_downgrade: false
+
+# seconds to wait for all nodes to rejoin the cluster after a downgrade,
+# before thawing the cluster frozen for the downgrade
+provision_cluster_rejoin_timeout: 300
 
 # set to something unique
 provision_cluster_clustername: demo

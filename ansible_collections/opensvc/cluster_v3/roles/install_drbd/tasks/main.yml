@@ -11,32 +11,29 @@
     insertbefore: '# Configuration option devices/global_filter'
     line: '        filter = [ "r|/dev/drbd.*|" ]'
 
+# lsmod | grep -q under pipefail reports a loaded module as missing,
+# when grep exits before lsmod has written all its output (SIGPIPE)
 - name: Check if DRBD module is already loaded
-  ansible.builtin.shell:
-    cmd: |
-      set -o pipefail
-      lsmod | grep -q drbd || echo 'not loaded'
-  args:
-    executable: /bin/bash
+  ansible.builtin.stat:
+    path: /sys/module/drbd
   register: install_drbd_check
-  changed_when: false
 
 - name: Skip DRBD installation if module is loaded
   ansible.builtin.debug:
     msg: "DRBD module already loaded, skipping installation."
-  when: install_drbd_check.stdout != 'not loaded'
+  when: install_drbd_check.stat.exists
 
 - name: Load DRBD module if not loaded
   ansible.builtin.command: modprobe drbd
   changed_when: install_drbd_load.rc == 0
-  when: install_drbd_check.stdout == 'not loaded'
+  when: not install_drbd_check.stat.exists
   register: install_drbd_load
   failed_when: install_drbd_load.rc != 0  # Fail if the module cannot be loaded
 
 - name: Fail if DRBD module is not found
   ansible.builtin.fail:
     msg: "The DRBD module is not present on this system."
-  when: install_drbd_check.stdout == 'not loaded' and install_drbd_load.rc != 0
+  when: not install_drbd_check.stat.exists and install_drbd_load.rc != 0
 
 - name: Check for DRBD module version
   ansible.builtin.shell:

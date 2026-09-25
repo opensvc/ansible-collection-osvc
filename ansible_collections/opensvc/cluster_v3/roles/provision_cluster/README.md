@@ -17,6 +17,28 @@ This variable is used to set a cluster unique name. Default value is `demo`.
 
 Examples : prod01, demo, staging, 12723
 
+`provision_cluster_version`
+
+The OpenSVC version to install, for example `3.0.0~rc40.0.g2bb1b2a8a`.
+The opensvc-server and opensvc-client packages are both pinned to this version,
+whatever the distribution specific package suffix.
+
+Default value is empty, installing the latest version available in the repository.
+
+`provision_cluster_allow_downgrade`
+
+Allow installing a `provision_cluster_version` older than the one already installed.
+Before a downgrade, the cluster is frozen. It is thawed after the downgrade only when
+all the cluster nodes have rejoined, else the role fails and the cluster stays frozen.
+
+Default value is `false`.
+
+`provision_cluster_rejoin_timeout`
+
+Seconds to wait for all the nodes to rejoin the cluster after a downgrade.
+
+Default value is `300`.
+
 `provision_cluster_hb_timeout`
 
 This variable is used to set an expiration timeout to the default unicast heartbeat.

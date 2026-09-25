@@ -1,6 +1,6 @@
 ---
 - name: Install DRBD package prerequisites on RHEL
-  ansible.builtin.dnf:
+  ansible.builtin.package:
     name: "{{ item }}"
     state: present
   loop:

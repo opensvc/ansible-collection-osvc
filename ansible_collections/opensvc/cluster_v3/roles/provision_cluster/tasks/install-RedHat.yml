@@ -5,7 +5,8 @@
     description: OpenSVC Repository
     baseurl: "{{ provision_cluster_opensvc_repo_url }}"
     enabled: true
-    gpgcheck: true
+    # rpm 4.11 on EL7 can not verify signatures made with a gpg subkey
+    gpgcheck: "{{ ansible_distribution_major_version | int >= 8 }}"
     gpgkey: "{{ provision_cluster_repositories_gpgkey_url }}"
     state: present
   when: ansible_os_family == "RedHat"
@@ -42,10 +43,12 @@
   when:
     - ansible_facts['os_family'] == "RedHat"
 
+# package module resolves to yum on EL7, dnf on EL8+
 - name: Install opensvc-server package
-  ansible.builtin.dnf:
-    name: "{{ provision_cluster_package_name }}"
+  ansible.builtin.package:
+    name: "{{ provision_cluster_packages }}"
     state: present
+    allow_downgrade: "{{ provision_cluster_allow_downgrade | bool }}"
     update_cache: true
     enablerepo: opensvc
     disablerepo: "*"

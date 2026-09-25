@@ -1,6 +1,6 @@
 ---
 
-- name: Configure directory pool
+- name: Configure vg pool
   ansible.builtin.command:
     cmd: >
       om cluster config update
@@ -9,13 +9,13 @@
   register: install_pool_output
   changed_when: install_pool_output.rc == 0
 
-- name: Configure directory pool path
+- name: Configure vg pool backing lvm vg
   ansible.builtin.command:
     cmd: >
       om cluster config update
-      --set pool#{{ install_pool_name }}.path={{ install_pool_path }}
+      --set pool#{{ install_pool_name }}.name={{ install_pool_vg }}
   run_once: true
   register: install_pool_output
   changed_when: install_pool_output.rc == 0
   when:
-    - (install_pool_path is defined) and (install_pool_path|length > 0)
+    - (install_pool_vg is defined) and (install_pool_vg|length > 0)

@@ -23,13 +23,13 @@ The cluster pool type.
 
 Default value is `directory`
 
-`osvc_pool_path`
+`install_pool_path`
 
 Optional. The cluster pool path.
 
 Default value is `/var/lib/opensvc/pool/directory`
 
-`osvc_pool_vg`
+`install_pool_vg`
 
 Optional. The cluster pool volume group. No default value.
 
@@ -40,6 +40,10 @@ Optional. The cluster pool zpool. No default value.
 `install_pool_network`
 
 Optional. For DRBD pools, it allow to specify a backend network for replication paths. Use node public ips by default.
+
+`install_pool_force`
+
+Optional. If set to true, overwrite existing pool configuration. false by default.
 
 
 Example Playbook
@@ -54,7 +58,7 @@ The snippet below can be used to configure a directory pool backed by /data file
           vars:
             install_pool_name: dirpool
             install_pool_type: directory
-            osvc_pool_path: /data
+            install_pool_path: /data
 
 The snippet below can be used to configure a drbd pool backed by datavg lvm volume group 
 
@@ -65,7 +69,7 @@ The snippet below can be used to configure a drbd pool backed by datavg lvm volu
           vars:
             install_pool_name: drbdpool
             install_pool_type: drbd
-            osvc_pool_vg: datavg
+            install_pool_vg: datavg
 
 The snippet below can be used to configure a drbd pool backed by zfs zpool 
 

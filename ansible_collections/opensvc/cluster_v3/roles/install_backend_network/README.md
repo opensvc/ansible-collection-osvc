@@ -19,15 +19,15 @@ Default value is `backend`
 
 `install_backend_network_subnet_range`
 
-The cluster backend network range. The routed_bridge driver fragments this into `install_backend_network_subnet_ips_per_node` blocks subnets.
+The cluster backend network range. The routed_bridge driver fragments this into per-node subnets of prefix length `install_backend_network_subnet_mask_per_node`.
 
 Default value is `10.100.0.0/16`
 
-`install_backend_network_subnet_ips_per_node`
+`install_backend_network_subnet_mask_per_node`
 
-The number of allocatable ips per node on the network.
+The per-node expected subnet mask. With value 24, you obtain 256 ip addr per nodes.
 
-Default value is `1024`
+Default value is `24`
 
 `install_backend_network_tunnel`
 
@@ -47,7 +47,7 @@ The snippet below can be used as a playbook:
           vars:
             install_backend_network_name: backendnet
             install_backend_network_subnet_range: 10.123.0.0/16
-            install_backend_network_subnet_ips_per_node: 4096
+            install_backend_network_subnet_mask_per_node: 20
             install_backend_network_tunnel: auto
 
 With the previous inputs on a 2-nodes cluster, the role will configure a network named `backendnet`.

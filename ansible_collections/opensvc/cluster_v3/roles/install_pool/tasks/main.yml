@@ -3,7 +3,7 @@
 
 - name: Check for actual pool config
   ansible.builtin.shell:
-    cmd: set -o pipefail && om pool ls | grep -w {{ install_pool_name }}
+    cmd: set -o pipefail && om pool ls -o json | jq -r '.[]|.name' | grep -w ^{{ install_pool_name }}
   args:
     executable: /bin/bash
   failed_when: false
@@ -15,6 +15,12 @@
   ansible.builtin.set_fact:
     install_pool_is_configured: "{{ install_pool_name in install_pool_list.stdout }}"
   run_once: true
+
+- name: Check if force flag is present
+  ansible.builtin.set_fact:
+    install_pool_is_configured: false
+  run_once: true
+  when: install_pool_force
 
 - name: Display pool existence flag
   ansible.builtin.debug:
@@ -32,12 +38,16 @@
       when: install_pool_type == "drbd"
       ansible.builtin.include_tasks: "drbd.yml"
 
+    - name: Configure vg pool
+      when: install_pool_type == "vg"
+      ansible.builtin.include_tasks: "vg.yml"
+
     - name: Configure pool schedule
       when: (install_pool_status_schedule | length) > 0
       ansible.builtin.command:
         cmd: >
-          om cluster set
-          --kw pool#{{ install_pool_name }}.status_schedule={{ install_pool_status_schedule }}
+          om cluster config update
+          --set pool#{{ install_pool_name }}.status_schedule={{ install_pool_status_schedule }}
       run_once: true
       register: install_pool_output
       changed_when: install_pool_output.rc == 0

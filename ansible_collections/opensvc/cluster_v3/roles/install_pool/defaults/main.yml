@@ -7,3 +7,5 @@ install_pool_name: "pool"
 install_pool_status_schedule: ""
 
 install_pool_network: ""
+
+install_pool_force: false

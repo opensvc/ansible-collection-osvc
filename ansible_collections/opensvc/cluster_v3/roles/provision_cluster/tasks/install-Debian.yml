@@ -1,13 +1,16 @@
 ---
 - name: Add OpenSVC repository for Debian-based systems
   ansible.builtin.apt_repository:
-    repo: "deb [trusted=yes] {{ provision_cluster_opensvc_repo_url }} uat-opensvc-v3-{{ ansible_facts['lsb']['codename'] }} main"
+    repo: "deb [trusted=yes] {{ provision_cluster_opensvc_repo_url }} {{ provision_cluster_repopath }} main"
     state: present
+  register: provision_cluster_apt_repo
   when: ansible_facts['distribution'] == "Debian"
 
+# refresh when the repository just changed, else only when the cache is old
 - name: Update packages list
   ansible.builtin.apt:
     update_cache: true
+    cache_valid_time: "{{ 0 if provision_cluster_apt_repo is changed else 3600 }}"
 
 - name: Install common packages for ubuntu/deb
   ansible.builtin.apt:
@@ -17,13 +20,15 @@
   vars:
     packages:
       - docker.io
+      - jq
       - runc
       - sg3-utils
 
 - name: Install opensvc-server package
   ansible.builtin.apt:
-    name: "{{ provision_cluster_package_name }}"
+    name: "{{ provision_cluster_packages }}"
     state: present
+    allow_downgrade: "{{ provision_cluster_allow_downgrade | bool }}"
     update_cache: true
 
 - name: Enable opensvc-server.service unit file
