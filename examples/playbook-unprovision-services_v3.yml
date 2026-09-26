@@ -1,5 +1,9 @@
-- hosts: all
+# DESTRUCTIVE: purges all the services of the cluster, with their data.
+# The role only lists them and fails, unless run with:
+#   -e unprovision_services_confirm=true
+- name: Unprovision all the OpenSVC services of the cluster
+  hosts: all
   tasks:
-    - name: import role unprovision_services
-      import_role:
+    - name: Import role unprovision_services
+      ansible.builtin.import_role:
         name: opensvc.cluster_v3.unprovision_services

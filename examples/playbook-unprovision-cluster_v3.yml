@@ -1,5 +1,8 @@
-- hosts: all
+# Removes OpenSVC from the nodes, fails if services are left on the cluster.
+# Add -e unprovision_cluster_purge=true to also remove the OpenSVC configuration and data.
+- name: Unprovision the OpenSVC cluster
+  hosts: all
   tasks:
-    - name: import role unprovision_cluster
-      import_role:
+    - name: Import role unprovision_cluster
+      ansible.builtin.import_role:
         name: opensvc.cluster_v3.unprovision_cluster

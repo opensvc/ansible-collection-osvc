@@ -1,6 +1,50 @@
 ---
 # tasks file for unprovision_cluster
 
+# om ls needs a running daemon, so check the services from the first node
+# whose daemon is active: objects are replicated on all the nodes
+- name: Get services state
+  ansible.builtin.service_facts:
+
+- name: Detect if OpenSVC daemon is running
+  ansible.builtin.set_fact:
+    unprovision_cluster_daemon_running: >-
+      {{ ansible_facts.services['opensvc-server.service'].state | default('') == 'running' }}
+
+- name: Select a node with a running OpenSVC daemon
+  ansible.builtin.set_fact:
+    unprovision_cluster_check_node: >-
+      {{ ansible_play_hosts | map('extract', hostvars) | selectattr('unprovision_cluster_daemon_running')
+         | map(attribute='inventory_hostname') | first | default('') }}
+  run_once: true
+
+# listing */*/* always matches the cluster object: a selector matching
+# nothing makes om ls fail
+- name: List objects left on the cluster
+  ansible.builtin.command: om */*/* ls -o json
+  register: unprovision_cluster_services
+  changed_when: false
+  # delegate_to is templated before the when condition
+  delegate_to: "{{ unprovision_cluster_check_node | default(inventory_hostname, true) }}"
+  run_once: true
+  when: unprovision_cluster_check_node | length > 0
+
+# unprovision_services purges them, keeping the cluster own objects
+- name: Refuse to unprovision a cluster still running services
+  ansible.builtin.assert:
+    that:
+      - unprovision_cluster_services_left | length == 0
+    fail_msg: >-
+      services are still defined on the cluster: {{ unprovision_cluster_services_left | join(', ') }}.
+      Purge them first, for example with the unprovision_services role.
+    quiet: true
+  vars:
+    unprovision_cluster_services_left: >-
+      {{ (unprovision_cluster_services.stdout | default('{"items": []}') | from_json)['items']
+         | map(attribute='meta.object') | select('match', '^[^/]+/(svc|vol)/') | list }}
+  run_once: true
+  when: unprovision_cluster_check_node | length > 0
+
 - name: Stop and disable opensvc-server.service unit
   ansible.builtin.systemd:
     name: opensvc-server
@@ -8,25 +52,23 @@
     enabled: false
   failed_when: false
 
-- name: Retrieve process list
-  ansible.builtin.shell: |
-    set -o pipefail && ps afx | grep "[o]m daemon run"
-  args:
-    executable: /bin/bash
-  register: unprovision_cluster_osvc_daemon_ps
-  changed_when: false
-  failed_when: false
-
-- name: Shutdown OpenSVC daemon
-  ansible.builtin.command: "om daemon shutdown"
-  register: unprovision_cluster_output
-  changed_when: unprovision_cluster_output.rc == 0
-  when: unprovision_cluster_osvc_daemon_ps.rc == 0
-
-- name: Remove OpenSVC package
-  ansible.builtin.package:
-    name: opensvc-server
+# purge also removes the package configuration files on Debian and Ubuntu
+- name: Remove OpenSVC packages
+  ansible.builtin.apt:
+    name:
+      - opensvc-server
+      - opensvc-client
     state: absent
+    purge: "{{ unprovision_cluster_purge | bool }}"
+  when: ansible_facts['os_family'] == "Debian"
+
+- name: Remove OpenSVC packages
+  ansible.builtin.package:
+    name:
+      - opensvc-server
+      - opensvc-client
+    state: absent
+  when: ansible_facts['os_family'] != "Debian"
 
 - name: Purge OpenSVC folders
   ansible.builtin.file:
@@ -45,3 +87,4 @@
     - /lib/systemd/system/opensvc-server.service
     - /lib/systemd/system/opensvc-services.service
   notify: Systemctl-daemon-reload
+  when: unprovision_cluster_purge | bool

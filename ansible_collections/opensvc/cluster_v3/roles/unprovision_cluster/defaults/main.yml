@@ -1,0 +1,6 @@
+---
+# defaults file for unprovision_cluster
+
+# also remove the OpenSVC configuration and data: package configuration
+# files on Debian and Ubuntu, /etc/opensvc, /var/lib/opensvc, logs...
+unprovision_cluster_purge: false

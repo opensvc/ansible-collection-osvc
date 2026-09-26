@@ -1,3 +1,23 @@
+## 1.2.0
+
+Breaking changes:
+
+- unprovision_services: the role lists the objects to purge and fails without changing anything,
+  unless `unprovision_services_confirm` is set to `true`
+- unprovision_cluster: the OpenSVC configuration and data are kept, unless
+  `unprovision_cluster_purge` is set to `true`
+
+Fixes:
+
+- unprovision_services: keep the objects the cluster needs: cluster, `system/sec/ca`, `system/sec/cert`,
+  `system/sec/hb`, `system/sec/relay`, the secrets referenced by relay heartbeats, and the users.
+  The hb secret was purged, breaking the heartbeats at the next daemon restart
+- unprovision_services: purge volumes after the services holding them
+- unprovision_services: remove the `cluster.vip` tasks, deprecated in OpenSVC v3
+- unprovision_services: thaw the cluster after the purge, unless it was frozen before
+- unprovision_cluster: fail when services or volumes are still defined on the cluster
+- unprovision_cluster: remove opensvc-client too, drop the v2 daemon shutdown tasks
+
 ## 1.1.0
 
 Breaking changes, variables renamed (old names are silently ignored):

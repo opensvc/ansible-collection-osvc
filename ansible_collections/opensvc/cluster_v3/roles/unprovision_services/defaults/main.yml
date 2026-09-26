@@ -1,6 +1,9 @@
 ---
 # defaults file for unprovision_services
 
+# the role purges services, it only acts when this is set to true
+unprovision_services_confirm: false
+
 # Time to wait actual service purge to be done
 unprovision_services_purge_wait_time: 120s
 

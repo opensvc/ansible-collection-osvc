@@ -1,96 +1,146 @@
 ---
 # tasks file for unprovision_services
+#
+# Purge every object except the ones the cluster itself needs:
+# the cluster config, the ca, cert, hb and relay secrets, the users,
+# and the secrets referenced by relay heartbeats.
 
-- name: Freeze cluster
-  ansible.builtin.command: "om cluster freeze"
-  register: unprovision_services_output
-  changed_when: unprovision_services_output.rc == 0
-  when:
-    - inventory_hostname == ansible_play_hosts[0]
-
-- name: Check cluster vip current config
-  ansible.builtin.command: "om cluster get --kw cluster.vip --eval"
-  register: unprovision_services_osvc_cluster_vip
+- name: List cluster objects
+  ansible.builtin.command: om */*/* ls -o json
+  register: unprovision_services_objects
   changed_when: false
-  failed_when: false
+  run_once: true
 
-- name: Consider that vip is not configured
+- name: Get cluster config
+  ansible.builtin.command: om cluster config show
+  register: unprovision_services_cluster_config
+  changed_when: false
+  run_once: true
+
+- name: Get heartbeats type and password
+  ansible.builtin.command:
+    argv: >-
+      {{ ['om', 'cluster', 'config', 'get', '-o', 'json']
+         + (unprovision_services_hb_sections | map('regex_replace', '^(.*)$', '--kw=\1.type') | list)
+         + (unprovision_services_hb_sections | map('regex_replace', '^(.*)$', '--kw=\1.password') | list) }}
+  vars:
+    unprovision_services_hb_sections: >-
+      {{ unprovision_services_cluster_config.stdout
+         | regex_findall('^\[(hb#[^\]]+)\]', multiline=True) }}
+  register: unprovision_services_hb_config
+  changed_when: false
+  run_once: true
+  when: unprovision_services_hb_sections | length > 0
+
+# a relay heartbeat password is "from <secret> key <key>", or the legacy
+# "<secret>" form, and defaults to system/sec/relay
+- name: Compute objects to purge
   ansible.builtin.set_fact:
-    unprovision_services_vip_is_configured: false
+    unprovision_services_to_purge: >-
+      {{ unprovision_services_all
+         | reject('in', unprovision_services_keep + unprovision_services_hb_secrets)
+         | reject('match', '^system/usr/')
+         | list }}
+  vars:
+    unprovision_services_all: >-
+      {{ (unprovision_services_objects.stdout | from_json)['items']
+         | map(attribute='meta.object') | list }}
+    unprovision_services_keep:
+      - cluster
+      - system/sec/ca
+      - system/sec/cert
+      - system/sec/hb
+      - system/sec/relay
+    unprovision_services_hb_items: >-
+      {{ (unprovision_services_hb_config.stdout | default('{"items": []}') | from_json)['items']
+         | items2dict(key_name='keyword', value_name='value') }}
+    unprovision_services_hb_secrets: >-
+      {%- set secrets = [] -%}
+      {%- for kw, value in unprovision_services_hb_items.items() if kw.endswith('.type') and value == 'relay' -%}
+      {%- set password = unprovision_services_hb_items[kw | regex_replace('\.type$', '.password')] | default('') -%}
+      {%- if password | length == 0 -%}
+      {%- set _ = secrets.append('system/sec/relay') -%}
+      {%- elif password.startswith('from ') -%}
+      {%- set _ = secrets.append(password.split()[1]) -%}
+      {%- else -%}
+      {%- set _ = secrets.append(password) -%}
+      {%- endif -%}
+      {%- endfor -%}
+      {{ secrets }}
+  run_once: true
 
-- name: Check if vip is actually configured
-  ansible.builtin.set_fact:
-    unprovision_services_vip_is_configured: true
-  when:
-    - unprovision_services_osvc_cluster_vip.stdout.find('None') == -1
-
-- name: Display unprovision_services_vip_is_configured variable content
+- name: Display objects to purge
   ansible.builtin.debug:
-    var: unprovision_services_vip_is_configured
-    verbosity: 2
+    msg: "Objects to purge: {{ unprovision_services_to_purge | join(', ') if unprovision_services_to_purge else 'none' }}"
+  run_once: true
 
-- name: Unconfigure cluster vip
-  ansible.builtin.command: om cluster unset --kw cluster.vip
-  register: unprovision_services_output
-  changed_when: unprovision_services_output.rc == 0
-  when:
-    - unprovision_services_vip_is_configured | bool
-    - inventory_hostname == ansible_play_hosts[0]
+- name: Require confirmation before purging services
+  ansible.builtin.assert:
+    that:
+      - unprovision_services_confirm | bool or unprovision_services_to_purge | length == 0
+    fail_msg: >-
+      DESTRUCTIVE ACTION: this role destroys the services, volumes, configmaps
+      and secrets listed above, and their data. Set unprovision_services_confirm
+      to true to proceed.
+    quiet: true
+  run_once: true
 
-- name: Unconfigure cluster vip (scoped entries)
-  ansible.builtin.command: "om cluster unset --kw cluster.vip@{{ ansible_facts['hostname'] }}"
-  register: unprovision_services_output
-  changed_when: unprovision_services_output.rc == 0
-  when:
-    - unprovision_services_vip_is_configured|bool
+- name: Unprovision services
+  when: unprovision_services_to_purge | length > 0
+  run_once: true
+  block:
+    - name: Get cluster status
+      ansible.builtin.command: om cluster status -o json
+      register: unprovision_services_status
+      changed_when: false
 
-- name: Consider that we do not need to purge anything
-  ansible.builtin.set_fact:
-    unprovision_services_need_purge: false
-  when:
-    - inventory_hostname == ansible_play_hosts[0]
+    # a zero frozen_at timestamp means the node is not frozen
+    - name: Detect if the cluster is already frozen
+      ansible.builtin.set_fact:
+        unprovision_services_was_frozen: >-
+          {{ (unprovision_services_status.stdout | from_json).cluster.node.values()
+             | map(attribute='status.frozen_at') | reject('match', '0001-01-01') | list | length > 0 }}
 
-- name: Check if we actually need to purge something
-  ansible.builtin.shell: |
-    set -o pipefail && om '*/*/*+!*/*/cluster+!system/sec/cert+!system/sec/ca' ls | grep -v ^OBJECT | wc -l
-  args:
-    executable: /bin/bash
-  changed_when: false
-  failed_when: false
-  register: unprovision_services_svc_count
-  when:
-    - inventory_hostname == ansible_play_hosts[0]
+    - name: Freeze cluster
+      ansible.builtin.command: om cluster freeze --wait
+      register: unprovision_services_output
+      changed_when: unprovision_services_output.rc == 0
+      when: not unprovision_services_was_frozen | bool
 
-- name: Update fact
-  ansible.builtin.set_fact:
-    unprovision_services_need_purge: true
-  when:
-    - inventory_hostname == ansible_play_hosts[0]
-    - unprovision_services_svc_count.rc == 0 and unprovision_services_svc_count.stdout|int > 0
+    # volumes are purged last, as a volume is not purged while a service holds it
+    - name: Purge services
+      ansible.builtin.command:
+        argv:
+          - om
+          - "{{ item | join(',') }}"
+          - purge
+          - --wait
+          - --time
+          - "{{ unprovision_services_purge_wait_time }}"
+      loop:
+        - "{{ unprovision_services_to_purge | reject('match', '^[^/]+/vol/') | list }}"
+        - "{{ unprovision_services_to_purge | select('match', '^[^/]+/vol/') | list }}"
+      loop_control:
+        label: "{{ item | join(',') }}"
+      register: unprovision_services_output
+      changed_when: unprovision_services_output.rc == 0
+      when: item | length > 0
 
-- name: Purge all OpenSVC services
-  ansible.builtin.shell: |
-    set -o pipefail && om '*/*/*+!*/*/cluster+!system/sec/cert+!system/sec/ca' purge --wait --time {{ unprovision_services_purge_wait_time }}
-  args:
-    executable: /bin/bash
-  register: unprovision_services_output
-  changed_when: unprovision_services_output.rc == 0
-  failed_when: false
-  when:
-    - inventory_hostname == ansible_play_hosts[0]
-    - unprovision_services_need_purge|bool
+    - name: Wait for services to be purged
+      ansible.builtin.command: om */*/* ls -o json
+      register: unprovision_services_remaining
+      changed_when: false
+      retries: "{{ unprovision_services_purge_retries }}"
+      delay: "{{ unprovision_services_purge_delay }}"
+      until: >-
+        (unprovision_services_remaining.stdout | from_json)['items']
+        | map(attribute='meta.object') | select('in', unprovision_services_to_purge)
+        | list | length == 0
 
-- name: Check for actual service unprov
-  ansible.builtin.shell: |
-    set -o pipefail && om '*/*/*+!*/*/cluster+!system/sec/cert+!system/sec/ca' ls | grep -v ^OBJECT | wc -l
-  args:
-    executable: /bin/bash
-  changed_when: false
-  failed_when: false
-  register: unprovision_services_unprov_cmdres
-  retries: "{{ unprovision_services_purge_retries }}"
-  delay: "{{ unprovision_services_purge_delay }}"
-  until: unprovision_services_unprov_cmdres.stdout == '0'
-  when:
-    - inventory_hostname == ansible_play_hosts[0]
-    - unprovision_services_need_purge | bool
+    # leave the cluster frozen when it was frozen before this role,
+    # or when the purge failed
+    - name: Thaw cluster
+      ansible.builtin.command: om cluster thaw --wait
+      register: unprovision_services_output
+      changed_when: unprovision_services_output.rc == 0
+      when: not unprovision_services_was_frozen | bool
