@@ -92,7 +92,8 @@
 - name: Detect opensvc downgrade in the cluster
   ansible.builtin.set_fact:
     provision_cluster_downgrade_cluster: >-
-      {{ ansible_play_hosts | map('extract', hostvars, 'provision_cluster_downgrade')
+      {{ ansible_play_hosts | map('extract', hostvars)
+         | map(attribute='provision_cluster_downgrade', default=false)
          | select | list | length > 0 }}
 
 - name: Freeze cluster before downgrade
