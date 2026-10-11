@@ -5,6 +5,6 @@
       import_role:
         name: opensvc.cluster.provision_cluster
       vars:
-        osvc_clustername: testcluster
-        osvc_hb_timeout: 25s
-        osvc_update_etc_hosts: true
+        provision_cluster_osvc_clustername: testcluster
+        provision_cluster_osvc_hb_timeout: 25s
+        provision_cluster_osvc_update_etc_hosts: true
