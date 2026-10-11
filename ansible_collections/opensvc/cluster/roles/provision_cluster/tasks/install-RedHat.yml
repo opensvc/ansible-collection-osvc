@@ -1,7 +1,8 @@
 ---
 
+# EL7 has no dnf: let the package module pick yum
 - name: Install common packages for rhel/centos/fedora (ver < 8)
-  ansible.builtin.dnf:
+  ansible.builtin.package:
     name: "{{ packages }}"
     state: present
   vars:

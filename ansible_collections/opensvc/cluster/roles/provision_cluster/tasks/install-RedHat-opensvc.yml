@@ -1,7 +1,18 @@
 ---
 
+# EL7 has no dnf: let the package module pick yum
+- name: Install OpenSVC agent package (ver < 8)
+  ansible.builtin.package:
+    name: "{{ provision_cluster_osvc_pkg_dl_path }}"
+    state: present
+    disable_gpg_check: true
+  when:
+    - (ansible_distribution_major_version|int < 8)
+
 - name: Install OpenSVC agent package
   ansible.builtin.dnf:
     name: "{{ provision_cluster_osvc_pkg_dl_path }}"
     state: present
     disable_gpg_check: true
+  when:
+    - (ansible_distribution_major_version|int >= 8)
