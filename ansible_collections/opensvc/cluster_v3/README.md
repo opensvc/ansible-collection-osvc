@@ -40,9 +40,17 @@ Then you can use the roles from the collection in your playbooks:
 
 ## Ansible version compatibility
 
-RHEL 7 and RHEL 8 nodes ship python 3.6, which ansible-core 2.17 and later
-can no longer manage. Use ansible-core <= 2.16 (Ansible <= 9) to deploy on
-these distributions.
+This collection requires ansible-core >= 2.16. It has been tested with
+ansible-core 2.16, 2.19, 2.20, 2.21 and 2.22 (beta), on Ubuntu 20.04, 22.04,
+24.04, 26.04 and RHEL 7, 8, 9, 10 nodes.
+
+The python version of the managed nodes limits the usable ansible-core versions:
+
+| Nodes                       | Python | ansible-core |
+|-----------------------------|--------|--------------|
+| RHEL 7, RHEL 8              | 3.6    | <= 2.16      |
+| Ubuntu 20.04                | 3.8    | <= 2.19      |
+| RHEL 9, RHEL 10, Ubuntu 22.04 and later | >= 3.9 | >= 2.16 |
 
 On RHEL 7, the OpenSVC repository is declared with `gpgcheck` disabled,
 because rpm 4.11 can not verify packages signed with a gpg subkey.

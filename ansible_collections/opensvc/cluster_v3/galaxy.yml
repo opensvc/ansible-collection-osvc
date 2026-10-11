@@ -2,7 +2,7 @@
 
 namespace: opensvc
 name: cluster_v3
-version: 1.2.0
+version: 1.3.0
 
 # Path to the Markdown (.md) readme file. This path is relative to the root of the collection
 readme: README.md
@@ -22,7 +22,6 @@ description: >
 license:
   - Apache-2.0
 
-license_file: ''
 
 # List of tags for indexing/searching purposes
 tags:
@@ -50,10 +49,15 @@ dependencies:
 repository: https://github.com/opensvc/ansible-collection-osvc
 
 # URL to any online docs
-documentation: https://github.com/opensvc/ansible-collection-osvc
+documentation: https://github.com/opensvc/ansible-collection-osvc/blob/master/ansible_collections/opensvc/cluster_v3/README.md
 
 # Homepage of the collection/project
 homepage: https://github.com/opensvc/ansible-collection-osvc
 
 # URL to the collection issue tracker
 issues: https://github.com/opensvc/ansible-collection-osvc/issues
+
+# files and directories to exclude when building the collection artifact
+build_ignore:
+  - tests/output
+  - "*.tar.gz"
