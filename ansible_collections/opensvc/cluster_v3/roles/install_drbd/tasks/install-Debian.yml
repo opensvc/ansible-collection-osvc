@@ -1,0 +1,52 @@
+---
+- name: Fail on Debian
+  ansible.builtin.fail:
+    msg: >-
+      No DRBD 9 module is installed: install DRBD 9 before running this role,
+      or set install_drbd_linbit_key to install it from the LINBIT repositories.
+  when: ansible_facts['distribution'] != "Ubuntu"
+
+- name: Fail on Ubuntu releases without DRBD 9 ppa packages
+  ansible.builtin.fail:
+    msg: >-
+      No DRBD 9 module is installed, and the LINBIT ppa provides no DRBD 9 packages for
+      Ubuntu {{ ansible_facts['distribution_version'] }}: set install_drbd_linbit_key to install it
+      from the LINBIT repositories.
+  when: ansible_facts['distribution_major_version'] | int < 22
+
+- name: Declare the DRBD 9 ppa
+  vars:
+    install_drbd_ppa_path: "{{ install_drbd_ppa | regex_replace('^ppa:', '') }}"
+  block:
+    - name: Get DRBD ppa signing key fingerprint
+      ansible.builtin.uri:
+        url: "https://launchpad.net/api/1.0/~{{ install_drbd_ppa_path.split('/')[0] }}/+archive/ubuntu/{{ install_drbd_ppa_path.split('/')[1] }}"
+        return_content: true
+      register: install_drbd_ppa_info
+
+    - name: Get DRBD ppa signing key
+      ansible.builtin.uri:
+        url: "https://keyserver.ubuntu.com/pks/lookup?op=get&search=0x{{ install_drbd_ppa_info.json.signing_key_fingerprint }}"
+        return_content: true
+      register: install_drbd_ppa_key
+
+    # the keyserver backends order the armor headers differently,
+    # drop them so the source file only changes with the key itself
+    - name: Add DRBD ppa deb822 source
+      ansible.builtin.deb822_repository:
+        name: "{{ install_drbd_ppa_path | replace('/', '-') }}"
+        types: deb
+        uris: "https://ppa.launchpadcontent.net/{{ install_drbd_ppa_path }}/ubuntu"
+        suites: "{{ ansible_facts['distribution_release'] }}"
+        components: main
+        signed_by: "{{ install_drbd_ppa_key.content | regex_replace('(?m)^(Comment|Version): .*\\n', '') | trim }}"
+      register: install_drbd_ppa_source
+
+- name: Install DRBD 9 packages from the ppa
+  ansible.builtin.apt:
+    name:
+      - drbd-dkms
+      - drbd-utils
+    state: present
+    update_cache: true
+    cache_valid_time: "{{ 0 if install_drbd_ppa_source is changed else 3600 }}"

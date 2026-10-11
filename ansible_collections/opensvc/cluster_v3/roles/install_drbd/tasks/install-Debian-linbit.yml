@@ -1,0 +1,30 @@
+---
+- name: Install the LINBIT keyring
+  ansible.builtin.apt:
+    deb: "{{ install_drbd_linbit_url }}/public/linbit-keyring.deb"
+
+# the source carries the confidential enabler code: keep it out of the logs,
+# and readable by root only
+- name: Add the LINBIT drbd-9 deb822 source
+  ansible.builtin.deb822_repository:
+    name: linbit-drbd-9
+    types: deb
+    uris: "{{ install_drbd_linbit_url }}/{{ install_drbd_linbit_key }}/"
+    suites: "{{ ansible_facts['distribution_release'] }}"
+    components: drbd-9
+    signed_by: /etc/apt/trusted.gpg.d/linbit-keyring.gpg
+    mode: "0600"
+  register: install_drbd_linbit_source
+  no_log: true
+
+# apt errors print the repository url
+- name: Install DRBD 9 packages from LINBIT
+  ansible.builtin.apt:
+    name:
+      - "linux-headers-{{ ansible_facts['kernel'] }}"
+      - drbd-dkms
+      - drbd-utils
+    state: present
+    update_cache: true
+    cache_valid_time: "{{ 0 if install_drbd_linbit_source is changed else 3600 }}"
+  no_log: true

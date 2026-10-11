@@ -1,0 +1,33 @@
+---
+# rpm 4.11 (EL7) can not verify the signatures made with a subkey
+- name: Install the LINBIT keyring
+  ansible.builtin.package:
+    name: >-
+      {{ install_drbd_linbit_url }}/public/{{ 'linbit-keyring-with-53B3B037282B6E23.rpm'
+      if ansible_facts['distribution_major_version'] | int <= 7 else 'linbit-keyring.rpm' }}
+    state: present
+    disable_gpg_check: true
+
+# the LINBIT kernel modules follow the kABI of each minor release: rerun the
+# role after a minor release upgrade.
+# the repository carries the confidential enabler code: keep it out of the
+# logs, and readable by root only
+- name: Add the LINBIT drbd-9 repository
+  ansible.builtin.yum_repository:
+    name: linbit-drbd-9
+    description: "LINBIT Packages for drbd-9 - $basearch"
+    baseurl: "{{ install_drbd_linbit_url }}/{{ install_drbd_linbit_key }}/yum/rhel{{ ansible_facts['distribution_version'] }}/drbd-9/$basearch"
+    gpgkey: file:///etc/pki/rpm-gpg/RPM-GPG-KEY-linbit
+    gpgcheck: true
+    repo_gpgcheck: true
+    mode: "0600"
+  no_log: true
+
+# dnf errors print the repository url
+- name: Install DRBD 9 packages from LINBIT
+  ansible.builtin.package:
+    name:
+      - kmod-drbd
+      - drbd-utils
+    state: present
+  no_log: true

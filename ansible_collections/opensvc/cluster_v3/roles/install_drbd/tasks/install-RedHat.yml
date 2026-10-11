@@ -1,0 +1,21 @@
+---
+- name: Fail on unsupported RHEL versions
+  ansible.builtin.fail:
+    msg: >-
+      No DRBD 9 module is installed, and ELRepo provides no DRBD 9 packages for
+      EL{{ ansible_facts['distribution_major_version'] }}: install DRBD 9 before running this role,
+      or set install_drbd_linbit_key to install it from the LINBIT repositories.
+  when: ansible_facts['distribution_major_version'] | int < 8
+
+- name: Install ELRepo repository
+  ansible.builtin.dnf:
+    name: "https://www.elrepo.org/elrepo-release-{{ install_drbd_el }}.el{{ install_drbd_el }}.elrepo.noarch.rpm"
+    state: present
+    disable_gpg_check: true
+  vars:
+    install_drbd_el: "{{ ansible_facts['distribution_major_version'] }}"
+
+- name: Install DRBD 9 packages from ELRepo
+  ansible.builtin.dnf:
+    name: "{{ install_drbd_elrepo_packages[ansible_facts['distribution_major_version'] | int] | default(install_drbd_elrepo_packages['default']) }}"
+    state: present

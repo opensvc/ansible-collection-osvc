@@ -1,6 +1,20 @@
 ---
 # defaults file for install_drbd
 
+# LINBIT customer repository enabler code (confidential, keep it in a vault):
+# when set, a missing drbd 9 module is installed from the official LINBIT
+# repositories, else from the ubuntu ppa or ELRepo
+install_drbd_linbit_key: ""
+install_drbd_linbit_url: "https://packages.linbit.com"
+# ubuntu ppa used when no drbd 9 module is installed
 install_drbd_ppa: ppa:linbit/linbit-drbd9-stack
 install_drbd_debian_repo: "https://packages.linbit.com/"
 install_drbd_debian_version: "drbd-9"
+# ELRepo packages used when no drbd 9 module is installed, by EL major version
+install_drbd_elrepo_packages:
+  8:
+    - kmod-drbd90
+    - drbd90-utils
+  default:
+    - kmod-drbd9x
+    - drbd9x-utils
