@@ -81,7 +81,9 @@
 
 - name: Set fact for filter expression
   ansible.builtin.set_fact:
-    provision_cluster_filter_expression: "'InstanceStatusUpdated,path=system/svc/vip,node={{ ansible_play_hosts[0] }},instance_status.overall=\"up\"'"
+    provision_cluster_filter_expression: >-
+      'InstanceStatusUpdated,path=system/svc/vip,node={{ hostvars[ansible_play_hosts[0]].ansible_facts['hostname']
+      }},.instance_status.overall="up"'
   when:
     - not provision_cluster_vip_created
 
@@ -93,14 +95,14 @@
     - not provision_cluster_vip_created
 
 - name: Wait for vip service instance to be spawned
-  ansible.builtin.command: om node event --filter {{ provision_cluster_filter_expression }} --wait --duration 15s
+  ansible.builtin.command: om daemon events --filter {{ provision_cluster_filter_expression }} --wait --duration 15s --quiet
   run_once: true
   changed_when: false
   when:
     - not provision_cluster_vip_created
 
 - name: Unfreeze vip service
-  ansible.builtin.command: 'om system/svc/vip thaw --wait'
+  ansible.builtin.command: 'om system/svc/vip unfreeze --wait'
   run_once: true
   register: provision_cluster_output
   changed_when: provision_cluster_output.rc == 0

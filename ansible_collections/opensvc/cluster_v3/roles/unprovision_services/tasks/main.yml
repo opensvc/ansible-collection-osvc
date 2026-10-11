@@ -140,7 +140,7 @@
     # leave the cluster frozen when it was frozen before this role,
     # or when the purge failed
     - name: Thaw cluster
-      ansible.builtin.command: om cluster thaw --wait
+      ansible.builtin.command: om cluster unfreeze --wait
       register: unprovision_services_output
       changed_when: unprovision_services_output.rc == 0
       when: not unprovision_services_was_frozen | bool

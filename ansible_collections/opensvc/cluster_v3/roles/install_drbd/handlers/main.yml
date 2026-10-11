@@ -7,6 +7,6 @@
 
 - name: Wait for restart to be terminated
   ansible.builtin.command: |
-    om node wait --duration 120s --filter monitor.nodes.{{ ansible_facts['hostname'] }}.monitor.status=idle
+    om daemon events --filter 'NodeMonitorUpdated,node={{ ansible_facts['hostname'] }},.node_monitor.state="idle"' --wait --duration 120s --quiet
   register: install_drbd_output
   changed_when: install_drbd_output.rc == 0

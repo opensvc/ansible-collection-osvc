@@ -31,7 +31,7 @@
   when: install_hb_relay_secret_ls.rc != 0
 
 - name: Get current relay password
-  ansible.builtin.command: "om {{ install_hb_relay_secret }} key decode --name {{ install_hb_relay_secret_key }}"
+  ansible.builtin.command: "om {{ install_hb_relay_secret }} key decode {{ install_hb_relay_secret_key }}"
   register: install_hb_relay_password_current
   changed_when: false
   failed_when: false
@@ -44,7 +44,7 @@
     cmd: >-
       om {{ install_hb_relay_secret }} key
       {{ 'change' if install_hb_relay_password_current.rc == 0 else 'add' }}
-      --name {{ install_hb_relay_secret_key }} --from /dev/stdin
+      {{ install_hb_relay_secret_key }} --from /dev/stdin
     stdin: "{{ install_hb_relay_password }}"
     stdin_add_newline: false
   register: install_hb_relay_password_output
@@ -104,8 +104,9 @@
 
 ########################## CHECK ##########################
 
+# a single node cluster never reports its heartbeats as beating
 - name: Wait for relay heartbeat to beat
-  ansible.builtin.command: om daemon hb status -o json
+  ansible.builtin.command: om daemon hb list -o json
   register: install_hb_relay_status
   changed_when: false
   retries: "{{ (install_hb_relay_wait_timeout | int / 5) | round(0, 'ceil') | int }}"
@@ -117,3 +118,4 @@
      | rejectattr('is_beating') | list | length == 0) and
     (install_hb_relay_status.stdout | from_json
      | selectattr('id', 'match', 'hb#' ~ install_hb_relay_rid ~ '\.') | list | length > 0)
+  when: ansible_play_hosts | length > 1

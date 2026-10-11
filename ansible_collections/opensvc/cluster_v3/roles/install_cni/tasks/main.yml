@@ -62,7 +62,7 @@
     - install_cni_get_url_result is changed
 
 - name: Get CNI paths for OpenSVC cluster
-  ansible.builtin.command: om cluster get --kw cni.plugins
+  ansible.builtin.command: om cluster config get --kw cni.plugins
   register: install_cni_plugins_path
   failed_when: false
   changed_when: false
@@ -71,7 +71,7 @@
     - not install_cni_bin_is_installed
 
 - name: Set CNI paths for OpenSVC cluster
-  ansible.builtin.command: om cluster set --kw cni.plugins={{ install_cni_plugins_dir }} --kw cni.config={{ install_cni_config_dir }}
+  ansible.builtin.command: om cluster config update --set cni.plugins={{ install_cni_plugins_dir }} --set cni.config={{ install_cni_config_dir }}
   run_once: true
   register: install_cni_output
   changed_when: install_cni_output.rc == 0

@@ -29,7 +29,7 @@
     - not install_dns_cfg_created
 
 - name: Set dns cfgmap server key content
-  ansible.builtin.command: om {{ install_dns_cfgmap_name }} add --key server --from {{ install_dns_cfg_server_template }}
+  ansible.builtin.command: om {{ install_dns_cfgmap_name }} key add server --from {{ install_dns_cfg_server_template }}
   register: install_dns_output
   changed_when: install_dns_output.rc == 0
   run_once: true
@@ -57,7 +57,7 @@
     - not install_dns_cfg_created
 
 - name: Set dns cfgmap recursor key content
-  ansible.builtin.command: om {{ install_dns_cfgmap_name }} add --key recursor --from /tmp/recursor
+  ansible.builtin.command: om {{ install_dns_cfgmap_name }} key add recursor --from /tmp/recursor
   register: install_dns_output
   changed_when: install_dns_output.rc == 0
   run_once: true
@@ -65,7 +65,7 @@
     - not install_dns_cfg_created
 
 - name: Set dns cfgmap configure key content
-  ansible.builtin.command: om {{ install_dns_cfgmap_name }} add --key configure --from {{ install_dns_cfg_configure_template }}
+  ansible.builtin.command: om {{ install_dns_cfgmap_name }} key add configure --from {{ install_dns_cfg_configure_template }}
   register: install_dns_output
   changed_when: install_dns_output.rc == 0
   run_once: true
@@ -214,12 +214,12 @@
 
 - name: Wait for dns service
   ansible.builtin.command: |
-    om node event --wait --filter {{ osvcfilter }} --duration 60s -o json
+    om daemon events --wait --filter {{ osvcfilter }} --duration 60s --quiet
   changed_when: false
   run_once: true
   vars:
     osvcfilter: >
-      'InstanceStatusUpdated,node={{ ansible_play_hosts[0] }},path={{ install_dns_service_name
+      'InstanceStatusUpdated,node={{ hostvars[ansible_play_hosts[0]].ansible_facts['hostname'] }},path={{ install_dns_service_name
       }},.instance_status.avail="up",.instance_status.provisioned="true"'
   when:
     - not install_dns_svc_created

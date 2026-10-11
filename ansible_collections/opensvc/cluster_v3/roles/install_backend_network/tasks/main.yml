@@ -26,11 +26,11 @@
 - name: Configure backend network if not configured
   ansible.builtin.command:
     cmd: >
-      om cluster set
-      --kw network#{{ install_backend_network_name }}.type=routed_bridge
-      --kw network#{{ install_backend_network_name }}.network={{ install_backend_network_subnet_range }}
-      --kw network#{{ install_backend_network_name }}.mask_per_node={{ install_backend_network_subnet_mask_per_node }}
-      --kw network#{{ install_backend_network_name }}.tunnel={{ install_backend_network_tunnel }}
+      om cluster config update
+      --set network#{{ install_backend_network_name }}.type=routed_bridge
+      --set network#{{ install_backend_network_name }}.network={{ install_backend_network_subnet_range }}
+      --set network#{{ install_backend_network_name }}.mask_per_node={{ install_backend_network_subnet_mask_per_node }}
+      --set network#{{ install_backend_network_name }}.tunnel={{ install_backend_network_tunnel }}
   run_once: true
   register: install_backend_network_output
   changed_when: install_backend_network_output.rc == 0

@@ -109,7 +109,7 @@
 
 - name: Wait for monitor to be idle
   ansible.builtin.command: |
-    om node event --filter 'NodeMonitorUpdated,node={{ inventory_hostname }},node_monitor.state="idle"' --wait --duration 15s
+    om daemon events --filter 'NodeMonitorUpdated,node={{ ansible_facts['hostname'] }},.node_monitor.state="idle"' --wait --duration 15s --quiet
   changed_when: false
 
 - name: Debug node count
@@ -148,7 +148,7 @@
 ########################## FIRST NODE ##########################
 
 - name: Get current cluster name
-  ansible.builtin.command: om cluster get --kw cluster.name
+  ansible.builtin.command: om cluster config get --kw cluster.name
   register: provision_cluster_name
   changed_when: false
   failed_when: false
@@ -156,7 +156,7 @@
     - inventory_hostname == ansible_play_hosts[0]
 
 - name: Set cluster name
-  ansible.builtin.command: "om cluster set --kw cluster.name={{ provision_cluster_clustername }}"
+  ansible.builtin.command: "om cluster config update --set cluster.name={{ provision_cluster_clustername }}"
   register: provision_cluster_output
   changed_when: provision_cluster_output.rc == 0
   when:
@@ -164,7 +164,7 @@
     - provision_cluster_name.stdout != provision_cluster_clustername
 
 - name: Get cluster token on first node
-  ansible.builtin.command: "om daemon auth token --role join"
+  ansible.builtin.command: "om daemon auth --role join --duration 10m"
   register: provision_cluster_token
   changed_when: false
   failed_when: provision_cluster_token.rc != 0
@@ -183,7 +183,7 @@
 ########################## OTHER NODES ##########################
 
 - name: Check other nodes are joined to a cluster
-  ansible.builtin.command: om cluster get --kw cluster.nodes
+  ansible.builtin.command: om cluster config get --kw cluster.nodes
   register: provision_cluster_clusternodes
   changed_when: false
   failed_when: false
@@ -261,7 +261,7 @@
 
 # a zero frozen_at timestamp means the node is not frozen
 - name: Unfreeze cluster
-  ansible.builtin.command: 'om cluster thaw --wait'
+  ansible.builtin.command: 'om cluster unfreeze --wait'
   register: provision_cluster_output
   changed_when: provision_cluster_output.rc == 0
   when:
