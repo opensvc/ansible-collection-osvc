@@ -42,18 +42,18 @@ galaxy_info:
   #   - 7
   #   - 99.99
   platforms:
-    - name: Fedora
-      versions:
-        - all
     - name: EL
       versions:
-        - all
-    - name: Debian
-      versions:
-        - all
+        - "7"
+        - "8"
+        - "9"
+        - "10"
     - name: Ubuntu
       versions:
-        - all
+        - focal
+        - jammy
+        - noble
+        - resolute
 
   galaxy_tags:
     - opensvc
