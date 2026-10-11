@@ -59,7 +59,7 @@ The subnet `10.123.16.0/20` will be assigned to the second cluster node (4096 ip
 License
 -------
 
-GPL-2.0-or-later
+Apache-2.0
 
 Author Information
 ------------------

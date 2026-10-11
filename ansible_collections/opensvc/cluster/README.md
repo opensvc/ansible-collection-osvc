@@ -36,6 +36,20 @@ Then you can use the roles from the collection in your playbooks:
             provision_cluster_osvc_clustername: prod01
             provision_cluster_osvc_hb_timeout: 30s
 
+## Ansible version compatibility
+
+This collection requires ansible-core >= 2.16. It has been tested with
+ansible-core 2.16, 2.19, 2.20, 2.21 and 2.22 (beta), on Ubuntu 20.04, 22.04,
+24.04, 26.04 and RHEL 7, 8, 9, 10 nodes.
+
+The python version of the managed nodes limits the usable ansible-core versions:
+
+| Nodes                       | Python | ansible-core |
+|-----------------------------|--------|--------------|
+| RHEL 7, RHEL 8              | 3.6    | <= 2.16      |
+| Ubuntu 20.04                | 3.8    | <= 2.19      |
+| RHEL 9, RHEL 10, Ubuntu 22.04 and later | >= 3.9 | >= 2.16 |
+
 ## Support
 
 As Red Hat Ansible Certified Content, this collection is entitled to support

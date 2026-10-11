@@ -39,7 +39,7 @@ The snippet below can be used as a playbook:
 License
 -------
 
-GPL-2.0-or-later
+Apache-2.0
 
 Author Information
 ------------------

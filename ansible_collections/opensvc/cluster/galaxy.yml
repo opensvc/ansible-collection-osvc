@@ -10,7 +10,7 @@ namespace: opensvc
 name: cluster
 
 # The version of the collection. Must be compatible with semantic versioning
-version: 2.0.0
+version: 2.1.0
 
 # The path to the Markdown (.md) readme file. This path is relative to the root of the collection
 readme: README.md
@@ -31,11 +31,10 @@ description: >
 # Either a single license or a list of licenses for content inside of a collection. Ansible Galaxy currently only
 # accepts L(SPDX,https://spdx.org/licenses/) licenses. This key is mutually exclusive with 'license_file'
 license:
-  - GPL-2.0-or-later
+  - Apache-2.0
 
 # The path to the license file for the collection. This path is relative to the root of the collection. This key is
 # mutually exclusive with 'license'
-license_file: ''
 
 # A list of tags you want to associate with the collection for indexing/searching. A tag name has the same character
 # requirements as 'namespace' and 'name'
@@ -67,10 +66,15 @@ dependencies:
 repository: https://github.com/opensvc/ansible-collection-osvc
 
 # The URL to any online docs
-documentation: https://github.com/opensvc/ansible-collection-osvc
+documentation: https://github.com/opensvc/ansible-collection-osvc/blob/master/ansible_collections/opensvc/cluster/README.md
 
 # The URL to the homepage of the collection/project
 homepage: https://github.com/opensvc/ansible-collection-osvc
 
 # The URL to the collection issue tracker
 issues: https://github.com/opensvc/ansible-collection-osvc/issues
+
+# files and directories to exclude when building the collection artifact
+build_ignore:
+  - tests/output
+  - "*.tar.gz"
