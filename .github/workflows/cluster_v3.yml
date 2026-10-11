@@ -24,7 +24,7 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        ansible: ["2.16", "2.20"]
+        ansible: ["2.16", "2.20", "2.21"]
         python: ["3.12"]
     defaults:
       run:
@@ -49,7 +49,7 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        ansible: ["2.16", "2.20"]
+        ansible: ["2.16", "2.20", "2.21"]
         python: ["3.12"]
     defaults:
       run:
