@@ -172,10 +172,26 @@
   ansible.builtin.pause:
     seconds: 5
 
+# om node update ssh authorized keys only appends missing entries, so compare
+# the file checksum to report whether it actually changed something
+- name: Get root authorized_keys state before trust
+  ansible.builtin.stat:
+    path: /root/.ssh/authorized_keys
+  register: provision_cluster_ssh_trust_before
+  when:
+    - provision_cluster_nodecount | int > 1
+
 - name: Add mutual root ssh trust
   ansible.builtin.command: 'om node update ssh authorized keys --node "*"'
   register: provision_cluster_output
-  changed_when: provision_cluster_output.rc == 0
+  changed_when: false
+  when:
+    - provision_cluster_nodecount | int > 1
+
+- name: Get root authorized_keys state after trust
+  ansible.builtin.stat:
+    path: /root/.ssh/authorized_keys
+  register: provision_cluster_ssh_trust_after
   when:
     - provision_cluster_nodecount | int > 1
 
@@ -183,6 +199,9 @@
   ansible.builtin.debug:
     msg: "{{ provision_cluster_output.stdout }}"
     verbosity: 2
+  changed_when: >-
+    provision_cluster_ssh_trust_before.stat.checksum | default('')
+    != provision_cluster_ssh_trust_after.stat.checksum | default('')
   when:
     - provision_cluster_nodecount | int > 1
 
