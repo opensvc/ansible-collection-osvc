@@ -3,4 +3,4 @@
   hosts: localhost
   remote_user: root
   roles:
-    - provision_cluster
+    - opensvc.cluster.provision_cluster

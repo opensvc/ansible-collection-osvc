@@ -3,4 +3,4 @@
   hosts: localhost
   remote_user: root
   roles:
-    - unprovision_services
+    - opensvc.cluster.unprovision_services

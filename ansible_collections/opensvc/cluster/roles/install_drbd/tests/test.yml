@@ -3,4 +3,4 @@
   hosts: localhost
   remote_user: root
   roles:
-    - install_drbd
+    - opensvc.cluster.install_drbd

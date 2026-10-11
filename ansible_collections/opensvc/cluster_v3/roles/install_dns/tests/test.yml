@@ -3,4 +3,4 @@
   hosts: localhost
   remote_user: root
   roles:
-    - install_dns
+    - opensvc.cluster_v3.install_dns

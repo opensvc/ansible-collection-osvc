@@ -37,8 +37,9 @@ jobs:
         with:
           python-version: ${{ matrix.python }}
 
-      - name: Install ansible-core
-        run: pip install "ansible-core~=${{ matrix.ansible }}.0"
+      # antsibull-changelog enables the ansible-test changelog sanity test
+      - name: Install ansible-core and antsibull-changelog
+        run: pip install "ansible-core~=${{ matrix.ansible }}.0" antsibull-changelog
 
       - name: Run ansible-test sanity
         run: ansible-test sanity --python ${{ matrix.python }} --color yes
@@ -65,7 +66,7 @@ jobs:
         run: pip install "ansible-core~=${{ matrix.ansible }}.0" ansible-lint
 
       - name: Run ansible-lint
-        # lets the roles tests/test.yml playbooks resolve their role by short name
+        # lets the roles tests/test.yml playbooks resolve their role by FQCN
         env:
-          ANSIBLE_ROLES_PATH: ${{ github.workspace }}/ansible_collections/opensvc/cluster/roles
+          ANSIBLE_COLLECTIONS_PATH: ${{ github.workspace }}
         run: ansible-lint --profile production
