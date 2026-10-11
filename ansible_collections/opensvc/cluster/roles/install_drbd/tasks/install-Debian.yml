@@ -1,4 +1,11 @@
 ---
+- name: Check if apt-key is available
+  ansible.builtin.stat:
+    path: /usr/bin/apt-key
+  register: install_drbd_apt_key
+  when:
+    - ansible_facts['distribution'] == "Ubuntu"
+
 - name: Add Ubuntu apt repo for drbd
   ansible.builtin.apt_repository:
     validate_certs: false
@@ -6,6 +13,46 @@
     state: present
   when:
     - ansible_facts['distribution'] == "Ubuntu"
+    - install_drbd_apt_key.stat.exists
+
+# apt 3 (Ubuntu >= 26.04) has no apt-key, and apt_repository can not fetch
+# a ppa signing key without it: declare the ppa as a deb822 source instead
+- name: Add Ubuntu apt repo for drbd without apt-key
+  when:
+    - ansible_facts['distribution'] == "Ubuntu"
+    - not install_drbd_apt_key.stat.exists
+  vars:
+    install_drbd_ppa_path: "{{ install_drbd_osvc_drbd_ppa | regex_replace('^ppa:', '') }}"
+  block:
+    - name: Get drbd ppa signing key fingerprint
+      ansible.builtin.uri:
+        url: "https://launchpad.net/api/1.0/~{{ install_drbd_ppa_path.split('/')[0] }}/+archive/ubuntu/{{ install_drbd_ppa_path.split('/')[1] }}"
+        return_content: true
+      register: install_drbd_ppa_info
+
+    - name: Get drbd ppa signing key
+      ansible.builtin.uri:
+        url: "https://keyserver.ubuntu.com/pks/lookup?op=get&search=0x{{ install_drbd_ppa_info.json.signing_key_fingerprint }}"
+        return_content: true
+      register: install_drbd_ppa_key
+
+    # the keyserver backends order the armor headers differently,
+    # drop them so the source file only changes with the key itself
+    - name: Add drbd ppa deb822 source
+      ansible.builtin.deb822_repository:
+        name: "{{ install_drbd_ppa_path | replace('/', '-') }}"
+        types: deb
+        uris: "https://ppa.launchpadcontent.net/{{ install_drbd_ppa_path }}/ubuntu"
+        suites: "{{ ansible_facts['distribution_release'] }}"
+        components: main
+        signed_by: "{{ install_drbd_ppa_key.content | regex_replace('(?m)^(Comment|Version): .*\\n', '') | trim }}"
+      register: install_drbd_ppa_source
+
+    # refresh when the source just changed, else only when the cache is old
+    - name: Update packages list
+      ansible.builtin.apt:
+        update_cache: true
+        cache_valid_time: "{{ 0 if install_drbd_ppa_source is changed else 3600 }}"
 
 - name: Install drbd packages
   ansible.builtin.package:
