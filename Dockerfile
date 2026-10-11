@@ -1,4 +1,6 @@
-FROM python:3.12.13-alpine3.23
+# ansible >= 15 (ansible-core >= 2.22) needs python >= 3.13 on the controller
+ARG PYTHON_IMAGE=python:3.12.15-alpine3.23
+FROM ${PYTHON_IMAGE}
 
 LABEL maintainer="OpenSVC Ansible Team <ansible@opensvc.com>"
 LABEL vendor1="OpenSVC"

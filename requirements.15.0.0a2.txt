@@ -1,0 +1,7 @@
+ansible~=15.0.0a2
+pylint
+pyyaml
+ansible-lint
+yamllint
+dnspython
+docker
