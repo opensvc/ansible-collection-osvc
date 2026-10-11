@@ -1,11 +1,9 @@
 ---
-- name: Install elrepo channels for version 7
-  ansible.builtin.dnf:
-    name: https://www.elrepo.org/elrepo-release-7.el7.elrepo.noarch.rpm
-    state: present
-    disable_gpg_check: true
+- name: Fail on EL7, ELRepo provides no drbd 9 packages anymore
+  ansible.builtin.fail:
+    msg: "No drbd 9 module is installed, and ELRepo provides no drbd 9 packages for EL7: install drbd 9 before running this role."
   when:
-    - ansible_distribution_major_version|int == 7
+    - ansible_distribution_major_version|int < 8
 
 - name: Install elrepo channels for version 8
   ansible.builtin.dnf:
@@ -22,6 +20,14 @@
     disable_gpg_check: true
   when:
     - ansible_distribution_major_version|int == 9
+
+- name: Install elrepo channels for version 10
+  ansible.builtin.dnf:
+    name: https://www.elrepo.org/elrepo-release-10.el10.elrepo.noarch.rpm
+    state: present
+    disable_gpg_check: true
+  when:
+    - ansible_distribution_major_version|int == 10
 
 - name: Install drbd packages
   ansible.builtin.dnf:

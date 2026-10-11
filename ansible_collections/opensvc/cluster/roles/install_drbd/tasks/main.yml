@@ -11,8 +11,19 @@
     insertbefore: '# Configuration option devices/global_filter'
     line: '        filter = [ "r|/dev/drbd.*|" ]'
 
+# the distribution kernels may ship a drbd 8.4 module, only a drbd 9 one
+# is accepted as already installed
+- name: Get installed DRBD module version
+  ansible.builtin.command: modinfo -F version drbd
+  changed_when: false
+  failed_when: false
+  register: install_drbd_installed
+
 - name: Install DRBD software
   ansible.builtin.include_tasks: "install-{{ ansible_os_family }}.yml"
+  when: >-
+    install_drbd_installed.rc != 0
+    or install_drbd_installed.stdout | trim is not version('9.0.0', '>=')
 
 - name: Load drbd kernel module
   ansible.builtin.command: modprobe drbd
