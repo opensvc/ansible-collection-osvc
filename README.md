@@ -17,13 +17,23 @@ There are multiple ways of using the collection, they are described below
 This repository requires some products to be installed:
 
 __Collection usage__
-- python interpreter `2.7` and `3.6+`
-- ansible >= `2.11.0`
-- docker
+- ansible-core >= `2.16.0`
+- docker, to use the collection images
 
 ## Ansible version compatibility
 
-This collection has been tested against the following Ansible versions: >=2.11, 2.13, 2.14, 2.15.
+The collections require ansible-core >= 2.16. They have been tested with
+ansible-core 2.16, 2.19, 2.20, 2.21 and 2.22 (beta), the docker images being
+built for the Ansible releases on a maintained ansible-core (see `build.img.sh`).
+
+They have been tested on Ubuntu 20.04, 22.04, 24.04, 26.04 and RHEL 7, 8, 9, 10
+nodes. The managed nodes python version limits the ansible-core version:
+
+| Nodes                   | Python | ansible-core |
+|-------------------------|--------|--------------|
+| RHEL 7, RHEL 8          | 3.6    | <= 2.16      |
+| Ubuntu 20.04            | 3.8    | <= 2.19      |
+| RHEL 9, 10, Ubuntu 22.04+ | >= 3.9 | all          |
 
 ----
 
