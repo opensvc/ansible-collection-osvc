@@ -1,75 +1,95 @@
+---
 ancestor: null
 releases:
   1.1.0:
     changes:
       minor_changes:
-      - Implement changes requested by Red Hat Ansible partners team.
+        - Implement changes requested by Red Hat Ansible partners team.
     release_date: '2023-09-07'
   1.1.1:
     changes:
       minor_changes:
-      - Add mandatory tags in opensvc.cluster collection.
+        - Add mandatory tags in opensvc.cluster collection.
     release_date: '2023-09-07'
   1.2.0:
     changes:
       minor_changes:
-      - Remove community.general dependency (install_drbd role impacted).
-      - Set minimum ansible version to 2.13.0.
+        - Remove community.general dependency (install_drbd role impacted).
+        - Set minimum ansible version to 2.13.0.
     release_date: '2023-09-18'
   1.2.1:
     changes:
       bugfixes:
-      - Fix command-instead-of-shell warning during galaxy import.
+        - Fix command-instead-of-shell warning during galaxy import.
     release_date: '2023-09-18'
   1.3.0:
     changes:
       bugfixes:
-      - Fix /etc/hosts file build.
-      - Fix variable definition.
+        - Fix /etc/hosts file build.
+        - Fix variable definition.
       minor_changes:
-      - Bump to Ansible Core 2.16 and Python 3.12 minimum version.
+        - Bump to Ansible Core 2.16 and Python 3.12 minimum version.
     release_date: '2026-05-04'
   2.0.0:
     changes:
       breaking_changes:
-      - Role variable names now comply with Ansible linter.
+        - Role variable names now comply with Ansible linter.
       bugfixes:
-      - Fix linting and sanity errors.
+        - Fix linting and sanity errors.
       minor_changes:
-      - Red Hat Ansible Automation Platform is ending support for Ansible Core 2.15
-        and Python 3.11.
-      - Set minimum ansible version to 2.16.0.
+        - Red Hat Ansible Automation Platform is ending support for Ansible Core 2.15
+          and Python 3.11.
+        - Set minimum ansible version to 2.16.0.
     release_date: '2026-05-18'
   2.1.0:
     changes:
       bugfixes:
-      - examples - use the role variable names introduced in 2.0.0.
-      - galaxy.yml - remove the duplicate ``dependencies`` key, ``community.general``
-        is not a dependency since 1.2.0.
-      - install_drbd - fail with an explicit message on EL7 when no drbd 9 module
-        is installed, ELRepo provides no drbd 9 packages for EL7 anymore.
-      - install_drbd - keep an already installed drbd 9 module, instead of installing
-        the ELRepo packages conflicting with the LINBIT ones.
-      - provision_cluster - install the EL7 packages with yum, EL7 has no dnf.
-      - provision_cluster - report the mutual root ssh trust as changed only when
-        ``authorized_keys`` changes.
-      - roles tests - call the roles by FQCN, and the install_pool test now runs install_pool.
+        - examples - use the role variable names introduced in 2.0.0.
+        - galaxy.yml - remove the duplicate ``dependencies`` key, ``community.general``
+          is not a dependency since 1.2.0.
+        - install_drbd - fail with an explicit message on EL7 when no drbd 9 module
+          is installed, ELRepo provides no drbd 9 packages for EL7 anymore.
+        - install_drbd - keep an already installed drbd 9 module, instead of installing
+          the ELRepo packages conflicting with the LINBIT ones.
+        - provision_cluster - install the EL7 packages with yum, EL7 has no dnf.
+        - provision_cluster - report the mutual root ssh trust as changed only when
+          ``authorized_keys`` changes.
+        - roles tests - call the roles by FQCN, and the install_pool test now runs
+          install_pool.
       minor_changes:
-      - 'Documentation - README: describe the collection, add the support and release
-        notes sections.'
-      - 'Documentation - README: document the ansible-core and managed nodes python
-        compatibility.'
-      - License - the collection is licensed under Apache-2.0, like its roles (galaxy.yml
-        declared GPL-2.0-or-later), and ships the LICENSE file.
-      - Roles metadata - declare the tested platforms, EL 7 to 10 and Ubuntu 20.04
-        to 26.04, instead of all the Fedora, EL, Debian and Ubuntu versions.
-      - install_drbd - declare the LINBIT ppa as a deb822 source when apt-key is missing
-        (apt 3, Ubuntu 26.04), ``ansible.builtin.apt_repository`` can not fetch the
-        ppa signing key without it.
-      - install_drbd - support RHEL 10, with the ELRepo packages.
+        - 'Documentation - README: describe the collection, add the support and release
+          notes sections.'
+        - 'Documentation - README: document the ansible-core and managed nodes python
+          compatibility.'
+        - License - the collection is licensed under Apache-2.0, like its roles (galaxy.yml
+          declared GPL-2.0-or-later), and ships the LICENSE file.
+        - Roles metadata - declare the tested platforms, EL 7 to 10 and Ubuntu 20.04
+          to 26.04, instead of all the Fedora, EL, Debian and Ubuntu versions.
+        - install_drbd - declare the LINBIT ppa as a deb822 source when apt-key is
+          missing (apt 3, Ubuntu 26.04), ``ansible.builtin.apt_repository`` can not
+          fetch the ppa signing key without it.
+        - install_drbd - support RHEL 10, with the ELRepo packages.
       release_summary: 'Maintenance release: RHEL 10 support in install_drbd, Ubuntu
         26.04 and RHEL 7 fixes, no breaking change. The collection is now licensed
         under Apache-2.0, like its roles.'
     fragments:
-    - 2.1.0.yml
+      - 2.1.0.yml
     release_date: '2026-10-11'
+  2.1.1:
+    changes:
+      bugfixes:
+        - Use the ``ansible_facts`` dictionary instead of the top-level fact variables,
+          removing the ``INJECT_FACTS_AS_VARS`` deprecation warning of ansible-core
+          2.20 and later.
+        - provision_cluster - the cluster vip was set up on the wrong interface when
+          ``/etc/hosts`` listed an alias like ``<hostname>-hb1`` before the node name,
+          or a loopback address for the node name. The node production ip lookup now
+          matches the exact node name and skips the loopback addresses.
+      release_summary: 'Bugfix release: the roles no longer rely on the top-level
+        fact variables deprecated by ansible-core 2.20, and the cluster vip interface
+        detection matches the exact node name.'
+    fragments:
+      - facts-namespace.yml
+      - release-summary.yml
+      - vip-prd-ip-lookup.yml
+    release_date: '2026-10-12'

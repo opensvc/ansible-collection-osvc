@@ -1,7 +1,0 @@
----
-bugfixes:
-  - >-
-    provision_cluster - the cluster vip was set up on the wrong interface when ``/etc/hosts``
-    listed an alias like ``<hostname>-hb1`` before the node name, or a loopback address for
-    the node name. The node production ip lookup now matches the exact node name and skips
-    the loopback addresses.
