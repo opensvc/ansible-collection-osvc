@@ -179,7 +179,7 @@
 - name: Configure cluster dns thread
   ansible.builtin.shell:
     cmd: |
-      om cluster config update --set 'cluster.dns@{{ ansible_hostname }}={{ install_dns_list_string }}'
+      om cluster config update --set 'cluster.dns@{{ ansible_facts['hostname'] }}={{ install_dns_list_string }}'
       sleep 5
   args:
     executable: /bin/bash

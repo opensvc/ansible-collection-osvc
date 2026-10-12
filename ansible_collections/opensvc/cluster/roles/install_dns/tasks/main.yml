@@ -94,7 +94,7 @@
     install_dns_ipv4_dict: "{{ dict(ansible_play_hosts | zip(_ipv4)) }}"
   vars:
     _ipv4: "{{ ansible_play_hosts |
-               map('extract', hostvars, ['ansible_default_ipv4', 'address']) |
+               map('extract', hostvars, ['ansible_facts', 'default_ipv4', 'address']) |
                list }}"
   run_once: true
   when:

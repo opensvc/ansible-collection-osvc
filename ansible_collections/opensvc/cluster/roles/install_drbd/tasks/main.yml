@@ -1,7 +1,7 @@
 ---
 # tasks file for install_drbd
 - name: Install DRBD software prerequisites
-  ansible.builtin.include_tasks: "install-{{ ansible_os_family }}-prerequisites.yml"
+  ansible.builtin.include_tasks: "install-{{ ansible_facts['os_family'] }}-prerequisites.yml"
 
 # need to be done before kernel module installation, to benefit from initramfs update involved by kms installation
 - name: Set LVM filter to avoid drbd devices to be scanned
@@ -20,7 +20,7 @@
   register: install_drbd_installed
 
 - name: Install DRBD software
-  ansible.builtin.include_tasks: "install-{{ ansible_os_family }}.yml"
+  ansible.builtin.include_tasks: "install-{{ ansible_facts['os_family'] }}.yml"
   when: >-
     install_drbd_installed.rc != 0
     or install_drbd_installed.stdout | trim is not version('9.0.0', '>=')

@@ -3,7 +3,7 @@
   ansible.builtin.fail:
     msg: "No drbd 9 module is installed, and ELRepo provides no drbd 9 packages for EL7: install drbd 9 before running this role."
   when:
-    - ansible_distribution_major_version|int < 8
+    - ansible_facts['distribution_major_version']|int < 8
 
 - name: Install elrepo channels for version 8
   ansible.builtin.dnf:
@@ -11,7 +11,7 @@
     state: present
     disable_gpg_check: true
   when:
-    - ansible_distribution_major_version|int == 8
+    - ansible_facts['distribution_major_version']|int == 8
 
 - name: Install elrepo channels for version 9
   ansible.builtin.dnf:
@@ -19,7 +19,7 @@
     state: present
     disable_gpg_check: true
   when:
-    - ansible_distribution_major_version|int == 9
+    - ansible_facts['distribution_major_version']|int == 9
 
 - name: Install elrepo channels for version 10
   ansible.builtin.dnf:
@@ -27,7 +27,7 @@
     state: present
     disable_gpg_check: true
   when:
-    - ansible_distribution_major_version|int == 10
+    - ansible_facts['distribution_major_version']|int == 10
 
 - name: Install drbd packages
   ansible.builtin.dnf:
@@ -38,7 +38,7 @@
     - kmod-drbd90
     - drbd90-utils
   when:
-    - ansible_distribution_major_version|int <= 8
+    - ansible_facts['distribution_major_version']|int <= 8
 
 - name: Install drbd packages
   ansible.builtin.dnf:
@@ -49,4 +49,4 @@
     - kmod-drbd9x
     - drbd9x-utils
   when:
-    - ansible_distribution_major_version|int > 8
+    - ansible_facts['distribution_major_version']|int > 8

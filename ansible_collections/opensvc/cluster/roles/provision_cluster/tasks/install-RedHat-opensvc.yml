@@ -7,7 +7,7 @@
     state: present
     disable_gpg_check: true
   when:
-    - (ansible_distribution_major_version|int < 8)
+    - (ansible_facts['distribution_major_version']|int < 8)
 
 - name: Install OpenSVC agent package
   ansible.builtin.dnf:
@@ -15,4 +15,4 @@
     state: present
     disable_gpg_check: true
   when:
-    - (ansible_distribution_major_version|int >= 8)
+    - (ansible_facts['distribution_major_version']|int >= 8)

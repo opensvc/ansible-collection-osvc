@@ -14,7 +14,7 @@
       - sg3_utils
       - psmisc
   when:
-    - (ansible_distribution_major_version|int < 8)
+    - (ansible_facts['distribution_major_version']|int < 8)
 
 - name: Install common packages for rhel/centos/fedora (ver > 8)
   ansible.builtin.dnf:
@@ -29,4 +29,4 @@
       - python3-cryptography
       - sg3_utils
   when:
-    - (ansible_distribution_major_version|int >= 8)
+    - (ansible_facts['distribution_major_version']|int >= 8)

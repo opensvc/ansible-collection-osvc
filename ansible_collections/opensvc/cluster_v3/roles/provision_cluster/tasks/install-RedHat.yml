@@ -6,10 +6,10 @@
     baseurl: "{{ provision_cluster_opensvc_repo_url }}"
     enabled: true
     # rpm 4.11 on EL7 can not verify signatures made with a gpg subkey
-    gpgcheck: "{{ ansible_distribution_major_version | int >= 8 }}"
+    gpgcheck: "{{ ansible_facts['distribution_major_version'] | int >= 8 }}"
     gpgkey: "{{ provision_cluster_repositories_gpgkey_url }}"
     state: present
-  when: ansible_os_family == "RedHat"
+  when: ansible_facts['os_family'] == "RedHat"
 
 - name: Install common packages for RHEL/CentOS/Fedora (ver >= 8)
   ansible.builtin.package:
@@ -20,7 +20,7 @@
       - psmisc
       - sg3_utils
   when:
-    - ansible_distribution_major_version | int >= 8
+    - ansible_facts['distribution_major_version'] | int >= 8
 
 - name: Check if docker is present
   ansible.builtin.command: which docker
@@ -34,7 +34,7 @@
     state: present
   when:
     - provision_cluster_docker_check.rc != 0
-    - ansible_distribution_major_version | int >= 8
+    - ansible_facts['distribution_major_version'] | int >= 8
 
 - name: Install jq if not present
   ansible.builtin.package:

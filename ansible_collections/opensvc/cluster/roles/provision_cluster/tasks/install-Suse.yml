@@ -13,7 +13,7 @@
       - sg3_utils
       - psmisc
   when:
-    - (ansible_distribution_major_version|int < 15)
+    - (ansible_facts['distribution_major_version']|int < 15)
 
 - name: Install common packages for sles (ver >= 15)
   community.general.zypper:
@@ -31,4 +31,4 @@
       - python311-cryptography
       - sg3_utils
   when:
-    - (ansible_distribution_major_version|int >= 15)
+    - (ansible_facts['distribution_major_version']|int >= 15)
