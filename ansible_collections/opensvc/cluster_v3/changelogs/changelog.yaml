@@ -116,3 +116,22 @@ releases:
     fragments:
       - 1.3.0.yml
     release_date: '2026-10-11'
+  1.3.1:
+    changes:
+      bugfixes:
+        - Use the ``ansible_facts`` dictionary instead of the top-level fact variables,
+          removing the ``INJECT_FACTS_AS_VARS`` deprecation warning of ansible-core
+          2.20 and later.
+        - provision_cluster - without ``provision_cluster_vip_dev``, the vip interface
+          detection picked the wrong ip when ``/etc/hosts`` listed a loopback address
+          or an alias like ``hb1-<hostname>`` for the node name, and found none when
+          the node name preceded the fqdn. The node production ip lookup now matches
+          the exact node name and skips the loopback addresses.
+      release_summary: 'Bugfix release: the roles no longer rely on the top-level
+        fact variables deprecated by ansible-core 2.20, and the cluster vip interface
+        detection matches the exact node name.'
+    fragments:
+      - facts-namespace.yml
+      - release-summary.yml
+      - vip-prd-ip-lookup.yml
+    release_date: '2026-10-12'

@@ -1,8 +1,0 @@
----
-bugfixes:
-  - >-
-    provision_cluster - without ``provision_cluster_vip_dev``, the vip interface detection
-    picked the wrong ip when ``/etc/hosts`` listed a loopback address or an alias like
-    ``hb1-<hostname>`` for the node name, and found none when the node name preceded the
-    fqdn. The node production ip lookup now matches the exact node name and skips the
-    loopback addresses.

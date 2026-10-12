@@ -1,5 +1,0 @@
----
-bugfixes:
-  - >-
-    Use the ``ansible_facts`` dictionary instead of the top-level fact variables,
-    removing the ``INJECT_FACTS_AS_VARS`` deprecation warning of ansible-core 2.20 and later.
