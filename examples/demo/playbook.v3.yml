@@ -42,10 +42,10 @@
       import_role:
         name: opensvc.cluster_v3.install_dns
 
-    - name: download webapp
-      ansible.builtin.command: |
-        curl -L -o /usr/share/opensvc/html/index.html
-        https://github.com/opensvc/om3-webapp/releases/download/v0.0.0-alpha21/index.html
+    - name: install webapp
+      ansible.builtin.package:
+        name: opensvc-webapp
+        state: present
 
     - name: add user
       ansible.builtin.command: |
