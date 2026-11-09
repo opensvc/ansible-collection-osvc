@@ -1,0 +1,29 @@
+---
+# defaults file for install_hb_unicast
+
+# mandatory, the heartbeat section id, configured as hb#<rid>
+install_hb_unicast_rid: ""
+
+# present, or absent to remove the heartbeat
+install_hb_unicast_state: present
+
+# the address of each node on the heartbeat network: set it as a host
+# variable, mandatory on the nodes of the heartbeat
+# install_hb_unicast_addr: 10.1.2.11
+
+# the interface to bind, optional host variable
+# install_hb_unicast_intf: eth1
+
+# the port, empty for the OpenSVC default, 10000. Each unicast heartbeat
+# of the cluster needs its own port.
+install_hb_unicast_port: ""
+
+# the nodes of the heartbeat, empty for all the cluster nodes
+install_hb_unicast_nodes: []
+
+# optional durations, empty means the OpenSVC default
+install_hb_unicast_timeout: ""
+install_hb_unicast_interval: ""
+
+# seconds to wait for the heartbeat to beat on every node
+install_hb_unicast_wait_timeout: 60

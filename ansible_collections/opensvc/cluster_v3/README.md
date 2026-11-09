@@ -8,7 +8,8 @@ It provides roles to:
 - build an OpenSVC v3 cluster from a server inventory: agent and client
   installation, cluster name, nodes, heartbeats and orchestrator configuration
   (`provision_cluster`)
-- add a relay heartbeat to the cluster (`install_hb_relay`)
+- add heartbeats to the cluster: unicast, disk and relay
+  (`install_hb_unicast`, `install_hb_disk`, `install_hb_relay`)
 - configure the split quorum, its arbitrators and split action
   (`install_quorum`)
 - configure container management support: backend network and CNI plugins

@@ -1,0 +1,34 @@
+---
+# defaults file for install_hb_disk
+
+# mandatory, the heartbeat section id, configured as hb#<rid>
+install_hb_disk_rid: ""
+
+# present, or absent to remove the heartbeat. The disk is left signed:
+# other clusters may share it.
+install_hb_disk_state: present
+
+# the shared disk, mandatory, the same disk seen by every node of the
+# heartbeat, for example /dev/mapper/<wwid>. Set it as a host variable
+# when its path differs between the nodes.
+install_hb_disk_dev: ""
+
+# the slots of the disk, empty for the OpenSVC default, 1024. It must not
+# change once the disk is in use, and must be the same for every cluster
+# sharing the disk.
+install_hb_disk_max_slots: ""
+
+# the nodes of the heartbeat, empty for all the cluster nodes
+install_hb_disk_nodes: []
+
+# optional durations, empty means the OpenSVC default
+install_hb_disk_timeout: ""
+install_hb_disk_interval: ""
+
+# sign a disk holding data, a known signature, or that udev does not
+# identify on every node. The first 4KiB and the heartbeat slots are
+# overwritten.
+install_hb_disk_force: false
+
+# seconds to wait for the heartbeat to beat on every node
+install_hb_disk_wait_timeout: 60

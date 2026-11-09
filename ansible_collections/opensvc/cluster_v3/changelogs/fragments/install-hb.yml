@@ -1,0 +1,12 @@
+---
+minor_changes:
+  - install_hb_unicast - new role, adding a unicast heartbeat with the
+    address, and optionally the interface, of each node. A port already
+    used by another unicast heartbeat of the cluster is refused.
+  - install_hb_disk - new role, adding a disk heartbeat. The disk is checked
+    on every node, signed once when it is not signed yet, and a disk
+    holding data or a known signature is refused unless forced.
+bugfixes:
+  - install_hb_relay - the wait for the heartbeat to beat read the output of
+    om daemon hb list without its items list, and never succeeded on a
+    cluster of several nodes.
