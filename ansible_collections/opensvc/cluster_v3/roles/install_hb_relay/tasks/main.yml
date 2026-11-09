@@ -104,18 +104,33 @@
 
 ########################## CHECK ##########################
 
-# a single node cluster never reports its heartbeats as beating
+# a single node cluster never reports its heartbeats as beating. Each
+# node runs a receiver and a sender, reported per peer.
 - name: Wait for relay heartbeat to beat
   ansible.builtin.command: om daemon hb list -o json
   register: install_hb_relay_status
   changed_when: false
-  retries: "{{ (install_hb_relay_wait_timeout | int / 5) | round(0, 'ceil') | int }}"
+  retries: >-
+    {{ (install_hb_relay_wait_timeout | int / 5) | round(0, 'ceil') | int }}
   delay: 5
   until: >-
-    install_hb_relay_status.rc == 0 and
-    (install_hb_relay_status.stdout | from_json
-     | selectattr('id', 'match', 'hb#' ~ install_hb_relay_rid ~ '\.')
-     | rejectattr('is_beating') | list | length == 0) and
-    (install_hb_relay_status.stdout | from_json
-     | selectattr('id', 'match', 'hb#' ~ install_hb_relay_rid ~ '\.') | list | length > 0)
+    install_hb_relay_status.rc == 0
+    and _items | length > 0
+    and _items | rejectattr('state', 'equalto', 'running') | list
+        | length == 0
+    and _items | rejectattr('is_beating') | list | length == 0
+    and _items | selectattr('id', 'match', '.*[.]rx$')
+        | map(attribute='node') | unique | length
+        == ansible_play_hosts | length
+    and _items | selectattr('id', 'match', '.*[.]tx$')
+        | map(attribute='node') | unique | length
+        == ansible_play_hosts | length
+  vars:
+    _items: >-
+      {{ (install_hb_relay_status.stdout | default('{}', true)
+          | from_json)['items'] | default([])
+         | selectattr('id', 'in', ['hb#' ~ install_hb_relay_rid ~ '.rx',
+                                   'hb#' ~ install_hb_relay_rid ~ '.tx'])
+         | list }}
+  run_once: true
   when: ansible_play_hosts | length > 1
