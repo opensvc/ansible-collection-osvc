@@ -5,8 +5,9 @@
 # majority of the votes run the split action
 install_quorum_enabled: true
 
-# node.split_action: crash, reboot or disabled (test only)
-install_quorum_split_action: crash
+# node.split_action: crash, reboot or disabled (test only). Empty leaves
+# it unmanaged: the OpenSVC default, crash, or the value set on each node
+install_quorum_split_action: ""
 
 # the arbitrators, configured as arbitrator#<name> sections, for example:
 # - name: site3
@@ -18,8 +19,9 @@ install_quorum_arbitrators: []
 # remove the arbitrator#* sections not listed in install_quorum_arbitrators
 install_quorum_exclusive: false
 
-# enable the quorum of a cluster with an even number of nodes and no
-# arbitrator: a split in two equal parts then stops every node
+# enable the quorum of a cluster with an even number of nodes, and no
+# arbitrator, or several arbitrators of which the loss of one loses a split
+# in two equal parts, which then stops every node
 install_quorum_allow_even_split: false
 
 # seconds to wait for every node to see the arbitrators up

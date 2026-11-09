@@ -7,14 +7,15 @@
 - name: Check the quorum parameters
   ansible.builtin.assert:
     that:
-      - install_quorum_split_action in ['crash', 'reboot', 'disabled']
+      - install_quorum_split_action in ['', 'crash', 'reboot', 'disabled']
       - _names | length == install_quorum_arbitrators | length
       - _names | unique | length == _names | length
       - _names | reject('match', '^[A-Za-z0-9_-]+$') | list | length == 0
       - _uris | length == install_quorum_arbitrators | length
       - _weights | select('lt', 1) | list | length == 0
     fail_msg: >-
-      install_quorum_split_action must be crash, reboot or disabled, and each
+      install_quorum_split_action must be empty, crash, reboot or disabled,
+      and each
       install_quorum_arbitrators item needs a unique name, made of letters,
       digits, - and _, an uri, and a weight of 1 or more
     quiet: true
@@ -44,22 +45,39 @@
     install_quorum_weight: >-
       {{ install_quorum_arbitrators | map(attribute='weight', default=1)
          | map('int') | sum }}
+    install_quorum_max_weight: >-
+      {{ install_quorum_arbitrators | map(attribute='weight', default=1)
+         | map('int') | max | default(0, true) }}
   run_once: true
 
-# with an even number of nodes and no arbitrator, each part of a split in
-# two equal parts has half of the votes, not the majority
+# with an even number of nodes, each part of a split in two equal parts has
+# half of the node votes: the part reaching more than half of the arbitrators
+# weight keeps the quorum. Without arbitrator, no part keeps it. With several
+# arbitrators, the loss of any one of them must not change that, else they
+# add failure points instead of redundancy: the heaviest arbitrator weighs
+# less than half of the arbitrators weight.
 - name: Refuse a quorum lost by a split in two equal parts
   ansible.builtin.assert:
     that: >-
       not install_quorum_enabled | bool
       or install_quorum_cluster_nodes | length is odd
-      or install_quorum_weight | int > 0
       or install_quorum_allow_even_split | bool
+      or (install_quorum_weight | int > 0
+          and (install_quorum_arbitrators | length == 1
+               or install_quorum_max_weight | int * 2
+                  < install_quorum_weight | int))
     fail_msg: >-
+      {% if install_quorum_weight | int == 0 -%}
       the cluster has {{ install_quorum_cluster_nodes | length }} nodes and
       no arbitrator: with the quorum enabled, a split in two equal parts
-      stops every node. Add an arbitrator, or set
-      install_quorum_allow_even_split to true.
+      stops every node. Add an arbitrator,
+      {%- else -%}
+      with these arbitrators, the loss of one of them makes a split in two
+      equal parts stop every node: the part keeping the quorum must reach
+      more than half of the arbitrators weight. Use one arbitrator, an odd
+      number of arbitrators of equal weight, or weights where each one is
+      less than half of the total,
+      {%- endif %} or set install_quorum_allow_even_split to true.
     quiet: true
   run_once: true
 
@@ -243,11 +261,13 @@
     - _updates | length > 0
   vars:
     _updates: >-
-      {{ ['cluster.quorum=true',
-          'node.split_action=' ~ install_quorum_split_action]
+      {{ (['cluster.quorum=true']
+          + (['node.split_action=' ~ install_quorum_split_action]
+             if install_quorum_split_action | length > 0 else []))
          | difference(install_quorum_current_keywords) }}
 
-# node.split_action of a node.conf overrides the cluster one
+# node.split_action of a node.conf overrides the cluster one: check it
+# when a cluster wide split action is requested
 - name: Wait for every node to apply the split action
   ansible.builtin.command: om cluster status -o json
   register: install_quorum_nodes_config
@@ -264,7 +284,9 @@
                  install_quorum_split_action)
     | list | length == install_quorum_cluster_nodes | length
   run_once: true
-  when: install_quorum_enabled | bool
+  when:
+    - install_quorum_enabled | bool
+    - install_quorum_split_action | length > 0
 
 - name: Check every node applies the split action
   ansible.builtin.assert:
@@ -286,4 +308,6 @@
                                install_quorum_split_action)
                   | map(attribute='key') | list) | list }}
   run_once: true
-  when: install_quorum_enabled | bool
+  when:
+    - install_quorum_enabled | bool
+    - install_quorum_split_action | length > 0

@@ -19,7 +19,18 @@ all the arbitrators, it runs the split action: `crash` (default), `reboot` or
 For example, two nodes and one arbitrator of weight 1 count 3 votes. When a
 site is lost, the node of the other site reaching the arbitrator has 2 votes
 out of 3 and keeps running. Without the arbitrator, each node of a split two
-nodes cluster has 1 vote out of 2 and both stop: the role refuses this setup,
+nodes cluster has 1 vote out of 2 and both stop.
+
+With an even number of nodes, the part of a split in two equal parts keeping
+the quorum must reach more than half of the arbitrators weight. Several
+arbitrators add redundancy only when the loss of any one of them keeps that
+true: two arbitrators of weight 1 count 4 votes with two nodes, and the
+surviving node needs both of them, 3 votes out of 4. Prefer one arbitrator,
+or an odd number of arbitrators of equal weight: with three, the surviving
+node still has 3 votes out of 5 when one of them is down.
+
+The role refuses an even number of nodes with no arbitrator, or with several
+arbitrators of which the heaviest weighs half of their total weight or more,
 unless `install_quorum_allow_even_split` is set.
 
 The arbitrators count in the total: with an odd number of nodes, the side
@@ -44,9 +55,10 @@ Role behavior
 -------------
 
 The role configures the arbitrators, waits for every cluster node to see them
-up, then enables the quorum and checks every node applies the split action.
-It fails before enabling the quorum when an arbitrator is not reached by every
-node. The arbitrators configured before the failure are kept.
+up, then enables the quorum. It fails before enabling the quorum when an
+arbitrator is not reached by every node, and the arbitrators configured before
+the failure are kept. When a split action is requested, it checks every node
+applies it.
 
 With `install_quorum_enabled: false`, the quorum is disabled before the
 arbitrators are changed.
@@ -70,8 +82,12 @@ Enable the quorum (`cluster.quorum`). Default value is `true`
 `install_quorum_split_action`
 
 The action of a node without the quorum (`node.split_action`): `crash`,
-`reboot`, or `disabled`, for test only. The role fails when a node overrides
-it in its `node.conf`. Default value is `crash`
+`reboot`, or `disabled`, for test only, set for all the nodes. The role fails
+when a node overrides it in its `node.conf`.
+
+Empty leaves it unmanaged: the OpenSVC default, `crash`, applies, or the value
+set in the configuration, for example in the `node.conf` of a node whose power
+on is not easy, set to `reboot`. Default value is `""`
 
 `install_quorum_arbitrators`
 
@@ -91,8 +107,9 @@ Default value is `false`
 
 `install_quorum_allow_even_split`
 
-Enable the quorum of a cluster with an even number of nodes and no arbitrator.
-A split in two equal parts then stops every node. Default value is `false`
+Enable the quorum of a cluster with an even number of nodes and no
+arbitrator, or several arbitrators of which the loss of one makes a split in
+two equal parts stop every node. Default value is `false`
 
 `install_quorum_wait_timeout`
 
