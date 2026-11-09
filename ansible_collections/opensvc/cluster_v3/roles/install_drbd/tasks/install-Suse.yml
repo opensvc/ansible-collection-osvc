@@ -1,0 +1,30 @@
+---
+# SUSE ships DRBD 9 in the SLE High Availability extension: install it
+# when an enabled repository provides it, zypper search exits 104 when
+# no package matches
+- name: Search DRBD 9 packages in the enabled repositories
+  ansible.builtin.command:
+    argv: [zypper, --non-interactive, search, -x, drbd-kmp-default]
+  register: install_drbd_zypper_search
+  changed_when: false
+  failed_when: install_drbd_zypper_search.rc not in [0, 104]
+
+- name: Fail when no repository provides DRBD 9
+  ansible.builtin.fail:
+    msg: >-
+      No DRBD 9 module is installed, and no enabled repository provides
+      drbd-kmp-default: register the SLE High Availability extension,
+      or set install_drbd_linbit_key to install it from the LINBIT
+      repositories.
+  when: install_drbd_zypper_search.rc != 0
+
+- name: Install DRBD 9 packages from the enabled repositories
+  ansible.builtin.command:
+    argv:
+      - zypper
+      - --non-interactive
+      - install
+      - drbd-kmp-default
+      - drbd-utils
+  register: install_drbd_zypper_install
+  changed_when: "'Nothing to do.' not in install_drbd_zypper_install.stdout"

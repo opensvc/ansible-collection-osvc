@@ -10,7 +10,6 @@
     architectures: "{{ provision_cluster_repoarch }}"
     signed_by: "{{ provision_cluster_repositories_gpgkey_url }}"
   register: provision_cluster_apt_repo
-  when: ansible_facts['distribution'] == "Ubuntu"
 
 # refresh when the repository just changed, else only when the cache is old
 - name: Update packages list

@@ -20,6 +20,7 @@ DRBD 9 sources
 | Debian          | unsupported, install DRBD 9 beforehand   | LINBIT repositories           |
 | RHEL 8, 9, 10   | ELRepo                                   | LINBIT repositories           |
 | RHEL 7          | unsupported, install DRBD 9 beforehand   | LINBIT repositories           |
+| SLES 15, 16     | enabled repositories (SLE HA extension)  | LINBIT repositories           |
 
 The LINBIT repositories are the official LINBIT customer repositories, reached
 with the enabler code of the LINBIT subscription.
@@ -43,6 +44,9 @@ The enabler code is confidential:
 On RHEL, the LINBIT kernel modules follow the kABI of each minor release, and
 the repository url includes the minor release: run the role again after a
 minor release upgrade.
+
+On SLES, the LINBIT repositories and kernel modules are per service pack
+(`sles15-sp7`, `sles16.0`...): run the role again after a service pack upgrade.
 
 Example Playbook
 ----------------

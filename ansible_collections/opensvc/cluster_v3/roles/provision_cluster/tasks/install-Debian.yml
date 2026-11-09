@@ -4,7 +4,6 @@
     repo: "deb [trusted=yes] {{ provision_cluster_opensvc_repo_url }} {{ provision_cluster_repopath }} main"
     state: present
   register: provision_cluster_apt_repo
-  when: ansible_facts['distribution'] == "Debian"
 
 # refresh when the repository just changed, else only when the cache is old
 - name: Update packages list

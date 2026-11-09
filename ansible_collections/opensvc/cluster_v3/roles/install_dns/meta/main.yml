@@ -54,6 +54,10 @@ galaxy_info:
         - jammy
         - noble
         - resolute
+    - name: SLES
+      versions:
+        - "15"
+        - "16"
 
   galaxy_tags:
     - opensvc

@@ -9,7 +9,6 @@
     gpgcheck: "{{ ansible_facts['distribution_major_version'] | int >= 8 }}"
     gpgkey: "{{ provision_cluster_repositories_gpgkey_url }}"
     state: present
-  when: ansible_facts['os_family'] == "RedHat"
 
 - name: Install common packages for RHEL/CentOS/Fedora (ver >= 8)
   ansible.builtin.package:
@@ -28,7 +27,7 @@
   failed_when: false
   changed_when: false
 
-- name: Installer Podman (RHEL/CentOS/Fedora)
+- name: Install podman when docker is not present
   ansible.builtin.dnf:
     name: podman
     state: present
@@ -36,12 +35,10 @@
     - provision_cluster_docker_check.rc != 0
     - ansible_facts['distribution_major_version'] | int >= 8
 
-- name: Install jq if not present
+- name: Install jq
   ansible.builtin.package:
     name: jq
     state: present
-  when:
-    - ansible_facts['os_family'] == "RedHat"
 
 # package module resolves to yum on EL7, dnf on EL8+
 - name: Install opensvc-server package

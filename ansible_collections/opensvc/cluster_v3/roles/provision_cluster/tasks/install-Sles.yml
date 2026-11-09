@@ -1,0 +1,46 @@
+---
+# ansible.builtin has no zypper module: the repository is a .repo file,
+# refreshed by zypper before installing (autorefresh), and the packages
+# are installed with the zypper command, which prints "Nothing to do."
+# when they are already installed
+- name: Import OpenSVC repository signing key
+  ansible.builtin.rpm_key:
+    key: "{{ provision_cluster_repositories_gpgkey_url }}"
+    state: present
+
+- name: Add OpenSVC repository
+  ansible.builtin.template:
+    src: zypper.repo.j2
+    dest: /etc/zypp/repos.d/opensvc.repo
+    mode: "0644"
+
+- name: Check if docker is present
+  ansible.builtin.command: which docker
+  register: provision_cluster_docker_check
+  failed_when: false
+  changed_when: false
+
+- name: Install common packages for SLES
+  ansible.builtin.command:
+    argv: "{{ ['zypper', '--non-interactive', 'install'] + _packages }}"
+  register: provision_cluster_zypper_common
+  changed_when: "'Nothing to do.' not in provision_cluster_zypper_common.stdout"
+  vars:
+    _packages: >-
+      {{ ['jq', 'psmisc', 'sg3_utils']
+         + ([] if provision_cluster_docker_check.rc == 0 else ['podman']) }}
+
+- name: Install opensvc-server package
+  ansible.builtin.command:
+    argv: >-
+      {{ ['zypper', '--non-interactive', 'install']
+         + (['--oldpackage'] if provision_cluster_allow_downgrade | bool else [])
+         + ['--from', 'opensvc'] + provision_cluster_packages }}
+  register: provision_cluster_zypper_osvc
+  changed_when: "'Nothing to do.' not in provision_cluster_zypper_osvc.stdout"
+
+- name: Enable and start opensvc-server.service
+  ansible.builtin.service:
+    name: opensvc-server.service
+    enabled: true
+    state: started

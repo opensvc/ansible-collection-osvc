@@ -1,26 +1,19 @@
 ---
 # tasks file for install_backend_network
 #
-- name: Set fact on network existence
-  ansible.builtin.set_fact:
-    install_backend_network_created: true
-
-# Check if the backend network is already configured
-- name: Check for backend network configuration
-  ansible.builtin.shell:
-    cmd: set -o pipefail && om net ls -o json | jq -r '.[]|.name' | grep -w "^{{ install_backend_network_name }}"
-  args:
-    executable: /bin/bash
-  failed_when: false
+- name: List configured networks
+  ansible.builtin.command: om net ls -o json
   changed_when: false
   register: install_backend_network_list
   run_once: true
 
 - name: Set fact on actual network existence
   ansible.builtin.set_fact:
-    install_backend_network_created: false
-  when:
-    - install_backend_network_list.rc != 0 or install_backend_network_name not in install_backend_network_list.stdout
+    install_backend_network_created: >-
+      {{ install_backend_network_name
+         in (install_backend_network_list.stdout | from_json)['items']
+         | map(attribute='name') | list }}
+  run_once: true
 
 # Configure backend network if not already present
 - name: Configure backend network if not configured

@@ -1,0 +1,56 @@
+---
+# the keyring package installs /etc/pki/rpm-gpg/RPM-GPG-KEY-linbit, it is
+# not signed by a key known yet
+- name: Get installed packages
+  ansible.builtin.package_facts:
+    manager: rpm
+
+- name: Install the LINBIT keyring
+  ansible.builtin.command:
+    argv:
+      - zypper
+      - --non-interactive
+      - --no-gpg-checks
+      - install
+      - "{{ install_drbd_linbit_url }}/public/linbit-keyring.rpm"
+  changed_when: true
+  when: "'linbit-keyring' not in ansible_facts.packages"
+
+# zypper does not trust the repository signing key by itself
+- name: Import the LINBIT signing key
+  ansible.builtin.rpm_key:
+    key: /etc/pki/rpm-gpg/RPM-GPG-KEY-linbit
+    state: present
+
+# the LINBIT repositories are per service pack: sles15-sp7, sles16.0...
+# the kernel module packages follow the kABI of each service pack: rerun
+# the role after a service pack upgrade.
+# the repository carries the confidential enabler code: keep it out of the
+# logs, and readable by root only
+- name: Add the LINBIT drbd-9 repository
+  ansible.builtin.template:
+    src: linbit.repo.j2
+    dest: /etc/zypp/repos.d/linbit-drbd-9.repo
+    mode: "0600"
+  vars:
+    install_drbd_linbit_dist: >-
+      {{ 'sles' ~ ansible_facts['distribution_major_version']
+         ~ '-sp' ~ ansible_facts['distribution_version'].split('.')[1]
+         if ansible_facts['distribution_major_version'] | int < 16
+         else 'sles' ~ ansible_facts['distribution_version'] }}
+  no_log: true
+
+# zypper errors print the repository url
+- name: Install DRBD 9 packages from LINBIT
+  ansible.builtin.command:
+    argv:
+      - zypper
+      - --non-interactive
+      - install
+      - --from
+      - linbit-drbd-9
+      - drbd-kmp-default
+      - drbd-utils
+  register: install_drbd_zypper_linbit
+  changed_when: "'Nothing to do.' not in install_drbd_zypper_linbit.stdout"
+  no_log: true

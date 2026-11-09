@@ -68,7 +68,26 @@
       - opensvc-server
       - opensvc-client
     state: absent
-  when: ansible_facts['os_family'] != "Debian"
+  when: ansible_facts['os_family'] not in ["Debian", "Suse"]
+
+# ansible.builtin has no zypper module, and zypper remove fails when one
+# of the packages is not installed: only pass the installed ones
+- name: Remove OpenSVC packages
+  when: ansible_facts['os_family'] == "Suse"
+  block:
+    - name: Get installed packages
+      ansible.builtin.package_facts:
+        manager: rpm
+
+    - name: Remove OpenSVC packages with zypper
+      ansible.builtin.command:
+        argv: "{{ ['zypper', '--non-interactive', 'remove'] + _installed }}"
+      changed_when: true
+      vars:
+        _installed: >-
+          {{ ['opensvc-server', 'opensvc-client']
+             | select('in', ansible_facts.packages) | list }}
+      when: _installed | length > 0
 
 - name: Purge OpenSVC folders
   ansible.builtin.file:

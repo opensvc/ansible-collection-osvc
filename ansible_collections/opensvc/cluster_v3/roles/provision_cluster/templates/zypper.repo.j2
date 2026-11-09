@@ -1,0 +1,9 @@
+{{ ansible_managed | comment }}
+[opensvc]
+name=OpenSVC Repository
+baseurl={{ provision_cluster_opensvc_repo_url }}
+enabled=1
+autorefresh=1
+type=rpm-md
+gpgcheck=1
+gpgkey={{ provision_cluster_repositories_gpgkey_url }}

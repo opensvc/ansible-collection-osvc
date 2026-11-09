@@ -1,0 +1,27 @@
+---
+minor_changes:
+  - provision_cluster - support SLES 15 and 16, from the
+    ``<env>-opensvc-v3-sles15`` and ``<env>-opensvc-v3-sles16`` repositories.
+    ansible.builtin has no zypper module, so the repository is a
+    ``/etc/zypp/repos.d/opensvc.repo`` file and the packages are installed
+    with the ``zypper`` command.
+  - provision_cluster - select the tasks and the repository by OS family,
+    so the RHEL rebuilds (Rocky Linux, AlmaLinux...) use the RHEL ones.
+  - install_drbd - support SLES 15 and 16, from the LINBIT repositories when
+    ``install_drbd_linbit_key`` is set, else from the enabled repositories
+    (SLE High Availability extension).
+  - unprovision_cluster - remove the OpenSVC packages on SLES.
+bugfixes:
+  - provision_cluster - the repository url was empty and the install tasks
+    file missing on the RHEL rebuilds and SLES.
+  - provision_cluster - a node whose name is a prefix of a cluster node name,
+    like ``node1`` and ``node10``, was considered as already joined, and a
+    node whose inventory name is not its hostname was joined again on each
+    run. The joined nodes are now compared by hostname.
+  - install_dns - ``install_dns_use_ip_from_ansible_host`` failed with an
+    ``extract()`` error, and now uses the ``ansible_host`` variable.
+  - install_dns - the dns configmap existence check ignored
+    ``install_dns_cfgmap_name``.
+  - install_pool, install_backend_network - the existence check did not
+    parse the current ``om pool ls`` and ``om net ls`` json output, so the
+    pool and the network were configured again on each run.

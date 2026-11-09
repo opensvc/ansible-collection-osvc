@@ -1,19 +1,17 @@
 ---
 # Tasks file for install_pool
 
-- name: Check for actual pool config
-  ansible.builtin.shell:
-    cmd: set -o pipefail && om pool ls -o json | jq -r '.[]|.name' | grep -w ^{{ install_pool_name }}
-  args:
-    executable: /bin/bash
-  failed_when: false
+- name: List configured pools
+  ansible.builtin.command: om pool ls -o json
   changed_when: false
   register: install_pool_list
   run_once: true
 
 - name: Set pool configuration flag
   ansible.builtin.set_fact:
-    install_pool_is_configured: "{{ install_pool_name in install_pool_list.stdout }}"
+    install_pool_is_configured: >-
+      {{ install_pool_name in (install_pool_list.stdout | from_json)['items']
+         | map(attribute='name') | list }}
   run_once: true
 
 - name: Check if force flag is present

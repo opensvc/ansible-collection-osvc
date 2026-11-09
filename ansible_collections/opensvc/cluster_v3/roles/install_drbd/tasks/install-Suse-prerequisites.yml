@@ -1,0 +1,8 @@
+---
+# ansible.builtin has no zypper module, zypper prints "Nothing to do."
+# when the packages are already installed
+- name: Install DRBD package prerequisites on SLES
+  ansible.builtin.command:
+    argv: [zypper, --non-interactive, install, gpg2, lvm2]
+  register: install_drbd_zypper_prereq
+  changed_when: "'Nothing to do.' not in install_drbd_zypper_prereq.stdout"

@@ -1,0 +1,10 @@
+{{ ansible_managed | comment }}
+[linbit-drbd-9]
+name=LINBIT Packages for drbd-9 - {{ install_drbd_linbit_dist }}
+baseurl={{ install_drbd_linbit_url }}/{{ install_drbd_linbit_key }}/yum/{{ install_drbd_linbit_dist }}/drbd-9/$basearch
+enabled=1
+autorefresh=1
+type=rpm-md
+gpgkey=file:///etc/pki/rpm-gpg/RPM-GPG-KEY-linbit
+gpgcheck=1
+repo_gpgcheck=1

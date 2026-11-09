@@ -8,7 +8,7 @@ provision_cluster_opensvc_command_delay: 3
 provision_cluster_repoenv: "prod"
 provision_cluster_repoarch: >-
   {%
-    if ansible_facts['distribution'] in ['Ubuntu', 'Debian']
+    if ansible_facts['os_family'] == 'Debian'
     %}amd64{%
     else
     %}x86_64{%
@@ -17,30 +17,46 @@ provision_cluster_repoarch: >-
 provision_cluster_repocomponents: "main"
 provision_cluster_repopath: >-
   {%
-    if ansible_facts['distribution'] in ['Ubuntu', 'Debian']
-    %}{{ provision_cluster_repoenv }}-opensvc-v3-{{ ansible_facts['distribution_release'] | trim }}{%
-    elif ansible_facts['distribution'] in ['RedHat', 'CentOS']
-    %}{{ provision_cluster_repoenv }}-opensvc-v3-rhel{{ ansible_facts['distribution_major_version'] | trim }}{%
-    elif ansible_facts['distribution'] == 'SLES'
-    %}{{ provision_cluster_repoenv }}-opensvc-v3-sles{{ ansible_facts['distribution_major_version'] | trim }}{%
+    if ansible_facts['os_family'] == 'Debian'
+    %}{{ provision_cluster_repoenv }}-opensvc-v3-{{
+      ansible_facts['distribution_release'] | trim }}{%
+    elif ansible_facts['os_family'] == 'RedHat'
+    %}{{ provision_cluster_repoenv }}-opensvc-v3-rhel{{
+      ansible_facts['distribution_major_version'] | trim }}{%
+    elif ansible_facts['os_family'] == 'Suse'
+    %}{{ provision_cluster_repoenv }}-opensvc-v3-sles{{
+      ansible_facts['distribution_major_version'] | trim }}{%
     else
     %}{{ provision_cluster_repoenv }}-opensvc-v3{%
     endif
   %}
+# repository url by family (Ubuntu, Debian, RedHat, Sles) and major version,
+# RedHat also applies to its rebuilds (Rocky, AlmaLinux, CentOS...)
+provision_cluster_rpm_url: >-
+  https://packages.opensvc.com/rpm/{{ provision_cluster_repoenv }}-opensvc-v3
 provision_cluster_repositories:
   RedHat:
-    default: "https://packages.opensvc.com/rpm/{{ provision_cluster_repoenv }}-opensvc-v3-rhel9/{{ provision_cluster_repoarch }}/"
-    7: "https://packages.opensvc.com/rpm/{{ provision_cluster_repoenv }}-opensvc-v3-rhel7/{{ provision_cluster_repoarch }}/"
-    8: "https://packages.opensvc.com/rpm/{{ provision_cluster_repoenv }}-opensvc-v3-rhel8/{{ provision_cluster_repoarch }}/"
-    9: "https://packages.opensvc.com/rpm/{{ provision_cluster_repoenv }}-opensvc-v3-rhel9/{{ provision_cluster_repoarch }}/"
-    10: "https://packages.opensvc.com/rpm/{{ provision_cluster_repoenv }}-opensvc-v3-rhel10/{{ provision_cluster_repoarch }}/"
+    default: >-
+      {{ provision_cluster_rpm_url }}-rhel9/{{ provision_cluster_repoarch }}/
+    7: >-
+      {{ provision_cluster_rpm_url }}-rhel7/{{ provision_cluster_repoarch }}/
+    8: >-
+      {{ provision_cluster_rpm_url }}-rhel8/{{ provision_cluster_repoarch }}/
+    9: >-
+      {{ provision_cluster_rpm_url }}-rhel9/{{ provision_cluster_repoarch }}/
+    10: >-
+      {{ provision_cluster_rpm_url }}-rhel10/{{ provision_cluster_repoarch }}/
   Debian:
     default: "https://packages.opensvc.com/apt/debian/"
   Ubuntu:
     default: "https://packages.opensvc.com/apt/ubuntu/"
   Sles:
-    default: "https://packages.opensvc.com/rpm/{{ provision_cluster_repoenv }}-opensvc-v3-sles15/x86_64/"
-    15: "https://packages.opensvc.com/rpm/{{ provision_cluster_repoenv }}-opensvc-v3-sles15/x86_64/"
+    default: >-
+      {{ provision_cluster_rpm_url }}-sles16/{{ provision_cluster_repoarch }}/
+    15: >-
+      {{ provision_cluster_rpm_url }}-sles15/{{ provision_cluster_repoarch }}/
+    16: >-
+      {{ provision_cluster_rpm_url }}-sles16/{{ provision_cluster_repoarch }}/
 
 provision_cluster_repositories_gpgkey_url: 'https://packages.opensvc.com/gpg.public.key.asc'
 
