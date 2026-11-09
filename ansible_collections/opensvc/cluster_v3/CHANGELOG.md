@@ -74,6 +74,7 @@ Support of RHEL 8\, 9 and 10\, Ubuntu 22\.04\, 24\.04 and 26\.04\, SLES 15 and 1
 * provision\_cluster \- the git hash was not removed from the versions before comparing them\, so two builds of the same release could be detected as a downgrade\, and refused unless <code>provision\_cluster\_allow\_downgrade</code> was set\.
 * provision\_cluster \- the repository url was empty and the install tasks file missing on SLES\.
 * provision\_cluster \- with <code>provision\_cluster\_configure\_ssh\_trust</code>\, the root login setting was only changed in <code>/etc/ssh/sshd\_config</code>\, while the <code>sshd\_config\.d</code> files it includes take precedence\, like the <code>01\-permitrootlogin\.conf</code> file of RHEL 9 and 10 allowing the root login with a password\. It is now set in <code>sshd\_config\.d/00\-opensvc\.conf</code> too\, the files are validated with <code>sshd \-t</code>\, <code>PermitRootLogin no</code> is replaced too\, and the effective setting is checked\.
+* provision\_cluster \- with <code>provision\_cluster\_configure\_ssh\_trust</code>\, the root login was left allowed with a password on RHEL 7\, whose sshd has no <code>Include</code> and allows it by default\. <code>PermitRootLogin prohibit\-password</code> is now added at the top of <code>/etc/ssh/sshd\_config</code> when it neither includes <code>sshd\_config\.d</code> nor sets it\.
 * unprovision\_cluster \- the defined services were not checked when no daemon was running\. They are now looked up in the object configuration files\.
 
 <a id="v1-3-1"></a>

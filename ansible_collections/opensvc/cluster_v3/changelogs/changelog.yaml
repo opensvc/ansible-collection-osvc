@@ -138,6 +138,11 @@ releases:
   1.4.0:
     changes:
       bugfixes:
+        - provision_cluster - with ``provision_cluster_configure_ssh_trust``, the
+          root login was left allowed with a password on RHEL 7, whose sshd has
+          no ``Include`` and allows it by default. ``PermitRootLogin
+          prohibit-password`` is now added at the top of ``/etc/ssh/sshd_config``
+          when it neither includes ``sshd_config.d`` nor sets it.
         - install_cni - the ``cni.plugins`` and ``cni.config`` cluster keywords were
           not set when the plugins were already in ``install_cni_plugins_dir``, and
           an interrupted download or extraction was never resumed.

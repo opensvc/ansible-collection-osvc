@@ -179,6 +179,16 @@
              else '/usr/etc/ssh/sshd_config' }}
       register: provision_cluster_sshd_config
 
+    - name: Set the sshd configuration facts
+      ansible.builtin.set_fact:
+        provision_cluster_sshd_includes: >-
+          {{ _content
+             is search('(?mi)^\s*Include\s+/etc/ssh/sshd_config[.]d/[*][.]conf\s*$') }}
+        provision_cluster_sshd_root_set: >-
+          {{ _content is search('(?mi)^\s*PermitRootLogin\s') }}
+      vars:
+        _content: "{{ provision_cluster_sshd_config.content | b64decode }}"
+
     - name: Set the ssh root login in a sshd_config.d file
       ansible.builtin.copy:
         content: |
@@ -188,11 +198,7 @@
         mode: "0600"
         validate: /usr/sbin/sshd -t -f %s
       notify: Reload sshd
-      when: _includes
-      vars:
-        _includes: >-
-          {{ provision_cluster_sshd_config.content | b64decode
-             is search('(?mi)^\s*Include\s+/etc/ssh/sshd_config[.]d/[*][.]conf\s*$') }}
+      when: provision_cluster_sshd_includes | bool
 
     # also when the drop-in exists: the main configuration may set it
     # before its Include line
@@ -205,6 +211,20 @@
       notify: Reload sshd
       when: provision_cluster_sshd_config_stat.stat.exists
 
+    # without include nor setting, the default applies, yes on RHEL 7: set
+    # it first, before any Match block
+    - name: Add the ssh root login to the sshd main configuration
+      ansible.builtin.lineinfile:
+        dest: /etc/ssh/sshd_config
+        line: "PermitRootLogin prohibit-password"
+        insertbefore: BOF
+        validate: /usr/sbin/sshd -t -f %s
+      notify: Reload sshd
+      when:
+        - provision_cluster_sshd_config_stat.stat.exists
+        - not provision_cluster_sshd_includes | bool
+        - not provision_cluster_sshd_root_set | bool
+
     - name: Get the sshd effective configuration
       ansible.builtin.command: /usr/sbin/sshd -T
       register: provision_cluster_sshd_effective
@@ -216,7 +236,7 @@
           - _effective in ['prohibit-password', 'without-password']
         fail_msg: >-
           sshd PermitRootLogin is {{ _effective }}, set by a configuration
-          file read before /etc/ssh/sshd_config.d/00-opensvc.conf
+          file read before the role setting
         quiet: true
       vars:
         _effective: >-
