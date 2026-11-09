@@ -103,8 +103,8 @@
   ansible.builtin.set_fact:
     install_quorum_current_names: >-
       {{ install_quorum_config_show.stdout_lines
-         | select('match', '^[[]arbitrator#')
-         | map('regex_replace', '^[[]arbitrator#', '')
+         | select('match', '^\[arbitrator#')
+         | map('regex_replace', '^\[arbitrator#', '')
          | map('regex_replace', '[]].*$', '') | list }}
     install_quorum_current_keywords:
       - "cluster.quorum={{ _kw['cluster.quorum'] | bool | string | lower }}"
