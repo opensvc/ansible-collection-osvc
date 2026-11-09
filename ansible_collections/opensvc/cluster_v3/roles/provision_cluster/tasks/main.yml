@@ -17,7 +17,7 @@
     verbosity: 2
 
 # Ubuntu has its own repository, the other distributions use the one of
-# their family: Debian, RedHat (Rocky, AlmaLinux...) or Sles (Suse)
+# their family: Debian, RedHat or Sles (Suse)
 - name: Set OS family used to select the tasks and the repository
   ansible.builtin.set_fact:
     provision_cluster_os: >-
@@ -126,7 +126,10 @@
     - inventory_hostname == ansible_play_hosts[0]
 
 - name: Deploy per OS prerequisites and install osvc package
-  ansible.builtin.include_tasks: "install-{{ provision_cluster_os }}.yml"
+  ansible.builtin.include_tasks:
+    file: >-
+      install-{{ 'Debian' if provision_cluster_os == 'Ubuntu'
+                 else provision_cluster_os }}.yml
 
 - name: Wait for monitor to be idle
   ansible.builtin.command: |

@@ -1,8 +1,26 @@
 ---
-- name: Add OpenSVC repository for Debian-based systems
+# Debian and Ubuntu
+
+# the role versions before 1.4.0 declared an unsigned [trusted=yes]
+# repository on Debian: apt refuses two sources with different options
+- name: Remove the unsigned OpenSVC repository
   ansible.builtin.apt_repository:
-    repo: "deb [trusted=yes] {{ provision_cluster_opensvc_repo_url }} {{ provision_cluster_repopath }} main"
-    state: present
+    repo: >-
+      deb [trusted=yes] {{ provision_cluster_opensvc_repo_url }}
+      {{ provision_cluster_repopath }} main
+    state: absent
+    update_cache: false
+  when: provision_cluster_os == 'Debian'
+
+- name: Add the OpenSVC repository, signed by the OpenSVC key
+  ansible.builtin.deb822_repository:
+    name: opensvc
+    types: deb
+    uris: "{{ provision_cluster_opensvc_repo_url }}"
+    suites: "{{ provision_cluster_repopath }}"
+    components: "{{ provision_cluster_repocomponents }}"
+    architectures: "{{ provision_cluster_repoarch }}"
+    signed_by: "{{ provision_cluster_repositories_gpgkey_url }}"
   register: provision_cluster_apt_repo
 
 # refresh when the repository just changed, else only when the cache is old
@@ -11,11 +29,11 @@
     update_cache: true
     cache_valid_time: "{{ 0 if provision_cluster_apt_repo is changed else 3600 }}"
 
-- name: Install common packages for ubuntu/deb
+- name: Install common packages
   ansible.builtin.apt:
     name: "{{ packages }}"
     state: present
-    update_cache: true
+    update_cache: false
   vars:
     packages:
       - docker.io
@@ -28,7 +46,7 @@
     name: "{{ provision_cluster_packages }}"
     state: present
     allow_downgrade: "{{ provision_cluster_allow_downgrade | bool }}"
-    update_cache: true
+    update_cache: false
 
 - name: Enable opensvc-server.service unit file
   ansible.builtin.service:

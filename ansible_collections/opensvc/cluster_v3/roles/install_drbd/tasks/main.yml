@@ -128,8 +128,14 @@
 - name: Flush handlers
   ansible.builtin.meta: flush_handlers
 
+# OpenSVC brings the drbd resources up. DRBD built from the sources may
+# install no systemd unit.
+- name: Get the systemd units
+  ansible.builtin.service_facts:
+
 - name: Disable drbd systemd unit
   ansible.builtin.service:
     name: drbd.service
     enabled: false
     state: stopped
+  when: "'drbd.service' in ansible_facts.services"

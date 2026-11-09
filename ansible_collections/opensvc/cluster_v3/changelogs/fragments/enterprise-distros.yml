@@ -6,6 +6,7 @@ minor_changes:
     ``/etc/zypp/repos.d/opensvc.repo`` file and the packages are installed
     with the ``zypper`` command.
   - provision_cluster - select the tasks and the repository by OS family.
+  - provision_cluster - support Debian 12 and 13, with the Ubuntu tasks.
   - install_drbd - support SLES 15 and 16, from the LINBIT repositories when
     ``install_drbd_linbit_key`` is set, else from the enabled repositories
     (SLE High Availability extension).
@@ -28,6 +29,9 @@ minor_changes:
     ``install_cni_search_dirs`` variable lists the directories looked up.
   - install_cni - the flannel plugin is no longer required.
 bugfixes:
+  - provision_cluster - the Debian repository was declared unsigned, with
+    ``[trusted=yes]``. It is now checked with the OpenSVC signing key, like
+    the Ubuntu one, and the unsigned declaration is removed.
   - provision_cluster - the repository url was empty and the install tasks
     file missing on SLES.
   - provision_cluster - a node whose name is a prefix of a cluster node name,
@@ -51,3 +55,5 @@ bugfixes:
   - install_cni - the ``cni.plugins`` and ``cni.config`` cluster keywords
     were not set when the plugins were already in ``install_cni_plugins_dir``,
     and an interrupted download or extraction was never resumed.
+  - install_drbd - failed on the nodes with a DRBD 9 built from the sources,
+    which installs no ``drbd.service`` systemd unit.

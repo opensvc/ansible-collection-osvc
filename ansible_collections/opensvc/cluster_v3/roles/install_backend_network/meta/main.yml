@@ -54,6 +54,10 @@ galaxy_info:
         - jammy
         - noble
         - resolute
+    - name: Debian
+      versions:
+        - bookworm
+        - trixie
     - name: SLES
       versions:
         - "15"

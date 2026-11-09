@@ -31,7 +31,6 @@ provision_cluster_repopath: >-
     endif
   %}
 # repository url by family (Ubuntu, Debian, RedHat, Sles) and major version,
-# RedHat also applies to its rebuilds (Rocky, AlmaLinux, CentOS...)
 provision_cluster_rpm_url: >-
   https://packages.opensvc.com/rpm/{{ provision_cluster_repoenv }}-opensvc-v3
 provision_cluster_repositories:
