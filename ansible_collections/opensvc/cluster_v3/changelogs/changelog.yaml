@@ -135,3 +135,128 @@ releases:
       - release-summary.yml
       - vip-prd-ip-lookup.yml
     release_date: '2026-10-12'
+  1.4.0:
+    changes:
+      bugfixes:
+        - install_cni - the ``cni.plugins`` and ``cni.config`` cluster keywords were
+          not set when the plugins were already in ``install_cni_plugins_dir``, and
+          an interrupted download or extraction was never resumed.
+        - install_dns - ``install_dns_use_ip_from_ansible_host`` failed with an ``extract()``
+          error, and now uses the ``ansible_host`` variable.
+        - install_dns - an empty ``install_dns_cfg_recursor_allowed_subnets`` added
+          a trailing comma to the recursor ``allow-from`` setting.
+        - install_dns - the ``cluster.dns`` keyword of each node was set from the
+          node itself, one node at a time with a 5 seconds sleep between them, to
+          avoid concurrent cluster configuration updates. All the nodes keywords are
+          now set in one update from the first node.
+        - install_dns - the debug tasks printed their message at the default verbosity,
+          they now need ``-vv``.
+        - install_dns - the dns configmap existence check ignored ``install_dns_cfgmap_name``.
+        - install_dns - the recursor configuration was edited in ``/tmp/recursor``,
+          left on the first node. It is now edited in a temporary file removed once
+          the configmap key is set, and ``/tmp/recursor`` is removed.
+        - install_drbd - failed on the nodes with a DRBD 9 built from the sources,
+          which installs no ``drbd.service`` systemd unit.
+        - install_drbd - the DRBD version check read the module file on disk, so a
+          DRBD 8.4 module loaded before the DRBD 9 installation was accepted. The
+          loaded module version is checked, and a loaded DRBD 8.4 module is replaced
+          when not in use.
+        - install_drbd - the ELRepo release package was installed without checking
+          its signature. The ELRepo signing key is now imported, checked by its fingerprint
+          (``install_drbd_elrepo_keys``).
+        - install_drbd - the drbd devices rejection was added as a second ``filter``
+          line when ``/etc/lvm/lvm.conf`` already had an active filter. It is now
+          prepended to the active filter.
+        - install_hb_relay - the wait for the heartbeat to beat read the output of
+          om daemon hb list without its items list, and never succeeded on a cluster
+          of several nodes.
+        - install_pool, install_backend_network - the existence check did not parse
+          the current ``om pool ls`` and ``om net ls`` json output, so the pool and
+          the network were configured again on each run.
+        - provision_cluster - a node whose name is a prefix of a cluster node name,
+          like ``node1`` and ``node10``, was considered as already joined, and a node
+          whose inventory name is not its hostname was joined again on each run. The
+          joined nodes are now compared by hostname.
+        - provision_cluster - each run on several nodes unfroze all the frozen nodes,
+          including the ones frozen by an operator. Only the nodes frozen by the role
+          for a downgrade are unfrozen now.
+        - provision_cluster - the Debian repository was declared unsigned, with ``[trusted=yes]``.
+          It is now checked with the OpenSVC signing key, like the Ubuntu one, and
+          the unsigned declaration is removed.
+        - provision_cluster - the git hash was not removed from the versions before
+          comparing them, so two builds of the same release could be detected as a
+          downgrade, and refused unless ``provision_cluster_allow_downgrade`` was
+          set.
+        - provision_cluster - the repository url was empty and the install tasks file
+          missing on SLES.
+        - provision_cluster - with ``provision_cluster_configure_ssh_trust``, the
+          root login setting was only changed in ``/etc/ssh/sshd_config``, while the
+          ``sshd_config.d`` files it includes take precedence, like the ``01-permitrootlogin.conf``
+          file of RHEL 9 and 10 allowing the root login with a password. It is now
+          set in ``sshd_config.d/00-opensvc.conf`` too, the files are validated with
+          ``sshd -t``, ``PermitRootLogin no`` is replaced too, and the effective setting
+          is checked.
+        - unprovision_cluster - the defined services were not checked when no daemon
+          was running. They are now looked up in the object configuration files.
+      minor_changes:
+        - all roles - removed the ``.travis.yml`` and ``tests/`` skeletons of the
+          roles, and the unused handlers and ``install_drbd_debian_repo``, ``install_drbd_debian_version``
+          variables of install_drbd.
+        - install_cni - the flannel plugin is no longer required.
+        - install_cni - use the CNI plugins already present on the nodes, like the
+          ones of the containernetworking-plugins packages (``/usr/lib/cni``, ``/usr/libexec/cni``),
+          instead of downloading them. The new ``install_cni_force`` variable downloads
+          them anyway, and the new ``install_cni_search_dirs`` variable lists the
+          directories looked up.
+        - install_drbd - set ``use_devicesfile = 0`` in ``/etc/lvm/lvm.conf``, as
+          OpenSVC nodes do not use the LVM devices file, enabled by default on recent
+          RHEL and SLES, which ignores the drbd devices filter.
+        - install_drbd - support SLES 15 and 16, from the LINBIT repositories when
+          ``install_drbd_linbit_key`` is set, else from the enabled repositories (SLE
+          High Availability extension).
+        - install_hb_disk - new role, adding a disk heartbeat. The disk is checked
+          on every node, signed once when it is not signed yet, and a disk holding
+          data or a known signature is refused unless forced.
+        - install_hb_unicast - new role, adding a unicast heartbeat with the address,
+          and optionally the interface, of each node. A port already used by another
+          unicast heartbeat of the cluster is refused.
+        - install_pool - new ``install_pool_keywords`` variable, a dictionary of other
+          pool keywords, like ``quota``, ``thin_pool`` or ``fs_type``.
+        - install_pool - update the keywords of an existing pool whose value differs
+          from the role variables, instead of leaving it as is unless ``install_pool_force``
+          is set, which now sets all the keywords. Configure loop, shm, virtual and
+          zpool pools too, refuse the other types, and check the mandatory keywords
+          of the vg, zpool and virtual pools.
+        - install_quorum - new role, configuring the cluster quorum, the arbitrators
+          and, optionally, the split action. The arbitrators must be seen up from
+          every node before the quorum is enabled. With an even number of nodes, a
+          setup losing a split in two equal parts is refused, with no arbitrator,
+          or with several arbitrators of which the loss of one loses it.
+        - provision_cluster - select the tasks and the repository by OS family.
+        - provision_cluster - set the sysrq trigger with ansible.builtin modules,
+          the collection no longer depends on ansible.posix.
+        - provision_cluster - support Debian 12 and 13, with the Ubuntu tasks.
+        - provision_cluster - support SLES 15 and 16, from the ``<env>-opensvc-v3-sles15``
+          and ``<env>-opensvc-v3-sles16`` repositories. ansible.builtin has no zypper
+          module, so the repository is a ``/etc/zypp/repos.d/opensvc.repo`` file and
+          the packages are installed with the ``zypper`` command.
+        - provision_cluster - the ``provision_cluster_opensvc_command_delay`` variable
+          is removed, it was the sleep after each node join. The role now waits for
+          the joined node monitor to be idle.
+        - unprovision_cluster - remove the OpenSVC packages on SLES.
+        - unprovision_cluster - with ``unprovision_cluster_purge``, also remove the
+          files added by provision_cluster, the OpenSVC package repository, the sysrq
+          setting, the ``/etc/hosts`` block and the docker daemon configuration it
+          installed.
+      release_summary: Support of RHEL 8, 9 and 10, Ubuntu 22.04, 24.04 and 26.04,
+        SLES 15 and 16, and Debian 12 and 13, with ansible.builtin modules only. New
+        roles install_quorum, install_hb_unicast and install_hb_disk. The roles are
+        idempotent, and many fixes, of the sshd root login setting, the ELRepo key
+        check, the Debian repository signature, the join and dns waits, and the relay
+        heartbeat wait among them.
+    fragments:
+      - enterprise-distros.yml
+      - install-hb.yml
+      - install-quorum.yml
+      - release-summary.yml
+    release_date: '2026-11-09'
