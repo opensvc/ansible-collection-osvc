@@ -7,11 +7,58 @@
       or set install_drbd_linbit_key to install it from the LINBIT repositories.
   when: ansible_facts['distribution_major_version'] | int < 8
 
+# ELRepo signs the EL8 and EL9 release packages with its DSA key, the EL10
+# ones with its v2 key. rpm_key fails on EL10, whose rpm database holds
+# keys gpg can not parse: check the fingerprint of the key file only.
+- name: Import the ELRepo signing key
+  vars:
+    _key: >-
+      {{ install_drbd_elrepo_keys[ansible_facts['distribution_major_version'] | int]
+         | default(install_drbd_elrepo_keys['default']) }}
+    _file: "/etc/pki/rpm-gpg/{{ _key.url | basename }}"
+  block:
+    - name: Download the ELRepo signing key
+      ansible.builtin.get_url:
+        url: "{{ _key.url }}"
+        dest: "{{ _file }}"
+        mode: "0644"
+
+    - name: Get the ELRepo signing key fingerprint
+      ansible.builtin.command:
+        argv: [gpg, --batch, --show-keys, --with-colons, --with-fingerprint, "{{ _file }}"]
+      register: install_drbd_elrepo_key_info
+      changed_when: false
+
+    # the first fpr record is the primary key one
+    - name: Check the ELRepo signing key fingerprint
+      ansible.builtin.assert:
+        that:
+          - _fpr == _key.fingerprint
+        fail_msg: >-
+          {{ _key.url }} fingerprint is {{ _fpr }}, not {{ _key.fingerprint }}
+        quiet: true
+      vars:
+        _fpr: >-
+          {{ install_drbd_elrepo_key_info.stdout_lines | select('match', '^fpr:')
+             | first | split(':') | select | last }}
+
+    - name: Check the ELRepo signing key is imported
+      ansible.builtin.command:
+        argv: [rpm, -q, "gpg-pubkey-{{ _key.fingerprint[-8:] | lower }}"]
+      register: install_drbd_elrepo_key_imported
+      changed_when: false
+      failed_when: false
+
+    - name: Import the ELRepo signing key in the rpm database
+      ansible.builtin.command:
+        argv: [rpm, --import, "{{ _file }}"]
+      changed_when: true
+      when: install_drbd_elrepo_key_imported.rc != 0
+
 - name: Install ELRepo repository
   ansible.builtin.dnf:
     name: "https://www.elrepo.org/elrepo-release-{{ install_drbd_el }}.el{{ install_drbd_el }}.elrepo.noarch.rpm"
     state: present
-    disable_gpg_check: true
   vars:
     install_drbd_el: "{{ ansible_facts['distribution_major_version'] }}"
 

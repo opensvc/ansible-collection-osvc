@@ -42,8 +42,7 @@ tags:
   - opensvc
 
 # Collections that this collection requires to be installed for it to be usable
-dependencies:
-  "ansible.posix": ">=1.0.0"
+dependencies: {}
 
 # URL of the originating SCM repository
 repository: https://github.com/opensvc/ansible-collection-osvc

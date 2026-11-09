@@ -32,7 +32,12 @@ minor_changes:
     files added by provision_cluster, the OpenSVC package repository, the
     sysrq setting, the ``/etc/hosts`` block and the docker daemon
     configuration it installed.
+  - provision_cluster - set the sysrq trigger with ansible.builtin modules,
+    the collection no longer depends on ansible.posix.
 bugfixes:
+  - install_drbd - the ELRepo release package was installed without
+    checking its signature. The ELRepo signing key is now imported, checked
+    by its fingerprint (``install_drbd_elrepo_keys``).
   - provision_cluster - each run on several nodes unfroze all the frozen
     nodes, including the ones frozen by an operator. Only the nodes frozen
     by the role for a downgrade are unfrozen now.
@@ -71,3 +76,10 @@ bugfixes:
     before comparing them, so two builds of the same release could be
     detected as a downgrade, and refused unless
     ``provision_cluster_allow_downgrade`` was set.
+  - install_dns - the recursor configuration was edited in ``/tmp/recursor``,
+    left on the first node. It is now edited in a temporary file removed
+    once the configmap key is set, and ``/tmp/recursor`` is removed.
+  - install_dns - an empty ``install_dns_cfg_recursor_allowed_subnets``
+    added a trailing comma to the recursor ``allow-from`` setting.
+  - install_dns - the debug tasks printed their message at the default
+    verbosity, they now need ``-vv``.

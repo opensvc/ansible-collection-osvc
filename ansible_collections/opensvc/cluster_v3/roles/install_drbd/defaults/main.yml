@@ -10,6 +10,16 @@ install_drbd_linbit_url: "https://packages.linbit.com"
 install_drbd_ppa: ppa:linbit/linbit-drbd9-stack
 install_drbd_debian_repo: "https://packages.linbit.com/"
 install_drbd_debian_version: "drbd-9"
+# the ELRepo signing keys by EL major version
+install_drbd_elrepo_keys:
+  default:
+    url: https://www.elrepo.org/RPM-GPG-KEY-v2-elrepo.org
+    fingerprint: B8A755874DA240C9DAC4E71551600989EAA31D4A
+  8: &install_drbd_elrepo_key_v1
+    url: https://www.elrepo.org/RPM-GPG-KEY-elrepo.org
+    fingerprint: 96C0104F631547311E0BB1AE309BC305BAADAE52
+  9: *install_drbd_elrepo_key_v1
+
 # ELRepo packages used when no drbd 9 module is installed, by EL major version
 install_drbd_elrepo_packages:
   8:

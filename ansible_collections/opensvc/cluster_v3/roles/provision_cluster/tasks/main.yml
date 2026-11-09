@@ -171,12 +171,24 @@
   ansible.builtin.meta: flush_handlers
 
 - name: Enable sysrq trigger
-  ansible.posix.sysctl:
-    name: kernel.sysrq
-    value: '1'
-    state: present
-    sysctl_file: /etc/sysctl.d/99-opensvc-sysrq.conf
-    sysctl_set: true
+  ansible.builtin.copy:
+    content: "kernel.sysrq=1\n"
+    dest: /etc/sysctl.d/99-opensvc-sysrq.conf
+    mode: "0644"
+  register: provision_cluster_sysrq_conf
+
+# also on a node rebooted since, where a later sysctl.d file may win
+- name: Get the running sysrq setting
+  ansible.builtin.slurp:
+    src: /proc/sys/kernel/sysrq
+  register: provision_cluster_sysrq_running
+
+- name: Apply the sysrq setting
+  ansible.builtin.command: sysctl -p /etc/sysctl.d/99-opensvc-sysrq.conf
+  changed_when: true
+  when: >-
+    provision_cluster_sysrq_conf is changed
+    or provision_cluster_sysrq_running.content | b64decode | trim != '1'
 
 ########################## FIRST NODE ##########################
 

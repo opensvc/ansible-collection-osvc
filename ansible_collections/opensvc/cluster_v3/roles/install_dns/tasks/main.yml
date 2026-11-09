@@ -36,33 +36,54 @@
   when:
     - not install_dns_cfg_created
 
-- name: Download recursor config file
-  ansible.builtin.get_url:
-    url: "{{ install_dns_cfg_recursor_template }}"
-    dest: /tmp/recursor
-    mode: '0600'
-  run_once: true
-  when:
-    - not install_dns_cfg_created
-
-- name: Modify allow-from parameter from recursor config file
-  ansible.builtin.lineinfile:
-    path: /tmp/recursor
-    state: present
-    regexp: '^(allow-from=.*)$'
-    line: '\g<1>,{{ install_dns_cfg_recursor_allowed_subnets }}'
-    backrefs: true
-  run_once: true
-  when:
-    - not install_dns_cfg_created
-
+# the recursor key is the template with the allowed subnets added: edit it
+# in a temporary file, removed once the key is set
 - name: Set dns cfgmap recursor key content
-  ansible.builtin.command: om {{ install_dns_cfgmap_name }} key add recursor --from /tmp/recursor
-  register: install_dns_output
-  changed_when: install_dns_output.rc == 0
   run_once: true
   when:
     - not install_dns_cfg_created
+  block:
+    - name: Create a temporary recursor config file
+      ansible.builtin.tempfile:
+        state: file
+        suffix: .recursor
+      register: install_dns_recursor_file
+
+    - name: Download recursor config file
+      ansible.builtin.get_url:
+        url: "{{ install_dns_cfg_recursor_template }}"
+        dest: "{{ install_dns_recursor_file.path }}"
+        mode: '0600'
+        force: true
+
+    - name: Modify allow-from parameter from recursor config file
+      ansible.builtin.lineinfile:
+        path: "{{ install_dns_recursor_file.path }}"
+        state: present
+        regexp: '^(allow-from=.*)$'
+        line: '\g<1>,{{ install_dns_cfg_recursor_allowed_subnets }}'
+        backrefs: true
+      when: install_dns_cfg_recursor_allowed_subnets | length > 0
+
+    - name: Add the recursor key to the dns cfgmap
+      ansible.builtin.command: >-
+        om {{ install_dns_cfgmap_name }} key add recursor
+        --from {{ install_dns_recursor_file.path }}
+      register: install_dns_output
+      changed_when: install_dns_output.rc == 0
+
+  always:
+    - name: Remove the temporary recursor config file
+      ansible.builtin.file:
+        path: "{{ install_dns_recursor_file.path }}"
+        state: absent
+      when: install_dns_recursor_file.path is defined
+
+# the role versions before 1.4.0 left it
+- name: Remove the recursor config file of the previous role versions
+  ansible.builtin.file:
+    path: /tmp/recursor
+    state: absent
 
 - name: Set dns cfgmap configure key content
   ansible.builtin.command: om {{ install_dns_cfgmap_name }} key add configure --from {{ install_dns_cfg_configure_template }}
@@ -114,6 +135,7 @@
 - name: Debug dns dict
   ansible.builtin.debug:
     var: install_dns_ipv4_dict
+    verbosity: 2
   run_once: true
   when:
     - not install_dns_svc_created
@@ -138,6 +160,7 @@
 - name: Debug install_dns_cluster_has_vip
   ansible.builtin.debug:
     msg: "VIP is present in the output."
+    verbosity: 2
   when: install_dns_cluster_has_vip | bool
   run_once: false
 
@@ -172,6 +195,7 @@
 - name: Debug dns list
   ansible.builtin.debug:
     var: install_dns_list_string
+    verbosity: 2
   run_once: false
   when:
     - not install_dns_svc_created
