@@ -29,6 +29,17 @@
   run_once: true
   when: unprovision_cluster_check_node | length > 0
 
+# without a running daemon, look for the object configuration files:
+# <name>.conf and vol/<name>.conf in the root namespace,
+# namespaces/<ns>/<kind>/<name>.conf in the others
+- name: List object configuration files
+  ansible.builtin.find:
+    paths: /etc/opensvc
+    patterns: "*.conf"
+    recurse: true
+  register: unprovision_cluster_conf_files
+  when: unprovision_cluster_check_node | length == 0
+
 # unprovision_services purges them, keeping the cluster own objects
 - name: Refuse to unprovision a cluster still running services
   ansible.builtin.assert:
@@ -39,11 +50,24 @@
       Purge them first, for example with the unprovision_services role.
     quiet: true
   vars:
-    unprovision_cluster_services_left: >-
+    _from_daemon: >-
       {{ (unprovision_cluster_services.stdout | default('{"items": []}') | from_json)['items']
-         | map(attribute='meta.object') | select('match', '^[^/]+/(svc|vol)/') | list }}
+         | map(attribute='meta.object') | list }}
+    _from_files: >-
+      {{ ansible_play_hosts | map('extract', hostvars, 'unprovision_cluster_conf_files')
+         | map(attribute='files', default=[]) | flatten | map(attribute='path')
+         | map('regex_replace', '^/etc/opensvc/', '')
+         | reject('in', ['cluster.conf', 'node.conf', 'namespace.conf'])
+         | select('match', '^(namespaces/[^/]+/[^/]+/[^/]+|vol/[^/]+|[^/]+)[.]conf$')
+         | map('regex_replace', '[.]conf$', '')
+         | map('regex_replace', '^namespaces/', '')
+         | map('regex_replace', '^vol/', 'root/vol/')
+         | map('regex_replace', '^(?=[^/]+$)', 'root/svc/')
+         | unique | list }}
+    unprovision_cluster_services_left: >-
+      {{ (_from_daemon if unprovision_cluster_check_node | length > 0 else _from_files)
+         | select('match', '^[^/]+/(svc|vol)/') | list }}
   run_once: true
-  when: unprovision_cluster_check_node | length > 0
 
 - name: Stop and disable opensvc-server.service unit
   ansible.builtin.systemd:
@@ -107,3 +131,55 @@
     - /lib/systemd/system/opensvc-services.service
   notify: Systemctl-daemon-reload
   when: unprovision_cluster_purge | bool
+
+# the files provision_cluster adds out of the packages
+- name: Remove the files added by provision_cluster
+  when: unprovision_cluster_purge | bool
+  block:
+    - name: Remove the OpenSVC apt repository
+      ansible.builtin.deb822_repository:
+        name: opensvc
+        state: absent
+      when: ansible_facts['os_family'] == "Debian"
+
+    - name: Remove the OpenSVC yum repository
+      ansible.builtin.yum_repository:
+        name: opensvc
+        state: absent
+      when: ansible_facts['os_family'] == "RedHat"
+
+    - name: Remove the OpenSVC zypper repository
+      ansible.builtin.file:
+        path: /etc/zypp/repos.d/opensvc.repo
+        state: absent
+      when: ansible_facts['os_family'] == "Suse"
+
+    # the running kernel keeps kernel.sysrq until the next boot
+    - name: Remove the sysrq setting
+      ansible.builtin.file:
+        path: /etc/sysctl.d/99-opensvc-sysrq.conf
+        state: absent
+
+    - name: Remove the cluster nodes block of /etc/hosts
+      ansible.builtin.blockinfile:
+        dest: /etc/hosts
+        state: absent
+
+    - name: Read the docker daemon configuration
+      ansible.builtin.slurp:
+        src: /etc/docker/daemon.json
+      register: unprovision_cluster_docker_daemon_json
+      failed_when: false
+
+    # only the file provision_cluster_deploy_docker_daemon_json installs,
+    # the file lookup strips the trailing newline
+    - name: Remove the docker daemon configuration of provision_cluster
+      ansible.builtin.file:
+        path: /etc/docker/daemon.json
+        state: absent
+      notify: Restart docker service
+      when:
+        - unprovision_cluster_docker_daemon_json.content is defined
+        - unprovision_cluster_docker_daemon_json.content | b64decode | trim
+          == lookup('ansible.builtin.file', role_path
+                    ~ '/../provision_cluster/files/docker.daemon.json') | trim

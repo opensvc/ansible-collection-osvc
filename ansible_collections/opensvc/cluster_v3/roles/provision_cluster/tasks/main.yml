@@ -95,8 +95,8 @@
     provision_cluster_downgrade: >-
       {{ provision_cluster_version | length > 0
          and 'opensvc-server' in ansible_facts.packages | default({})
-         and (ansible_facts.packages['opensvc-server'][0].version | regex_replace('\\.g[0-9a-f]+.*$', '')
-              is version(provision_cluster_version | regex_replace('\\.g[0-9a-f]+.*$', ''), '>')) }}
+         and (ansible_facts.packages['opensvc-server'][0].version | regex_replace('[.]g[0-9a-f]+.*$', '')
+              is version(provision_cluster_version | regex_replace('[.]g[0-9a-f]+.*$', ''), '>')) }}
 
 # checked here, as the dnf module downgrades despite allow_downgrade=false
 # when the package name holds a version glob
@@ -116,6 +116,15 @@
       {{ ansible_play_hosts | map('extract', hostvars)
          | map(attribute='provision_cluster_downgrade', default=false)
          | select | list | length > 0 }}
+
+# the nodes frozen by an operator stay frozen after the downgrade
+- name: Get the frozen nodes before downgrade
+  ansible.builtin.command: 'om cluster status -o json'
+  register: provision_cluster_prefreeze_status
+  changed_when: false
+  when:
+    - provision_cluster_downgrade_cluster | bool
+    - inventory_hostname == ansible_play_hosts[0]
 
 - name: Freeze cluster before downgrade
   ansible.builtin.command: 'om cluster freeze --wait'
@@ -279,24 +288,48 @@
     - provision_cluster_downgrade_cluster | bool
     - inventory_hostname == ansible_play_hosts[0]
 
-- name: Get cluster status
-  ansible.builtin.command: 'om cluster status -o json'
-  register: provision_cluster_status
-  changed_when: false
+# thaw only the nodes the role froze for the downgrade: the operator
+# freezes are kept. A zero frozen_at timestamp means not frozen.
+- name: Thaw the cluster after the downgrade
   when:
-    - provision_cluster_nodecount | int > 1 or provision_cluster_downgrade_cluster | bool
+    - provision_cluster_freeze_output is changed
     - inventory_hostname == ansible_play_hosts[0]
+  vars:
+    _before: >-
+      {{ (provision_cluster_prefreeze_status.stdout | from_json).cluster.node
+         | dict2items
+         | rejectattr('value.status.frozen_at', 'match', '0001-01-01')
+         | map(attribute='key') | list }}
+  block:
+    - name: Get cluster status
+      ansible.builtin.command: 'om cluster status -o json'
+      register: provision_cluster_status
+      changed_when: false
 
-# a zero frozen_at timestamp means the node is not frozen
-- name: Unfreeze cluster
-  ansible.builtin.command: 'om cluster unfreeze --wait'
-  register: provision_cluster_output
-  changed_when: provision_cluster_output.rc == 0
-  when:
-    - provision_cluster_nodecount | int > 1 or provision_cluster_downgrade_cluster | bool
-    - inventory_hostname == ansible_play_hosts[0]
-    - (provision_cluster_status.stdout | from_json).cluster.node.values()
-      | map(attribute='status.frozen_at') | reject('match', '0001-01-01') | list | length > 0
+    - name: Unfreeze the nodes frozen for the downgrade
+      ansible.builtin.command:
+        argv: [om, node, unfreeze, --node, "{{ _thaw | join(',') }}"]
+      register: provision_cluster_output
+      changed_when: provision_cluster_output.rc == 0
+      when: _thaw | length > 0
+      vars:
+        _thaw: >-
+          {{ (provision_cluster_status.stdout | from_json).cluster.node
+             | dict2items
+             | rejectattr('value.status.frozen_at', 'match', '0001-01-01')
+             | map(attribute='key') | difference(_before) }}
+
+    - name: Wait for the nodes to be unfrozen
+      ansible.builtin.command: 'om cluster status -o json'
+      register: provision_cluster_thaw_status
+      changed_when: false
+      retries: 12
+      delay: 5
+      until: >-
+        (provision_cluster_thaw_status.stdout | from_json).cluster.node
+        | dict2items
+        | rejectattr('value.status.frozen_at', 'match', '0001-01-01')
+        | map(attribute='key') | difference(_before) | length == 0
 
 # om cluster ssh trust only appends missing entries, so compare file
 # checksums to report whether it actually changed something

@@ -28,7 +28,17 @@ minor_changes:
     ``install_cni_force`` variable downloads them anyway, and the new
     ``install_cni_search_dirs`` variable lists the directories looked up.
   - install_cni - the flannel plugin is no longer required.
+  - unprovision_cluster - with ``unprovision_cluster_purge``, also remove the
+    files added by provision_cluster, the OpenSVC package repository, the
+    sysrq setting, the ``/etc/hosts`` block and the docker daemon
+    configuration it installed.
 bugfixes:
+  - provision_cluster - each run on several nodes unfroze all the frozen
+    nodes, including the ones frozen by an operator. Only the nodes frozen
+    by the role for a downgrade are unfrozen now.
+  - unprovision_cluster - the defined services were not checked when no
+    daemon was running. They are now looked up in the object configuration
+    files.
   - provision_cluster - the Debian repository was declared unsigned, with
     ``[trusted=yes]``. It is now checked with the OpenSVC signing key, like
     the Ubuntu one, and the unsigned declaration is removed.
@@ -57,3 +67,7 @@ bugfixes:
     and an interrupted download or extraction was never resumed.
   - install_drbd - failed on the nodes with a DRBD 9 built from the sources,
     which installs no ``drbd.service`` systemd unit.
+  - provision_cluster - the git hash was not removed from the versions
+    before comparing them, so two builds of the same release could be
+    detected as a downgrade, and refused unless
+    ``provision_cluster_allow_downgrade`` was set.

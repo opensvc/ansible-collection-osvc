@@ -6,12 +6,13 @@ This role can be used to unprovision an opensvc cluster.
 *Warning* This is a destructive action, once executed, opensvc cluster is unconfigured and uninstalled.
 
 The opensvc-server and opensvc-client packages are removed. The OpenSVC
-package repository is kept. The OpenSVC configuration and data are kept
-unless `unprovision_cluster_purge` is set.
+configuration and data, and the other files added by provision_cluster, are
+kept unless `unprovision_cluster_purge` is set.
 
 The role fails without changing anything when services or volumes are still
 defined on the cluster. Purge them first, for example with the
-unprovision_services role.
+unprovision_services role. The objects are listed by a running daemon, else
+from their configuration files on the nodes.
 
 Requirements
 ------------
@@ -25,6 +26,12 @@ Role Variables
 
 Also remove the OpenSVC configuration and data: the package configuration files on Debian and Ubuntu,
 `/etc/opensvc`, `/var/lib/opensvc`, `/var/log/opensvc` and the other OpenSVC files.
+
+Also remove the files added by provision_cluster: the OpenSVC package
+repository, the sysrq setting (the running kernel keeps it until the next
+boot), the cluster nodes block of `/etc/hosts`, and `/etc/docker/daemon.json`
+when it is the one of `provision_cluster_deploy_docker_daemon_json`, docker
+being restarted then. The repository signing key is kept.
 
 Default value is `false`.
 
