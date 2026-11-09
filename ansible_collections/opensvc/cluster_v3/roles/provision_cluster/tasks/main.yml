@@ -315,17 +315,29 @@
   when:
     - provision_cluster_nodecount | int > 1
 
+# one node at a time: om cluster join returns once the first node added
+# the node to the cluster and the local daemon restarted with the fetched
+# configuration
 - name: Join other nodes to the cluster
-  ansible.builtin.command: "{{ item }}"
+  ansible.builtin.command: >-
+    om cluster join
+    --node {{ hostvars[ansible_play_hosts[0]].ansible_facts['hostname'] }}
   throttle: 1
   register: provision_cluster_output
   changed_when: provision_cluster_output.rc == 0
-  failed_when: provision_cluster_output.rc != 0
   environment:
     OSVC_JOIN_TOKEN: "{{ hostvars[ansible_play_hosts[0]].provision_cluster_token.stdout }}"
-  with_items:
-    - om cluster join --node {{ hostvars[ansible_play_hosts[0]].ansible_facts['hostname'] }}
-    - sleep {{ provision_cluster_opensvc_command_delay }}
+  when:
+    - provision_cluster_nodecount | int > 1
+    - inventory_hostname != ansible_play_hosts[0]
+    - not provision_cluster_joined
+
+- name: Wait for the joined node monitor to be idle
+  ansible.builtin.command: >-
+    om daemon events --wait --duration 60s --quiet
+    --filter 'NodeMonitorUpdated,node={{ ansible_facts['hostname'] }},.node_monitor.state="idle"'
+  changed_when: false
+  throttle: 1
   when:
     - provision_cluster_nodecount | int > 1
     - inventory_hostname != ansible_play_hosts[0]

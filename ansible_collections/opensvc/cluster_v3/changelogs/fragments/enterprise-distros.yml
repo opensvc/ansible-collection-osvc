@@ -35,6 +35,9 @@ minor_changes:
   - provision_cluster - set the sysrq trigger with ansible.builtin modules,
     the collection no longer depends on ansible.posix.
 removed_features:
+  - provision_cluster - remove the ``provision_cluster_opensvc_command_delay``
+    variable, the sleep after each node join. The role now waits for the
+    joined node monitor to be idle.
   - all roles - remove the ``.travis.yml`` and ``tests/`` skeletons of the
     roles, and the unused handlers and ``install_drbd_debian_repo``,
     ``install_drbd_debian_version`` variables of install_drbd.
@@ -94,3 +97,8 @@ bugfixes:
     with a password. It is now set in ``sshd_config.d/00-opensvc.conf`` too,
     the files are validated with ``sshd -t``, ``PermitRootLogin no`` is
     replaced too, and the effective setting is checked.
+
+  - install_dns - the ``cluster.dns`` keyword of each node was set from the
+    node itself, one node at a time with a 5 seconds sleep between them, to
+    avoid concurrent cluster configuration updates. All the nodes keywords
+    are now set in one update from the first node.

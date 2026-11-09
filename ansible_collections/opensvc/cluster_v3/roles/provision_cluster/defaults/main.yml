@@ -1,9 +1,6 @@
 ---
 # defaults file for provision_cluster
 #
-# opensvc delay to introduce between commands
-provision_cluster_opensvc_command_delay: 3
-
 # opensvc_server package repositories
 provision_cluster_repoenv: "prod"
 provision_cluster_repoarch: >-

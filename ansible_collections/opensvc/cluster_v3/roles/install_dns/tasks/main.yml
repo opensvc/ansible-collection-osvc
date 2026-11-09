@@ -200,17 +200,22 @@
   when:
     - not install_dns_svc_created
 
+# set the keywords of all the nodes in one update from the first node,
+# then wait for each node to see its own: concurrent updates from several
+# nodes could overwrite each other
 - name: Configure cluster dns thread
-  ansible.builtin.shell:
-    cmd: |
-      om cluster config update --set 'cluster.dns@{{ ansible_facts['hostname'] }}={{ install_dns_list_string }}'
-      sleep 5
-  args:
-    executable: /bin/bash
+  ansible.builtin.command:
+    argv: >-
+      {{ ['om', 'cluster', 'config', 'update']
+         + (ansible_play_hosts
+            | map('extract', hostvars, ['ansible_facts', 'hostname'])
+            | map('regex_replace', '^', '--set=cluster.dns@')
+            | zip(ansible_play_hosts
+                  | map('extract', hostvars, 'install_dns_list_string'))
+            | map('join', '=') | list) }}
   register: install_dns_output
   changed_when: install_dns_output.rc == 0
-  run_once: false
-  throttle: 1
+  run_once: true
   when:
     - not install_dns_svc_created
 
