@@ -67,17 +67,20 @@
                or install_quorum_max_weight | int * 2
                   < install_quorum_weight | int))
     fail_msg: >-
-      {% if install_quorum_weight | int == 0 -%}
+      {{ (_no_arbitrator if install_quorum_weight | int == 0
+          else _no_redundancy) ~ ' ' ~ _allow }}
+  vars:
+    _allow: Set install_quorum_allow_even_split to true to allow it.
+    _no_arbitrator: >-
       the cluster has {{ install_quorum_cluster_nodes | length }} nodes and
       no arbitrator: with the quorum enabled, a split in two equal parts
-      stops every node. Add an arbitrator,
-      {%- else -%}
+      stops every node. Add an arbitrator.
+    _no_redundancy: >-
       with these arbitrators, the loss of one of them makes a split in two
       equal parts stop every node: the part keeping the quorum must reach
       more than half of the arbitrators weight. Use one arbitrator, an odd
       number of arbitrators of equal weight, or weights where each one is
-      less than half of the total,
-      {%- endif %} or set install_quorum_allow_even_split to true.
+      less than half of the total.
     quiet: true
   run_once: true
 
