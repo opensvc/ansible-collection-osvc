@@ -1,0 +1,289 @@
+---
+# tasks file for install_quorum
+#
+# The arbitrators are set, and seen up from every node, before the quorum
+# is enabled. The quorum is disabled before the arbitrators are changed.
+
+- name: Check the quorum parameters
+  ansible.builtin.assert:
+    that:
+      - install_quorum_split_action in ['crash', 'reboot', 'disabled']
+      - _names | length == install_quorum_arbitrators | length
+      - _names | unique | length == _names | length
+      - _names | reject('match', '^[A-Za-z0-9_-]+$') | list | length == 0
+      - _uris | length == install_quorum_arbitrators | length
+      - _weights | select('lt', 1) | list | length == 0
+    fail_msg: >-
+      install_quorum_split_action must be crash, reboot or disabled, and each
+      install_quorum_arbitrators item needs a unique name, made of letters,
+      digits, - and _, an uri, and a weight of 1 or more
+    quiet: true
+  vars:
+    _names: >-
+      {{ install_quorum_arbitrators | map(attribute='name', default='')
+         | reject('equalto', '') | list }}
+    _uris: >-
+      {{ install_quorum_arbitrators | map(attribute='uri', default='')
+         | reject('equalto', '') | list }}
+    _weights: >-
+      {{ install_quorum_arbitrators | map(attribute='weight', default=1)
+         | map('int') | list }}
+  run_once: true
+
+- name: Get the cluster nodes
+  ansible.builtin.command: om cluster config get --kw cluster.nodes
+  register: install_quorum_nodes
+  changed_when: false
+  run_once: true
+
+- name: Set the quorum facts
+  ansible.builtin.set_fact:
+    install_quorum_cluster_nodes: "{{ install_quorum_nodes.stdout | split }}"
+    install_quorum_names: >-
+      {{ install_quorum_arbitrators | map(attribute='name') | list }}
+    install_quorum_weight: >-
+      {{ install_quorum_arbitrators | map(attribute='weight', default=1)
+         | map('int') | sum }}
+  run_once: true
+
+# with an even number of nodes and no arbitrator, each part of a split in
+# two equal parts has half of the votes, not the majority
+- name: Refuse a quorum lost by a split in two equal parts
+  ansible.builtin.assert:
+    that: >-
+      not install_quorum_enabled | bool
+      or install_quorum_cluster_nodes | length is odd
+      or install_quorum_weight | int > 0
+      or install_quorum_allow_even_split | bool
+    fail_msg: >-
+      the cluster has {{ install_quorum_cluster_nodes | length }} nodes and
+      no arbitrator: with the quorum enabled, a split in two equal parts
+      stops every node. Add an arbitrator, or set
+      install_quorum_allow_even_split to true.
+    quiet: true
+  run_once: true
+
+- name: Get the cluster configuration
+  ansible.builtin.command: om cluster config show
+  register: install_quorum_config_show
+  changed_when: false
+  run_once: true
+
+- name: Get the current quorum keywords
+  ansible.builtin.command: >-
+    om cluster config get -o json
+    --kw cluster.quorum --kw node.split_action
+  register: install_quorum_current
+  changed_when: false
+  run_once: true
+
+# the values are compared as om prints them, the defaults when unset
+- name: Set the current quorum facts
+  ansible.builtin.set_fact:
+    install_quorum_current_names: >-
+      {{ install_quorum_config_show.stdout_lines
+         | select('match', '^[[]arbitrator#')
+         | map('regex_replace', '^[[]arbitrator#', '')
+         | map('regex_replace', '[]].*$', '') | list }}
+    install_quorum_current_keywords:
+      - "cluster.quorum={{ _kw['cluster.quorum'] | bool | string | lower }}"
+      - "node.split_action={{ _kw['node.split_action'] or 'crash' }}"
+  vars:
+    _items: "{{ (install_quorum_current.stdout | from_json)['items'] }}"
+    _kw: >-
+      {{ dict(_items | map(attribute='keyword')
+              | zip(_items | map(attribute='value'))) }}
+  run_once: true
+
+- name: Disable the quorum before changing the arbitrators
+  ansible.builtin.command: om cluster config update --set cluster.quorum=false
+  register: install_quorum_disable
+  changed_when: install_quorum_disable.rc == 0
+  run_once: true
+  when:
+    - not install_quorum_enabled | bool
+    - "'cluster.quorum=true' in install_quorum_current_keywords"
+
+########################## ARBITRATORS ##########################
+
+- name: Set the desired arbitrator keywords
+  ansible.builtin.set_fact:
+    install_quorum_arbitrator_keywords: >-
+      {%- set out = [] -%}
+      {%- for a in install_quorum_arbitrators -%}
+      {%- set s = 'arbitrator#' ~ a.name ~ '.' -%}
+      {%- set _ = out.extend([
+            s ~ 'uri=' ~ a.uri,
+            s ~ 'weight=' ~ (a.weight | default(1) | int),
+            s ~ 'insecure=' ~ (a.insecure | default(false) | bool
+                               | string | lower)]) -%}
+      {%- endfor -%}
+      {{ out }}
+  run_once: true
+
+- name: Get the current arbitrator keywords
+  ansible.builtin.command:
+    argv: >-
+      {{ ['om', 'cluster', 'config', 'get', '-o', 'json']
+         + (install_quorum_arbitrator_keywords
+            | map('regex_replace', '=.*$', '')
+            | map('regex_replace', '^', '--kw=') | list) }}
+  register: install_quorum_arbitrator_current
+  changed_when: false
+  run_once: true
+  when: install_quorum_arbitrator_keywords | length > 0
+
+- name: Configure the arbitrators
+  ansible.builtin.command:
+    argv: >-
+      {{ ['om', 'cluster', 'config', 'update']
+         + (_updates | map('regex_replace', '^', '--set=') | list) }}
+  register: install_quorum_arbitrator_output
+  changed_when: install_quorum_arbitrator_output.rc == 0
+  run_once: true
+  when:
+    - install_quorum_arbitrator_keywords | length > 0
+    - _updates | length > 0
+  vars:
+    _items: >-
+      {{ (install_quorum_arbitrator_current.stdout
+          | default('{"items": []}') | from_json)['items'] }}
+    _current: >-
+      {{ _items | map(attribute='keyword')
+         | zip(_items | map(attribute='value'))
+         | map('join', '=') | list }}
+    _updates: >-
+      {{ install_quorum_arbitrator_keywords | difference(_current) }}
+
+- name: Remove the arbitrators not listed
+  ansible.builtin.command:
+    argv: >-
+      {{ ['om', 'cluster', 'config', 'update']
+         + (_extra | map('regex_replace', '^', '--delete=arbitrator#')
+            | list) }}
+  register: install_quorum_delete_output
+  changed_when: install_quorum_delete_output.rc == 0
+  run_once: true
+  when:
+    - install_quorum_exclusive | bool
+    - _extra | length > 0
+  vars:
+    _extra: >-
+      {{ install_quorum_current_names | difference(install_quorum_names) }}
+
+# a node votes with the arbitrators it reaches when the cluster is split:
+# check them from every node before relying on them
+- name: Check the arbitrators from every node
+  when:
+    - install_quorum_enabled | bool
+    - install_quorum_names | length > 0
+  block:
+    - name: Wait for every node to see the arbitrators up
+      ansible.builtin.command: om cluster status -o json
+      register: install_quorum_status
+      changed_when: false
+      failed_when: false
+      retries: >-
+        {{ (install_quorum_wait_timeout | int / 5) | round(0, 'ceil') | int }}
+      delay: 5
+      until: >-
+        install_quorum_status.rc == 0
+        and (install_quorum_status.stdout | from_json).cluster.node
+        | dict2items
+        | selectattr('key', 'in', install_quorum_cluster_nodes)
+        | map(attribute='value.status.arbitrators', default={})
+        | map('dict2items') | flatten
+        | selectattr('key', 'in', install_quorum_names)
+        | selectattr('value.status', 'equalto', 'up') | list | length
+        == install_quorum_cluster_nodes | length
+        * install_quorum_names | length
+      run_once: true
+
+    # node => {arbitrator: status}
+    - name: Check every node sees the arbitrators up
+      ansible.builtin.assert:
+        that:
+          - _seen.values() | map('dict2items') | flatten
+            | selectattr('key', 'in', install_quorum_names)
+            | selectattr('value', 'equalto', 'up') | list | length
+            == install_quorum_cluster_nodes | length
+            * install_quorum_names | length
+        fail_msg: >-
+          the arbitrators are not seen up from every node after
+          {{ install_quorum_wait_timeout }}s, the quorum is not enabled:
+          {{ _seen }}
+        quiet: true
+      vars:
+        _node: >-
+          {{ (install_quorum_status.stdout | default('{}', true)
+              | from_json).cluster.node | default({}) }}
+        _seen: >-
+          {%- set out = {} -%}
+          {%- for n in install_quorum_cluster_nodes -%}
+          {%- set a = _node[n].status.arbitrators | default({})
+                      if n in _node else {} -%}
+          {%- set _ = out.update({n: dict(a.keys()
+                | zip(a.values() | map(attribute='status')))}) -%}
+          {%- endfor -%}
+          {{ out }}
+      run_once: true
+
+########################## QUORUM ##########################
+
+- name: Enable the quorum
+  ansible.builtin.command:
+    argv: >-
+      {{ ['om', 'cluster', 'config', 'update']
+         + (_updates | map('regex_replace', '^', '--set=') | list) }}
+  register: install_quorum_enable
+  changed_when: install_quorum_enable.rc == 0
+  run_once: true
+  when:
+    - install_quorum_enabled | bool
+    - _updates | length > 0
+  vars:
+    _updates: >-
+      {{ ['cluster.quorum=true',
+          'node.split_action=' ~ install_quorum_split_action]
+         | difference(install_quorum_current_keywords) }}
+
+# node.split_action of a node.conf overrides the cluster one
+- name: Wait for every node to apply the split action
+  ansible.builtin.command: om cluster status -o json
+  register: install_quorum_nodes_config
+  changed_when: false
+  failed_when: false
+  retries: 6
+  delay: 5
+  until: >-
+    install_quorum_nodes_config.rc == 0
+    and (install_quorum_nodes_config.stdout | from_json).cluster.node
+    | dict2items
+    | selectattr('key', 'in', install_quorum_cluster_nodes)
+    | selectattr('value.config.split_action', 'equalto',
+                 install_quorum_split_action)
+    | list | length == install_quorum_cluster_nodes | length
+  run_once: true
+  when: install_quorum_enabled | bool
+
+- name: Check every node applies the split action
+  ansible.builtin.assert:
+    that:
+      - _other | length == 0
+    fail_msg: >-
+      the nodes {{ _other | join(', ') }} do not apply the
+      {{ install_quorum_split_action }} split action: a node.split_action
+      set in their node.conf overrides the cluster one
+    quiet: true
+  vars:
+    _node: >-
+      {{ (install_quorum_nodes_config.stdout | default('{}', true)
+          | from_json).cluster.node | default({}) }}
+    _other: >-
+      {{ install_quorum_cluster_nodes
+         | reject('in', _node | dict2items
+                  | selectattr('value.config.split_action', 'equalto',
+                               install_quorum_split_action)
+                  | map(attribute='key') | list) | list }}
+  run_once: true
+  when: install_quorum_enabled | bool

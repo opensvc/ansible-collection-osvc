@@ -1,0 +1,26 @@
+---
+# defaults file for install_quorum
+
+# cluster.quorum: when the cluster is split, the nodes without the
+# majority of the votes run the split action
+install_quorum_enabled: true
+
+# node.split_action: crash, reboot or disabled (test only)
+install_quorum_split_action: crash
+
+# the arbitrators, configured as arbitrator#<name> sections, for example:
+# - name: site3
+#   uri: arbitrator.acme.com      # tcp connect, port 1215 by default
+#   weight: 1                     # optional, default 1
+#   insecure: false               # optional, https uri only
+install_quorum_arbitrators: []
+
+# remove the arbitrator#* sections not listed in install_quorum_arbitrators
+install_quorum_exclusive: false
+
+# enable the quorum of a cluster with an even number of nodes and no
+# arbitrator: a split in two equal parts then stops every node
+install_quorum_allow_even_split: false
+
+# seconds to wait for every node to see the arbitrators up
+install_quorum_wait_timeout: 90

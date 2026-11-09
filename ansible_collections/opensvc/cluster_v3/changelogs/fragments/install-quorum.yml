@@ -1,0 +1,6 @@
+---
+minor_changes:
+  - install_quorum - new role, configuring the cluster quorum, the split
+    action and the arbitrators. The arbitrators must be seen up from every
+    node before the quorum is enabled, and a quorum lost by any even split
+    is refused.

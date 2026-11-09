@@ -9,6 +9,8 @@ It provides roles to:
   installation, cluster name, nodes, heartbeats and orchestrator configuration
   (`provision_cluster`)
 - add a relay heartbeat to the cluster (`install_hb_relay`)
+- configure the split quorum, its arbitrators and split action
+  (`install_quorum`)
 - configure container management support: backend network and CNI plugins
   (`install_backend_network`, `install_cni`)
 - set up the cluster name service and DRBD9 prerequisites
