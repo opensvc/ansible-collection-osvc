@@ -3,13 +3,76 @@
 - name: Install DRBD software prerequisites
   ansible.builtin.include_tasks: "install-{{ ansible_facts['os_family'] }}-prerequisites.yml"
 
-# Need to be done before kernel module installation, to benefit from initramfs update involved by kms installation
-- name: Set LVM filter to avoid drbd devices to be scanned
+# Need to be done before kernel module installation, to benefit from
+# initramfs update involved by kms installation.
+# OpenSVC nodes do not use the lvm devices file (use_devicesfile=1 is the
+# default of recent RHEL and SLES): lvm then scans every device but the
+# ones rejected by the filter, like before the devices file. lvm older than
+# 2.03.12 (ubuntu 22.04) has no devices file, and lvmconfig exits 5.
+- name: Check the LVM devices file support
+  ansible.builtin.command: lvmconfig --typeconfig default devices/use_devicesfile
+  register: install_drbd_lvm_devicesfile
+  changed_when: false
+  failed_when: install_drbd_lvm_devicesfile.rc not in [0, 5]
+
+- name: Disable the LVM devices file
   ansible.builtin.lineinfile:
     path: /etc/lvm/lvm.conf
-    regexp: '.*filter.*/dev/drbd.*" ].*'
-    insertbefore: '# Configuration option devices/global_filter'
-    line: '        filter = [ "r|/dev/drbd.*|" ]'
+    regexp: '^\s*use_devicesfile\s*='
+    insertafter: '^devices \{'
+    line: '        use_devicesfile = 0'
+  when: install_drbd_lvm_devicesfile.rc == 0
+
+# lvm uses the first filter entry matching a device: the drbd rejection is
+# prepended to the active filter, which lvmconfig reports as a string or a
+# list of strings, and exits 5 when it is not set
+- name: Set LVM filter to avoid drbd devices to be scanned
+  block:
+    - name: Get the active LVM filter
+      ansible.builtin.command: lvmconfig devices/filter
+      register: install_drbd_lvm_filter
+      changed_when: false
+      failed_when: install_drbd_lvm_filter.rc not in [0, 5]
+
+    - name: Get the LVM configuration
+      ansible.builtin.slurp:
+        path: /etc/lvm/lvm.conf
+      register: install_drbd_lvm_conf
+
+    - name: Prepend the drbd devices rejection to the LVM filter
+      vars:
+        _current: >-
+          {{ [] if install_drbd_lvm_filter.rc != 0
+             else install_drbd_lvm_filter.stdout | trim
+                  | regex_replace('^filter=', '') | from_json }}
+        _entries: "{{ [_current] if _current is string else _current }}"
+        _rejected: >-
+          {{ _entries | select('match', 'r.?/dev/drbd') | list | length > 0 }}
+        # the active filter line of lvm.conf, when it fits on one line
+        _line: >-
+          {{ install_drbd_lvm_conf.content | b64decode
+             | regex_search('(?m)^\s*filter\s*=.*$') | default('', true) }}
+      when: not _rejected | bool
+      block:
+        - name: Refuse to change a filter not set on one line of lvm.conf
+          ansible.builtin.assert:
+            that:
+              - _entries | length == 0 or _line is search('(\]|")\s*$')
+            fail_msg: >-
+              the active LVM filter {{ _entries }} is not set on a single
+              line of /etc/lvm/lvm.conf: prepend "r|/dev/drbd.*|" to it by
+              hand
+            quiet: true
+
+        - name: Set the LVM filter
+          ansible.builtin.lineinfile:
+            path: /etc/lvm/lvm.conf
+            regexp: '^\s*filter\s*='
+            insertafter: '^devices \{'
+            line: >-
+              {{ '        filter = [ '
+                 ~ (['r|/dev/drbd.*|'] + _entries) | map('to_json')
+                 | join(', ') ~ ' ]' }}
 
 # the distribution kernels may ship a drbd 8.4 module, only a drbd 9 one
 # is accepted as already installed
@@ -25,49 +88,42 @@
     install_drbd_installed.rc != 0
     or install_drbd_installed.stdout | trim is not version('9.0.0', '>=')
 
-# lsmod | grep -q under pipefail reports a loaded module as missing,
-# when grep exits before lsmod has written all its output (SIGPIPE)
-- name: Check if DRBD module is already loaded
-  ansible.builtin.stat:
-    path: /sys/module/drbd
-  register: install_drbd_check
+# a module loaded before the drbd 9 installation, like a drbd 8.4 module
+# of the distribution kernel, stays loaded: replace it when it is not used.
+# /sys/module/drbd/version is the version of the loaded module.
+- name: Get loaded DRBD module version
+  ansible.builtin.command: cat /sys/module/drbd/version
+  changed_when: false
+  failed_when: false
+  register: install_drbd_loaded
 
-- name: Skip DRBD installation if module is loaded
-  ansible.builtin.debug:
-    msg: "DRBD module already loaded, skipping installation."
-  when: install_drbd_check.stat.exists
+- name: Unload the DRBD module older than 9
+  ansible.builtin.command: modprobe -r drbd
+  changed_when: true
+  when:
+    - install_drbd_loaded.rc == 0
+    - install_drbd_loaded.stdout | trim is not version('9.0.0', '>=')
 
-- name: Load DRBD module if not loaded
+- name: Load DRBD module
   ansible.builtin.command: modprobe drbd
-  changed_when: install_drbd_load.rc == 0
-  when: not install_drbd_check.stat.exists
-  register: install_drbd_load
-  failed_when: install_drbd_load.rc != 0  # Fail if the module cannot be loaded
+  changed_when: true
+  when: >-
+    install_drbd_loaded.rc != 0
+    or install_drbd_loaded.stdout | trim is not version('9.0.0', '>=')
 
-- name: Fail if DRBD module is not found
-  ansible.builtin.fail:
-    msg: "The DRBD module is not present on this system."
-  when: not install_drbd_check.stat.exists and install_drbd_load.rc != 0
-
-- name: Check for DRBD module version
-  ansible.builtin.shell:
-    cmd: |
-      set -o pipefail
-      modinfo drbd | grep -w "^version:" | awk '{print $2}'
-  args:
-    executable: /bin/bash
+- name: Get loaded DRBD module version
+  ansible.builtin.command: cat /sys/module/drbd/version
   changed_when: false
   register: install_drbd_version
 
-- name: Debug drbd module version
-  ansible.builtin.debug:
-    var: install_drbd_version.stdout
-    verbosity: 2
-
-- name: Test DRBD version >= 9.0.0
+- name: Test loaded DRBD module version >= 9.0.0
   ansible.builtin.assert:
     that:
-      - "install_drbd_version.stdout is version('9.0.0', '>=')"
+      - install_drbd_version.stdout | trim is version('9.0.0', '>=')
+    fail_msg: >-
+      the loaded DRBD module version is {{ install_drbd_version.stdout | trim }},
+      9.0.0 or later is required
+    quiet: true
 
 - name: Flush handlers
   ansible.builtin.meta: flush_handlers

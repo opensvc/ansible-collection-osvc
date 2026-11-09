@@ -5,7 +5,24 @@ install_cni_plugins_dir: "/usr/libexec/cni/bin"
 
 install_cni_config_dir: "/var/lib/opensvc/cni/net.d"
 
-install_cni_plugin_binaries: ['macvlan', 'ipvlan', 'vlan', 'flannel', 'bridge']
+# the plugins to look for in install_cni_search_dirs
+install_cni_plugin_binaries: ['macvlan', 'ipvlan', 'vlan', 'bridge']
+
+# the directories where the CNI plugins may already be installed:
+# install_cni_plugins_dir, the containernetworking-plugins package
+# directories of Ubuntu (/usr/lib/cni) and of RHEL and SLES (/usr/libexec/cni).
+# On each node, the first one holding all of install_cni_plugin_binaries is
+# found: it is used when it is the same on every node, else the plugins are
+# downloaded into install_cni_plugins_dir
+install_cni_search_dirs:
+  - "{{ install_cni_plugins_dir }}"
+  - /usr/lib/cni
+  - /usr/libexec/cni
+  - /opt/cni/bin
+
+# download the plugins into install_cni_plugins_dir, even when they are
+# already present
+install_cni_force: false
 
 install_cni_download_url_version:
   v0.8.5:

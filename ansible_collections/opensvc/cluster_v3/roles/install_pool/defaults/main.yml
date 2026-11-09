@@ -9,3 +9,8 @@ install_pool_status_schedule: ""
 install_pool_network: ""
 
 install_pool_force: false
+
+# other pool keywords, overriding the ones set by the variables above,
+# ex: {quota: true} for a directory pool, {thin_pool: thinpool} for a vg
+# pool, {template: templates/vol/mypool} for a virtual pool
+install_pool_keywords: {}

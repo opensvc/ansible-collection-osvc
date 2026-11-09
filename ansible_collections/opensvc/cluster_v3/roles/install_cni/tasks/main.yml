@@ -1,80 +1,94 @@
 ---
 # tasks file for install_cni
+#
+# Use the CNI plugins already present on the nodes, like the ones of the
+# containernetworking-plugins packages, else download them into
+# install_cni_plugins_dir. cni.plugins is a cluster keyword: it points to
+# the same directory on every node.
 
-- name: Set fact according to binary deployment
-  ansible.builtin.set_fact:
-    install_cni_bin_is_installed: false
-
-- name: Check if cni bin exists
+- name: Look for the CNI plugins
   ansible.builtin.stat:
-    path: "{{ install_cni_plugins_dir }}/{{ item }}"
-  with_items: "{{ install_cni_plugin_binaries | flatten }}"
+    path: "{{ item.0 }}/{{ item.1 }}"
+  loop: "{{ install_cni_search_dirs | product(install_cni_plugin_binaries) }}"
   register: install_cni_check_result
 
-- name: Set fact according to actual cni binary existence
+# the first directory holding all the plugins, or ''
+- name: Set the directory holding the CNI plugins on this node
   ansible.builtin.set_fact:
-    install_cni_bin_is_installed: true
-  when:
-    - item.stat.exists
-  loop: "{{ install_cni_check_result.results }}"
+    install_cni_found_dir: >-
+      {{ install_cni_search_dirs
+         | reject('in', install_cni_check_result.results
+                        | rejectattr('stat.exists')
+                        | map(attribute='item.0') | list)
+         | first | default('') }}
 
-- name: Display cni binary install flag
-  ansible.builtin.debug:
-    var: install_cni_bin_is_installed
-    verbosity: 2
+# use the directory found on every node, else install_cni_plugins_dir
+- name: Set the cluster CNI plugins directory
+  ansible.builtin.set_fact:
+    install_cni_dir: >-
+      {{ _found[0] if not install_cni_force | bool
+                      and _found | length == 1 and _found[0] | length > 0
+         else install_cni_plugins_dir }}
+  vars:
+    _found: >-
+      {{ ansible_play_hosts | map('extract', hostvars, 'install_cni_found_dir')
+         | unique | list }}
 
-- name: Deploy cni plugins
-  ansible.builtin.get_url:
-    url: "{{ item.url }}"
-    dest: "{{ item.dest }}"
-    checksum: "{{ item.checksum }}"
-    timeout: 300
-    mode: '0440'
-  loop:
-    - "{{ install_cni_download_url }}"
-  register: install_cni_get_url_result
-  until: install_cni_get_url_result is succeeded
-  when:
-    - not install_cni_bin_is_installed
+- name: Download and install the CNI plugins
+  when: >-
+    install_cni_force | bool
+    or install_cni_found_dir != install_cni_dir
+  block:
+    - name: Download the CNI plugins
+      ansible.builtin.get_url:
+        url: "{{ install_cni_download_url.url }}"
+        dest: "{{ install_cni_download_url.dest }}"
+        checksum: "{{ install_cni_download_url.checksum }}"
+        timeout: 300
+        mode: '0440'
+      register: install_cni_get_url_result
+      until: install_cni_get_url_result is succeeded
 
-- name: Create directory if it does not exist
+    - name: Create the CNI plugins directory
+      ansible.builtin.file:
+        path: "{{ install_cni_dir }}"
+        state: directory
+        mode: '0755'
+
+    - name: Extract the CNI plugins
+      ansible.builtin.unarchive:
+        src: "{{ install_cni_download_url.dest }}"
+        dest: "{{ install_cni_dir }}"
+        remote_src: true
+
+- name: Create the CNI configuration directory
   ansible.builtin.file:
-    path: "{{ item }}"
+    path: "{{ install_cni_config_dir }}"
     state: directory
     mode: '0755'
-  with_items:
-    - "{{ install_cni_plugins_dir }}"
-    - "{{ install_cni_config_dir }}"
-  when:
-    - not install_cni_bin_is_installed
 
-- name: Unarchive package
-  ansible.builtin.shell: |
-    set -o pipefail
-    cd {{ install_cni_plugins_dir }}
-    TMP_DIR="`mktemp -d`" && tar -zx -C $TMP_DIR -f {{ install_cni_download_url.dest }} && mv $TMP_DIR/* . && rm -rf $TMP_DIR
-  args:
-    executable: "/bin/bash"
-  register: install_cni_output
-  changed_when: install_cni_output.rc == 0
-  when:
-    - not install_cni_bin_is_installed
-    - install_cni_get_url_result is changed
-
-- name: Get CNI paths for OpenSVC cluster
-  ansible.builtin.command: om cluster config get --kw cni.plugins
-  register: install_cni_plugins_path
-  failed_when: false
+- name: Get the cluster CNI configuration
+  ansible.builtin.command: >-
+    om cluster config get -o json --kw cni.plugins --kw cni.config
+  register: install_cni_config_current
   changed_when: false
   run_once: true
-  when:
-    - not install_cni_bin_is_installed
 
-- name: Set CNI paths for OpenSVC cluster
-  ansible.builtin.command: om cluster config update --set cni.plugins={{ install_cni_plugins_dir }} --set cni.config={{ install_cni_config_dir }}
-  run_once: true
+- name: Set the cluster CNI configuration
+  ansible.builtin.command:
+    argv: >-
+      {{ ['om', 'cluster', 'config', 'update']
+         + (_desired | difference(_current)
+            | map('regex_replace', '^', '--set=') | list) }}
   register: install_cni_output
   changed_when: install_cni_output.rc == 0
-  when:
-    - not install_cni_bin_is_installed
-    - install_cni_plugins_dir != install_cni_plugins_path.stdout
+  run_once: true
+  when: _desired | difference(_current) | length > 0
+  vars:
+    _items: "{{ (install_cni_config_current.stdout | from_json)['items'] }}"
+    _current: >-
+      {{ _items | map(attribute='keyword') | zip(_items | map(attribute='value'))
+         | map('join', '=') | list }}
+    _desired:
+      - "cni.plugins={{ install_cni_dir }}"
+      - "cni.config={{ install_cni_config_dir }}"

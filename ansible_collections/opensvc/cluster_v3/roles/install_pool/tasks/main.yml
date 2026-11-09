@@ -1,51 +1,115 @@
 ---
 # Tasks file for install_pool
+#
+# Set the pool keywords of the role variables, on a new or an existing pool:
+# only the keywords whose value differs are updated. An empty variable leaves
+# its keyword unmanaged.
 
-- name: List configured pools
-  ansible.builtin.command: om pool ls -o json
+- name: Check the pool type is supported
+  ansible.builtin.assert:
+    that:
+      - install_pool_type in _types
+    fail_msg: >-
+      unsupported pool type {{ install_pool_type }}: this role configures
+      {{ _types | join(', ') }} pools
+    quiet: true
+  vars:
+    _types: [directory, loop, shm, virtual, vg, zpool, drbd]
+
+# the role variables mapped to the keywords of each pool type, overridden
+# by install_pool_keywords. The values are compared as om prints them:
+# booleans in lowercase.
+- name: Set desired pool keywords
+  ansible.builtin.set_fact:
+    install_pool_settings: >-
+      {%- set out = {} -%}
+      {%- for k, v in (_common | combine(_typed[install_pool_type])
+                       | combine(install_pool_keywords)).items()
+          if v | string | length > 0 -%}
+      {%- set _ = out.update({k: v | string | lower if v is boolean
+                                 else v | string}) -%}
+      {%- endfor -%}
+      {{ out }}
+  vars:
+    _path: "{{ install_pool_path | default('') }}"
+    _vg: "{{ install_pool_vg | default('') }}"
+    _zpool: "{{ install_pool_zpool | default('') }}"
+    _common:
+      type: "{{ install_pool_type }}"
+      status_schedule: "{{ install_pool_status_schedule }}"
+    _typed:
+      directory: {path: "{{ _path }}"}
+      loop: {path: "{{ _path }}"}
+      shm: {}
+      virtual: {}
+      vg: {name: "{{ _vg }}"}
+      zpool: {name: "{{ _zpool }}"}
+      drbd:
+        path: "{{ _path }}"
+        vg: "{{ _vg }}"
+        zpool: "{{ _zpool }}"
+        network: "{{ install_pool_network }}"
+  run_once: true
+
+- name: Check the pool type mandatory keywords are set
+  ansible.builtin.assert:
+    that:
+      - _required[install_pool_type] | difference(install_pool_settings)
+        | length == 0
+    fail_msg: >-
+      a {{ install_pool_type }} pool requires the
+      {{ _required[install_pool_type] | join(', ') }} keywords: set
+      {{ _hint[install_pool_type] }}
+    quiet: true
+  vars:
+    _required: {vg: [name], zpool: [name], virtual: [template]}
+    _hint:
+      vg: install_pool_vg
+      zpool: install_pool_zpool
+      virtual: "install_pool_keywords: {template: <volume template path>}"
+  run_once: true
+  when: install_pool_type in _required
+
+- name: Prefix the pool keywords with the pool section
+  ansible.builtin.set_fact:
+    install_pool_keywords_desired: >-
+      {{ dict(install_pool_settings.keys()
+              | map('regex_replace', '^', 'pool#' ~ install_pool_name ~ '.')
+              | zip(install_pool_settings.values())) }}
+  run_once: true
+
+- name: Get current pool config
+  ansible.builtin.command:
+    argv: >-
+      {{ ['om', 'cluster', 'config', 'get', '-o', 'json']
+         + (install_pool_keywords_desired.keys()
+            | map('regex_replace', '^', '--kw=') | list) }}
+  register: install_pool_config_current
   changed_when: false
-  register: install_pool_list
   run_once: true
 
-- name: Set pool configuration flag
+# compare "keyword=value" strings, keep the desired ones not already set,
+# or all of them when install_pool_force is set
+- name: Compute pool keywords to update
   ansible.builtin.set_fact:
-    install_pool_is_configured: >-
-      {{ install_pool_name in (install_pool_list.stdout | from_json)['items']
-         | map(attribute='name') | list }}
+    install_pool_updates: >-
+      {{ _desired if install_pool_force | bool
+         else _desired | difference(_current) }}
+  vars:
+    _items: "{{ (install_pool_config_current.stdout | from_json)['items'] }}"
+    _desired: >-
+      {{ install_pool_keywords_desired.items() | map('join', '=') | list }}
+    _current: >-
+      {{ _items | map(attribute='keyword') | zip(_items | map(attribute='value'))
+         | map('join', '=') | list }}
   run_once: true
 
-- name: Check if force flag is present
-  ansible.builtin.set_fact:
-    install_pool_is_configured: false
+- name: Configure pool
+  ansible.builtin.command:
+    argv: >-
+      {{ ['om', 'cluster', 'config', 'update']
+         + (install_pool_updates | map('regex_replace', '^', '--set=') | list) }}
+  register: install_pool_output
+  changed_when: install_pool_output.rc == 0
   run_once: true
-  when: install_pool_force
-
-- name: Display pool existence flag
-  ansible.builtin.debug:
-    var: install_pool_is_configured
-    verbosity: 2
-
-- name: Configure pool based on type
-  when: not install_pool_is_configured
-  block:
-    - name: Configure directory pool
-      when: install_pool_type == "directory"
-      ansible.builtin.include_tasks: "directory.yml"
-
-    - name: Configure drbd pool
-      when: install_pool_type == "drbd"
-      ansible.builtin.include_tasks: "drbd.yml"
-
-    - name: Configure vg pool
-      when: install_pool_type == "vg"
-      ansible.builtin.include_tasks: "vg.yml"
-
-    - name: Configure pool schedule
-      when: (install_pool_status_schedule | length) > 0
-      ansible.builtin.command:
-        cmd: >
-          om cluster config update
-          --set pool#{{ install_pool_name }}.status_schedule={{ install_pool_status_schedule }}
-      run_once: true
-      register: install_pool_output
-      changed_when: install_pool_output.rc == 0
+  when: install_pool_updates | length > 0

@@ -5,15 +5,31 @@ minor_changes:
     ansible.builtin has no zypper module, so the repository is a
     ``/etc/zypp/repos.d/opensvc.repo`` file and the packages are installed
     with the ``zypper`` command.
-  - provision_cluster - select the tasks and the repository by OS family,
-    so the RHEL rebuilds (Rocky Linux, AlmaLinux...) use the RHEL ones.
+  - provision_cluster - select the tasks and the repository by OS family.
   - install_drbd - support SLES 15 and 16, from the LINBIT repositories when
     ``install_drbd_linbit_key`` is set, else from the enabled repositories
     (SLE High Availability extension).
   - unprovision_cluster - remove the OpenSVC packages on SLES.
+  - install_drbd - set ``use_devicesfile = 0`` in ``/etc/lvm/lvm.conf``, as
+    OpenSVC nodes do not use the LVM devices file, enabled by default on
+    recent RHEL and SLES, which ignores the drbd devices filter.
+  - install_pool - update the keywords of an existing pool whose value
+    differs from the role variables, instead of leaving it as is unless
+    ``install_pool_force`` is set, which now sets all the keywords.
+    Configure loop, shm, virtual and zpool pools too, refuse the other
+    types, and check the mandatory keywords of the vg, zpool and virtual
+    pools.
+  - install_pool - new ``install_pool_keywords`` variable, a dictionary of
+    other pool keywords, like ``quota``, ``thin_pool`` or ``fs_type``.
+  - install_cni - use the CNI plugins already present on the nodes, like the
+    ones of the containernetworking-plugins packages (``/usr/lib/cni``,
+    ``/usr/libexec/cni``), instead of downloading them. The new
+    ``install_cni_force`` variable downloads them anyway, and the new
+    ``install_cni_search_dirs`` variable lists the directories looked up.
+  - install_cni - the flannel plugin is no longer required.
 bugfixes:
   - provision_cluster - the repository url was empty and the install tasks
-    file missing on the RHEL rebuilds and SLES.
+    file missing on SLES.
   - provision_cluster - a node whose name is a prefix of a cluster node name,
     like ``node1`` and ``node10``, was considered as already joined, and a
     node whose inventory name is not its hostname was joined again on each
@@ -25,3 +41,13 @@ bugfixes:
   - install_pool, install_backend_network - the existence check did not
     parse the current ``om pool ls`` and ``om net ls`` json output, so the
     pool and the network were configured again on each run.
+  - install_drbd - the DRBD version check read the module file on disk, so a
+    DRBD 8.4 module loaded before the DRBD 9 installation was accepted. The
+    loaded module version is checked, and a loaded DRBD 8.4 module is
+    replaced when not in use.
+  - install_drbd - the drbd devices rejection was added as a second
+    ``filter`` line when ``/etc/lvm/lvm.conf`` already had an active filter.
+    It is now prepended to the active filter.
+  - install_cni - the ``cni.plugins`` and ``cni.config`` cluster keywords
+    were not set when the plugins were already in ``install_cni_plugins_dir``,
+    and an interrupted download or extraction was never resumed.

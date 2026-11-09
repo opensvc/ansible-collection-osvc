@@ -42,8 +42,7 @@ Then you can use the roles from the collection in your playbooks:
 
 This collection requires ansible-core >= 2.16. It has been tested with
 ansible-core 2.16, 2.19, 2.20, 2.21 and 2.22 (beta), on Ubuntu 20.04, 22.04,
-24.04, 26.04, RHEL 7, 8, 9, 10 and SLES 15 SP7, 16.0 nodes. The RHEL rebuilds
-(Rocky Linux, AlmaLinux...) use the RHEL tasks and repositories, untested.
+24.04, 26.04, RHEL 7, 8, 9, 10 and SLES 15 SP7, 16.0 nodes.
 
 The python version of the managed nodes limits the usable ansible-core versions:
 

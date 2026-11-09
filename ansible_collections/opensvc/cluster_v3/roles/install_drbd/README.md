@@ -8,7 +8,19 @@ drives the DRBD resources).
 
 A node already providing a DRBD 9 module is left as is, whatever its source.
 The distribution kernels may ship a DRBD 8.4 module: it is not accepted, and
-DRBD 9 is installed.
+DRBD 9 is installed. A DRBD 8.4 module already loaded is unloaded when it is
+not in use, and replaced by the DRBD 9 one: the role fails if the loaded
+module is not DRBD 9.
+
+LVM
+---
+
+OpenSVC nodes do not use the LVM devices file: the role sets
+`use_devicesfile = 0` in `/etc/lvm/lvm.conf`, when the LVM version supports
+it (the default of recent RHEL and SLES is `1`). LVM then scans the devices
+accepted by its filter, and the role prepends the `r|/dev/drbd.*|` rejection
+to the active filter. It refuses to change a filter not set on a single line
+of `/etc/lvm/lvm.conf`: prepend the rejection by hand in this case.
 
 DRBD 9 sources
 --------------
