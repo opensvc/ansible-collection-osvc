@@ -125,9 +125,6 @@
       9.0.0 or later is required
     quiet: true
 
-- name: Flush handlers
-  ansible.builtin.meta: flush_handlers
-
 # OpenSVC brings the drbd resources up. DRBD built from the sources may
 # install no systemd unit.
 - name: Get the systemd units

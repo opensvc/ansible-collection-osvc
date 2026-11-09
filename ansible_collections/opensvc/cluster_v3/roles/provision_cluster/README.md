@@ -60,7 +60,13 @@ Default value is `false`.
 create a dedicated opensvc ssh keypair.
 populate root authorized_keys file with public ssh keys.
 => false: do not configure ssh root trust accross cluster nodes. rsync sync resources and fs.type=flag resource won't work.
-=> true: enable ssh trust autoconfig.
+=> true: enable ssh trust autoconfig, and allow the ssh root login with keys
+only (`PermitRootLogin prohibit-password`), which also disables the root
+login with a password. The setting is written in
+`/etc/ssh/sshd_config.d/00-opensvc.conf`, read before the other
+`sshd_config.d` files, when the sshd configuration includes them, and in
+`/etc/ssh/sshd_config` when it sets `PermitRootLogin`. The role fails when
+the effective setting differs.
 
 Default value is `false`.
 

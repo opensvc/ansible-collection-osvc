@@ -34,6 +34,10 @@ minor_changes:
     configuration it installed.
   - provision_cluster - set the sysrq trigger with ansible.builtin modules,
     the collection no longer depends on ansible.posix.
+removed_features:
+  - all roles - remove the ``.travis.yml`` and ``tests/`` skeletons of the
+    roles, and the unused handlers and ``install_drbd_debian_repo``,
+    ``install_drbd_debian_version`` variables of install_drbd.
 bugfixes:
   - install_drbd - the ELRepo release package was installed without
     checking its signature. The ELRepo signing key is now imported, checked
@@ -83,3 +87,10 @@ bugfixes:
     added a trailing comma to the recursor ``allow-from`` setting.
   - install_dns - the debug tasks printed their message at the default
     verbosity, they now need ``-vv``.
+  - provision_cluster - with ``provision_cluster_configure_ssh_trust``, the
+    root login setting was only changed in ``/etc/ssh/sshd_config``, while
+    the ``sshd_config.d`` files it includes take precedence, like the
+    ``01-permitrootlogin.conf`` file of RHEL 9 and 10 allowing the root login
+    with a password. It is now set in ``sshd_config.d/00-opensvc.conf`` too,
+    the files are validated with ``sshd -t``, ``PermitRootLogin no`` is
+    replaced too, and the effective setting is checked.

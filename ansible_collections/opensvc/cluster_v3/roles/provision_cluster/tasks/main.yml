@@ -158,14 +158,71 @@
   when:
     - provision_cluster_update_etc_hosts | bool
 
-- name: Enable ssh root access accross cluster nodes
-  ansible.builtin.replace:
-    dest: /etc/ssh/sshd_config
-    regexp: '^PermitRootLogin (yes|without-password)'
-    replace: "PermitRootLogin prohibit-password"
-  notify: Reload sshd
+# the cluster nodes log in as root with keys only. sshd keeps the first
+# value it reads: set it in a sshd_config.d file read first when the main
+# configuration includes them, which recent distributions do, else in the
+# main configuration (/usr/etc/ssh/sshd_config on SLES without
+# /etc/ssh/sshd_config)
+- name: Allow the ssh root login with keys only
   when:
     - provision_cluster_configure_ssh_trust | bool
+  block:
+    - name: Find the sshd main configuration
+      ansible.builtin.stat:
+        path: /etc/ssh/sshd_config
+      register: provision_cluster_sshd_config_stat
+
+    - name: Read the sshd main configuration
+      ansible.builtin.slurp:
+        src: >-
+          {{ '/etc/ssh/sshd_config' if provision_cluster_sshd_config_stat.stat.exists
+             else '/usr/etc/ssh/sshd_config' }}
+      register: provision_cluster_sshd_config
+
+    - name: Set the ssh root login in a sshd_config.d file
+      ansible.builtin.copy:
+        content: |
+          # managed by the opensvc.cluster_v3.provision_cluster role
+          PermitRootLogin prohibit-password
+        dest: /etc/ssh/sshd_config.d/00-opensvc.conf
+        mode: "0600"
+        validate: /usr/sbin/sshd -t -f %s
+      notify: Reload sshd
+      when: _includes
+      vars:
+        _includes: >-
+          {{ provision_cluster_sshd_config.content | b64decode
+             is search('(?mi)^\s*Include\s+/etc/ssh/sshd_config[.]d/[*][.]conf\s*$') }}
+
+    # also when the drop-in exists: the main configuration may set it
+    # before its Include line
+    - name: Set the ssh root login in the sshd main configuration
+      ansible.builtin.replace:
+        dest: /etc/ssh/sshd_config
+        regexp: '(?i)^PermitRootLogin\s+(yes|without-password|no)\s*$'
+        replace: "PermitRootLogin prohibit-password"
+        validate: /usr/sbin/sshd -t -f %s
+      notify: Reload sshd
+      when: provision_cluster_sshd_config_stat.stat.exists
+
+    - name: Get the sshd effective configuration
+      ansible.builtin.command: /usr/sbin/sshd -T
+      register: provision_cluster_sshd_effective
+      changed_when: false
+
+    - name: Check the ssh root login is allowed with keys only
+      ansible.builtin.assert:
+        that:
+          - _effective in ['prohibit-password', 'without-password']
+        fail_msg: >-
+          sshd PermitRootLogin is {{ _effective }}, set by a configuration
+          file read before /etc/ssh/sshd_config.d/00-opensvc.conf
+        quiet: true
+      vars:
+        _effective: >-
+          {{ provision_cluster_sshd_effective.stdout_lines
+             | select('match', '(?i)^permitrootlogin ') | first
+             | split | last }}
 
 - name: Flush handlers
   ansible.builtin.meta: flush_handlers
