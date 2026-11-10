@@ -1,0 +1,6 @@
+---
+minor_changes:
+  - install_hb_multicast - new role, adding a multicast heartbeat to the
+    cluster, with an optional interface per node. It refuses a group and port
+    pair already used by another multicast heartbeat, and waits for the
+    heartbeat to beat on every node.

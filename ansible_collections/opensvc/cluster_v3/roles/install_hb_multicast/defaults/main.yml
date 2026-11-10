@@ -1,0 +1,25 @@
+---
+# defaults file for install_hb_multicast
+
+# mandatory, the heartbeat section id, configured as hb#<rid>
+install_hb_multicast_rid: ""
+
+# present, or absent to remove the heartbeat
+install_hb_multicast_state: present
+
+# the multicast group address, empty for the OpenSVC default, 224.3.29.71
+install_hb_multicast_addr: ""
+
+# the udp port, empty for the OpenSVC default, 10000. Each multicast
+# heartbeat of the cluster needs its own address and port pair.
+install_hb_multicast_port: ""
+
+# the interface to send and listen on, optional host variable
+# install_hb_multicast_intf: eth1
+
+# optional durations, empty means the OpenSVC default
+install_hb_multicast_timeout: ""
+install_hb_multicast_interval: ""
+
+# seconds to wait for the heartbeat to beat on every node
+install_hb_multicast_wait_timeout: 60

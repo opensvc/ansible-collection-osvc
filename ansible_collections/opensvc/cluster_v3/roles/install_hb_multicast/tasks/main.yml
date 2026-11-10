@@ -1,0 +1,236 @@
+---
+# tasks file for install_hb_multicast
+
+- name: Check the heartbeat parameters
+  ansible.builtin.assert:
+    that:
+      - install_hb_multicast_rid | string is match('^[A-Za-z0-9_-]+$')
+      - install_hb_multicast_state in ['present', 'absent']
+      - install_hb_multicast_port | string is match('^([0-9]+)?$')
+      - _addr == ''
+        or _addr is match('^(22[4-9]|23[0-9])([.][0-9]{1,3}){3}$')
+        or _addr is match('^[fF][fF][0-9a-fA-F]{0,2}:[0-9a-fA-F:]*$')
+    fail_msg: >-
+      install_hb_multicast_rid must be set, made of letters, digits, - and _,
+      install_hb_multicast_state must be present or absent,
+      install_hb_multicast_port must be empty or a port number, and
+      install_hb_multicast_addr must be empty or a multicast address
+    quiet: true
+  vars:
+    _addr: "{{ install_hb_multicast_addr | string }}"
+  run_once: true
+
+# om names the nodes by their lowercased short hostname
+- name: Get the node names
+  ansible.builtin.setup:
+    gather_subset: [min]
+  when: ansible_facts['hostname'] is not defined
+
+- name: Get the cluster configuration
+  ansible.builtin.command: om cluster config show
+  register: install_hb_multicast_config_show
+  changed_when: false
+  run_once: true
+
+# section => {keyword: value}, from the ini text
+- name: Parse the cluster configuration
+  ansible.builtin.set_fact:
+    install_hb_multicast_config: >-
+      {%- set out = {} -%}
+      {%- set ns = namespace(section='') -%}
+      {%- for line in install_hb_multicast_config_show.stdout_lines -%}
+      {%- if line[:1] == '[' and ']' in line -%}
+      {%- set ns.section = line[1 : line.index(']')] -%}
+      {%- set _ = out.update({ns.section: {}}) -%}
+      {%- elif ns.section and line is match('^[^#;=]+=') -%}
+      {%- set kv = line.split('=', 1) -%}
+      {%- set _ = out[ns.section].update({kv[0] | trim: kv[1] | trim}) -%}
+      {%- endif -%}
+      {%- endfor -%}
+      {{ out }}
+    install_hb_multicast_section: "hb#{{ install_hb_multicast_rid }}"
+  run_once: true
+
+- name: Remove the heartbeat
+  ansible.builtin.command:
+    argv:
+      - om
+      - cluster
+      - config
+      - update
+      - "--delete={{ install_hb_multicast_section }}"
+  register: install_hb_multicast_delete
+  changed_when: install_hb_multicast_delete.rc == 0
+  run_once: true
+  when:
+    - install_hb_multicast_state == 'absent'
+    - install_hb_multicast_section in install_hb_multicast_config
+
+- name: Configure the heartbeat
+  when: install_hb_multicast_state == 'present'
+  block:
+    # A multicast heartbeat runs on all the cluster nodes. Two multicast
+    # heartbeats on the same group and port receive the datagrams of each
+    # other: one would beat on the sends of the other, and hide its own
+    # failure.
+    - name: Set the heartbeat facts
+      ansible.builtin.set_fact:
+        install_hb_multicast_hb_nodes: >-
+          {{ install_hb_multicast_config.cluster.nodes | default('')
+             | split | map('lower') | list }}
+        install_hb_multicast_intfs: >-
+          {%- set out = {} -%}
+          {%- for h in ansible_play_hosts -%}
+          {%- if hostvars[h].install_hb_multicast_intf | default('') -%}
+          {%- set _ = out.update({
+                hostvars[h].ansible_facts.hostname | lower:
+                hostvars[h].install_hb_multicast_intf}) -%}
+          {%- endif -%}
+          {%- endfor -%}
+          {{ out }}
+        install_hb_multicast_group_users: >-
+          {%- set out = [] -%}
+          {%- for name, kw in install_hb_multicast_config.items() -%}
+          {%- if name is match('^hb#')
+                and name != install_hb_multicast_section
+                and kw.type | default('') == 'multicast'
+                and kw.addr | default('224.3.29.71') | lower == _addr
+                and kw.port | default('10000') == _port -%}
+          {%- set _ = out.append(name) -%}
+          {%- endif -%}
+          {%- endfor -%}
+          {{ out }}
+      vars:
+        _addr: >-
+          {{ (install_hb_multicast_addr | string or '224.3.29.71') | lower }}
+        _port: "{{ install_hb_multicast_port | string or '10000' }}"
+      run_once: true
+
+    - name: Check the heartbeat setup
+      ansible.builtin.assert:
+        that:
+          - _type in ['', 'multicast']
+          - _unknown | length == 0
+          - install_hb_multicast_group_users | length == 0
+        fail_msg: >-
+          {{ install_hb_multicast_section }}:
+          {{ 'it is a ' ~ _type ~ ' heartbeat. '
+             if _type not in ['', 'multicast'] else '' }}
+          {{- 'not cluster nodes: ' ~ _unknown | join(', ') ~ '. '
+              if _unknown else '' }}
+          {{- 'the address and port are used by '
+              ~ install_hb_multicast_group_users | join(', ')
+              ~ ': set install_hb_multicast_addr or install_hb_multicast_port.'
+              if install_hb_multicast_group_users else '' }}
+        quiet: true
+      vars:
+        _type: >-
+          {{ install_hb_multicast_config[install_hb_multicast_section].type
+             | default('')
+             if install_hb_multicast_section in install_hb_multicast_config
+             else '' }}
+        _unknown: >-
+          {{ install_hb_multicast_intfs.keys() | list
+             | difference(install_hb_multicast_hb_nodes) }}
+      run_once: true
+
+    # the interfaces are scoped to each node
+    - name: Set the desired heartbeat keywords
+      ansible.builtin.set_fact:
+        install_hb_multicast_desired: >-
+          {%- set s = install_hb_multicast_section ~ '.' -%}
+          {%- set out = [s ~ 'type=multicast'] -%}
+          {%- for kw in ['addr', 'port', 'timeout', 'interval'] -%}
+          {%- set v = lookup('vars', 'install_hb_multicast_' ~ kw) | string -%}
+          {%- if v -%}{%- set _ = out.append(s ~ kw ~ '=' ~ v) -%}{%- endif -%}
+          {%- endfor -%}
+          {%- for n, i in install_hb_multicast_intfs.items() -%}
+          {%- set _ = out.append(s ~ 'intf@' ~ n ~ '=' ~ i) -%}
+          {%- endfor -%}
+          {{ out }}
+      run_once: true
+
+    - name: Get the current heartbeat keywords
+      ansible.builtin.command:
+        argv: >-
+          {{ ['om', 'cluster', 'config', 'get', '-o', 'json']
+             + (install_hb_multicast_desired
+                | map('regex_replace', '=.*$', '')
+                | map('regex_replace', '^', '--kw=') | list) }}
+      register: install_hb_multicast_current
+      changed_when: false
+      run_once: true
+
+    - name: Configure the heartbeat keywords
+      ansible.builtin.command:
+        argv: >-
+          {{ ['om', 'cluster', 'config', 'update']
+             + (_updates | map('regex_replace', '^', '--set=') | list) }}
+      register: install_hb_multicast_update
+      changed_when: install_hb_multicast_update.rc == 0
+      run_once: true
+      when: _updates | length > 0
+      vars:
+        _items: >-
+          {{ (install_hb_multicast_current.stdout | from_json)['items'] }}
+        _current: >-
+          {{ _items | map(attribute='keyword')
+             | zip(_items | map(attribute='value'))
+             | map('join', '=') | list }}
+        _updates: "{{ install_hb_multicast_desired | difference(_current) }}"
+
+    # each node runs a receiver and a sender, reported per peer
+    - name: Wait for the heartbeat to beat on every node
+      ansible.builtin.command: om daemon hb list -o json
+      register: install_hb_multicast_status
+      changed_when: false
+      failed_when: false
+      retries: >-
+        {{ (install_hb_multicast_wait_timeout | int / 5) | round(0, 'ceil')
+           | int }}
+      delay: 5
+      until: >-
+        install_hb_multicast_status.rc == 0
+        and _items | rejectattr('state', 'equalto', 'running') | list
+            | length == 0
+        and _items | rejectattr('is_beating') | list | length == 0
+        and _items | selectattr('id', 'match', '.*[.]rx$')
+            | map(attribute='node') | unique | length == _count | int
+        and _items | selectattr('id', 'match', '.*[.]tx$')
+            | map(attribute='node') | unique | length == _count | int
+      vars:
+        _count: "{{ install_hb_multicast_hb_nodes | length }}"
+        _items: >-
+          {{ (install_hb_multicast_status.stdout | default('{}', true)
+              | from_json)['items'] | default([])
+             | selectattr('id', 'in',
+                          [install_hb_multicast_section ~ '.rx',
+                           install_hb_multicast_section ~ '.tx'])
+             | selectattr('node', 'in', install_hb_multicast_hb_nodes)
+             | list }}
+      run_once: true
+      when: install_hb_multicast_hb_nodes | length > 1
+
+    - name: Check the heartbeat beats on every node
+      ansible.builtin.assert:
+        that: install_hb_multicast_status is succeeded
+        fail_msg: >-
+          {{ install_hb_multicast_section }} does not beat on every node
+          after {{ install_hb_multicast_wait_timeout }}s:
+          {{ _items | map(attribute='id')
+             | zip(_items | map(attribute='node'),
+                   _items | map(attribute='state'),
+                   _items | map(attribute='is_beating')
+                   | map('ternary', 'beating', 'not beating'))
+             | map('join', ' ') | join(', ') }}
+        quiet: true
+      vars:
+        _items: >-
+          {{ (install_hb_multicast_status.stdout | default('{}', true)
+              | from_json)['items'] | default([])
+             | selectattr('id', 'in',
+                          [install_hb_multicast_section ~ '.rx',
+                           install_hb_multicast_section ~ '.tx'])
+             | list }}
+      run_once: true
+      when: install_hb_multicast_hb_nodes | length > 1
