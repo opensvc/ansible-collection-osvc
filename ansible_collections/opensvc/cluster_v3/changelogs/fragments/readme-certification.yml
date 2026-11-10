@@ -1,6 +1,0 @@
----
-minor_changes:
-  - README - add the Installation section, focused on Red Hat Ansible
-    Automation Hub, and the License information section, linking to the
-    LICENSE file. Also add the Description, Requirements, Use cases, Testing,
-    Related information sections, and a link to the platform life cycle.

@@ -2,36 +2,53 @@
 
 **Topics**
 
-- <a href="#v1-4-0">v1\.4\.0</a>
+- <a href="#v1-5-0">v1\.5\.0</a>
     - <a href="#release-summary">Release Summary</a>
     - <a href="#minor-changes">Minor Changes</a>
+- <a href="#v1-4-0">v1\.4\.0</a>
+    - <a href="#release-summary-1">Release Summary</a>
+    - <a href="#minor-changes-1">Minor Changes</a>
     - <a href="#bugfixes">Bugfixes</a>
 - <a href="#v1-3-1">v1\.3\.1</a>
-    - <a href="#release-summary-1">Release Summary</a>
+    - <a href="#release-summary-2">Release Summary</a>
     - <a href="#bugfixes-1">Bugfixes</a>
 - <a href="#v1-3-0">v1\.3\.0</a>
-    - <a href="#release-summary-2">Release Summary</a>
-    - <a href="#minor-changes-1">Minor Changes</a>
+    - <a href="#release-summary-3">Release Summary</a>
+    - <a href="#minor-changes-2">Minor Changes</a>
     - <a href="#bugfixes-2">Bugfixes</a>
 - <a href="#v1-2-0">v1\.2\.0</a>
     - <a href="#breaking-changes--porting-guide">Breaking Changes / Porting Guide</a>
     - <a href="#bugfixes-3">Bugfixes</a>
 - <a href="#v1-1-0">v1\.1\.0</a>
-    - <a href="#minor-changes-2">Minor Changes</a>
+    - <a href="#minor-changes-3">Minor Changes</a>
     - <a href="#bugfixes-4">Bugfixes</a>
 - <a href="#v1-0-0">v1\.0\.0</a>
-    - <a href="#minor-changes-3">Minor Changes</a>
+    - <a href="#minor-changes-4">Minor Changes</a>
     - <a href="#bugfixes-5">Bugfixes</a>
 
-<a id="v1-4-0"></a>
-## v1\.4\.0
+<a id="v1-5-0"></a>
+## v1\.5\.0
 
 <a id="release-summary"></a>
 ### Release Summary
 
-Support of RHEL 8\, 9 and 10\, Ubuntu 22\.04\, 24\.04 and 26\.04\, SLES 15 and 16\, and Debian 12 and 13\, with ansible\.builtin modules only\. New roles install\_quorum\, install\_hb\_unicast and install\_hb\_disk\. The roles are idempotent\, and many fixes\, of the sshd root login setting\, the ELRepo key check\, the Debian repository signature\, the join and dns waits\, and the relay heartbeat wait among them\.
+New role install\_hb\_multicast\. The README follows the certified collection README template\, with an Installation section focused on Red Hat Ansible Automation Hub and a License information section\.
 
 <a id="minor-changes"></a>
+### Minor Changes
+
+* README \- add the Installation section\, focused on Red Hat Ansible Automation Hub\, and the License information section\, linking to the LICENSE file\. Also add the Description\, Requirements\, Use cases\, Testing\, Related information sections\, and a link to the platform life cycle\.
+* install\_hb\_multicast \- new role\, adding a multicast heartbeat to the cluster\, with an optional interface per node\. It refuses a group and port pair already used by another multicast heartbeat\, and waits for the heartbeat to beat on every node\.
+
+<a id="v1-4-0"></a>
+## v1\.4\.0
+
+<a id="release-summary-1"></a>
+### Release Summary
+
+Support of RHEL 8\, 9 and 10\, Ubuntu 22\.04\, 24\.04 and 26\.04\, SLES 15 and 16\, and Debian 12 and 13\, with ansible\.builtin modules only\. New roles install\_quorum\, install\_hb\_unicast and install\_hb\_disk\. The roles are idempotent\, and many fixes\, of the sshd root login setting\, the ELRepo key check\, the Debian repository signature\, the join and dns waits\, and the relay heartbeat wait among them\.
+
+<a id="minor-changes-1"></a>
 ### Minor Changes
 
 * all roles \- removed the <code>\.travis\.yml</code> and <code>tests/</code> skeletons of the roles\, and the unused handlers and <code>install\_drbd\_debian\_repo</code>\, <code>install\_drbd\_debian\_version</code> variables of install\_drbd\.
@@ -80,7 +97,7 @@ Support of RHEL 8\, 9 and 10\, Ubuntu 22\.04\, 24\.04 and 26\.04\, SLES 15 and 1
 <a id="v1-3-1"></a>
 ## v1\.3\.1
 
-<a id="release-summary-1"></a>
+<a id="release-summary-2"></a>
 ### Release Summary
 
 Bugfix release\: the roles no longer rely on the top\-level fact variables deprecated by ansible\-core 2\.20\, and the cluster vip interface detection matches the exact node name\.
@@ -94,12 +111,12 @@ Bugfix release\: the roles no longer rely on the top\-level fact variables depre
 <a id="v1-3-0"></a>
 ## v1\.3\.0
 
-<a id="release-summary-2"></a>
+<a id="release-summary-3"></a>
 ### Release Summary
 
 install\_drbd now installs DRBD 9 when it is missing\, from the LINBIT ppa\, ELRepo or the official LINBIT repositories\. The roles use the current OpenSVC v3 commands\, and the waits on the node and vip states are fixed\.
 
-<a id="minor-changes-1"></a>
+<a id="minor-changes-2"></a>
 ### Minor Changes
 
 * Documentation \- README\: describe the collection\, add the support and release notes sections\.
@@ -142,7 +159,7 @@ install\_drbd now installs DRBD 9 when it is missing\, from the LINBIT ppa\, ELR
 <a id="v1-1-0"></a>
 ## v1\.1\.0
 
-<a id="minor-changes-2"></a>
+<a id="minor-changes-3"></a>
 ### Minor Changes
 
 * New role install\_hb\_relay\, to add a relay heartbeat to the cluster\.
@@ -173,7 +190,7 @@ install\_drbd now installs DRBD 9 when it is missing\, from the LINBIT ppa\, ELR
 <a id="v1-0-0"></a>
 ## v1\.0\.0
 
-<a id="minor-changes-3"></a>
+<a id="minor-changes-4"></a>
 ### Minor Changes
 
 * Red Hat Ansible Automation Platform is ending support for Ansible Core 2\.15 and Python 3\.11\.

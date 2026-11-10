@@ -138,11 +138,6 @@ releases:
   1.4.0:
     changes:
       bugfixes:
-        - provision_cluster - with ``provision_cluster_configure_ssh_trust``, the
-          root login was left allowed with a password on RHEL 7, whose sshd has
-          no ``Include`` and allows it by default. ``PermitRootLogin
-          prohibit-password`` is now added at the top of ``/etc/ssh/sshd_config``
-          when it neither includes ``sshd_config.d`` nor sets it.
         - install_cni - the ``cni.plugins`` and ``cni.config`` cluster keywords were
           not set when the plugins were already in ``install_cni_plugins_dir``, and
           an interrupted download or extraction was never resumed.
@@ -201,6 +196,11 @@ releases:
           set in ``sshd_config.d/00-opensvc.conf`` too, the files are validated with
           ``sshd -t``, ``PermitRootLogin no`` is replaced too, and the effective setting
           is checked.
+        - provision_cluster - with ``provision_cluster_configure_ssh_trust``, the
+          root login was left allowed with a password on RHEL 7, whose sshd has no
+          ``Include`` and allows it by default. ``PermitRootLogin prohibit-password``
+          is now added at the top of ``/etc/ssh/sshd_config`` when it neither includes
+          ``sshd_config.d`` nor sets it.
         - unprovision_cluster - the defined services were not checked when no daemon
           was running. They are now looked up in the object configuration files.
       minor_changes:
@@ -265,3 +265,22 @@ releases:
       - install-quorum.yml
       - release-summary.yml
     release_date: '2026-11-09'
+  1.5.0:
+    changes:
+      minor_changes:
+        - README - add the Installation section, focused on Red Hat Ansible Automation
+          Hub, and the License information section, linking to the LICENSE file. Also
+          add the Description, Requirements, Use cases, Testing, Related information
+          sections, and a link to the platform life cycle.
+        - install_hb_multicast - new role, adding a multicast heartbeat to the cluster,
+          with an optional interface per node. It refuses a group and port pair already
+          used by another multicast heartbeat, and waits for the heartbeat to beat
+          on every node.
+      release_summary: New role install_hb_multicast. The README follows the certified
+        collection README template, with an Installation section focused on Red Hat
+        Ansible Automation Hub and a License information section.
+    fragments:
+      - install-hb-multicast.yml
+      - readme-certification.yml
+      - release-1.5.0.yml
+    release_date: '2026-11-10'
