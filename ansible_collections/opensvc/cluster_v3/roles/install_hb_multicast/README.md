@@ -51,8 +51,10 @@ letters, digits, `-` and `_`.
 
 `install_hb_multicast_addr`
 
-The multicast group address, IPv4 (`224.0.0.0/4`) or IPv6 (`ff00::/8`).
-Empty for the OpenSVC default, `224.3.29.71`. Default value is `""`
+The IPv4 multicast group address, in `224.0.0.0/4`. Empty for the OpenSVC
+default, `224.3.29.71`. Default value is `""`
+
+OpenSVC v3 does not support the IPv6 groups yet: the role refuses them.
 
 `install_hb_multicast_port`
 

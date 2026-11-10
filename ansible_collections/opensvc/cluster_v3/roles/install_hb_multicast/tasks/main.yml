@@ -9,12 +9,11 @@
       - install_hb_multicast_port | string is match('^([0-9]+)?$')
       - _addr == ''
         or _addr is match('^(22[4-9]|23[0-9])([.][0-9]{1,3}){3}$')
-        or _addr is match('^[fF][fF][0-9a-fA-F]{0,2}:[0-9a-fA-F:]*$')
     fail_msg: >-
       install_hb_multicast_rid must be set, made of letters, digits, - and _,
       install_hb_multicast_state must be present or absent,
       install_hb_multicast_port must be empty or a port number, and
-      install_hb_multicast_addr must be empty or a multicast address
+      install_hb_multicast_addr must be empty or an IPv4 multicast address
     quiet: true
   vars:
     _addr: "{{ install_hb_multicast_addr | string }}"
@@ -94,15 +93,14 @@
           {%- if name is match('^hb#')
                 and name != install_hb_multicast_section
                 and kw.type | default('') == 'multicast'
-                and kw.addr | default('224.3.29.71') | lower == _addr
+                and kw.addr | default('224.3.29.71') == _addr
                 and kw.port | default('10000') == _port -%}
           {%- set _ = out.append(name) -%}
           {%- endif -%}
           {%- endfor -%}
           {{ out }}
       vars:
-        _addr: >-
-          {{ (install_hb_multicast_addr | string or '224.3.29.71') | lower }}
+        _addr: "{{ install_hb_multicast_addr | string or '224.3.29.71' }}"
         _port: "{{ install_hb_multicast_port | string or '10000' }}"
       run_once: true
 
@@ -189,7 +187,7 @@
         {{ (install_hb_multicast_wait_timeout | int / 5) | round(0, 'ceil')
            | int }}
       delay: 5
-      until: >-
+      until: &beating >-
         install_hb_multicast_status.rc == 0
         and _items | rejectattr('state', 'equalto', 'running') | list
             | length == 0
@@ -198,7 +196,7 @@
             | map(attribute='node') | unique | length == _count | int
         and _items | selectattr('id', 'match', '.*[.]tx$')
             | map(attribute='node') | unique | length == _count | int
-      vars:
+      vars: &beating_vars
         _count: "{{ install_hb_multicast_hb_nodes | length }}"
         _items: >-
           {{ (install_hb_multicast_status.stdout | default('{}', true)
@@ -211,9 +209,11 @@
       run_once: true
       when: install_hb_multicast_hb_nodes | length > 1
 
+    # the condition of the wait, evaluated again: since ansible-core 2.21,
+    # failed_when false also marks a wait out of retries as succeeded
     - name: Check the heartbeat beats on every node
       ansible.builtin.assert:
-        that: install_hb_multicast_status is succeeded
+        that: *beating
         fail_msg: >-
           {{ install_hb_multicast_section }} does not beat on every node
           after {{ install_hb_multicast_wait_timeout }}s:
@@ -224,13 +224,6 @@
                    | map('ternary', 'beating', 'not beating'))
              | map('join', ' ') | join(', ') }}
         quiet: true
-      vars:
-        _items: >-
-          {{ (install_hb_multicast_status.stdout | default('{}', true)
-              | from_json)['items'] | default([])
-             | selectattr('id', 'in',
-                          [install_hb_multicast_section ~ '.rx',
-                           install_hb_multicast_section ~ '.tx'])
-             | list }}
+      vars: *beating_vars
       run_once: true
       when: install_hb_multicast_hb_nodes | length > 1
