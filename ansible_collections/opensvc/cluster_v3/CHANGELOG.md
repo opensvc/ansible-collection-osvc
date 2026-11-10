@@ -5,26 +5,27 @@
 - <a href="#v1-5-0">v1\.5\.0</a>
     - <a href="#release-summary">Release Summary</a>
     - <a href="#minor-changes">Minor Changes</a>
+    - <a href="#bugfixes">Bugfixes</a>
 - <a href="#v1-4-0">v1\.4\.0</a>
     - <a href="#release-summary-1">Release Summary</a>
     - <a href="#minor-changes-1">Minor Changes</a>
-    - <a href="#bugfixes">Bugfixes</a>
+    - <a href="#bugfixes-1">Bugfixes</a>
 - <a href="#v1-3-1">v1\.3\.1</a>
     - <a href="#release-summary-2">Release Summary</a>
-    - <a href="#bugfixes-1">Bugfixes</a>
+    - <a href="#bugfixes-2">Bugfixes</a>
 - <a href="#v1-3-0">v1\.3\.0</a>
     - <a href="#release-summary-3">Release Summary</a>
     - <a href="#minor-changes-2">Minor Changes</a>
-    - <a href="#bugfixes-2">Bugfixes</a>
+    - <a href="#bugfixes-3">Bugfixes</a>
 - <a href="#v1-2-0">v1\.2\.0</a>
     - <a href="#breaking-changes--porting-guide">Breaking Changes / Porting Guide</a>
-    - <a href="#bugfixes-3">Bugfixes</a>
+    - <a href="#bugfixes-4">Bugfixes</a>
 - <a href="#v1-1-0">v1\.1\.0</a>
     - <a href="#minor-changes-3">Minor Changes</a>
-    - <a href="#bugfixes-4">Bugfixes</a>
+    - <a href="#bugfixes-5">Bugfixes</a>
 - <a href="#v1-0-0">v1\.0\.0</a>
     - <a href="#minor-changes-4">Minor Changes</a>
-    - <a href="#bugfixes-5">Bugfixes</a>
+    - <a href="#bugfixes-6">Bugfixes</a>
 
 <a id="v1-5-0"></a>
 ## v1\.5\.0
@@ -32,13 +33,18 @@
 <a id="release-summary"></a>
 ### Release Summary
 
-New role install\_hb\_multicast\. The README follows the certified collection README template\, with an Installation section focused on Red Hat Ansible Automation Hub and a License information section\.
+New role install\_hb\_multicast\. The README follows the certified collection README template\, with an Installation section focused on Red Hat Ansible Automation Hub and a License information section\. The heartbeat roles fail again when the heartbeat does not beat\, with ansible\-core 2\.21 and later\.
 
 <a id="minor-changes"></a>
 ### Minor Changes
 
 * README \- add the Installation section\, focused on Red Hat Ansible Automation Hub\, and the License information section\, linking to the LICENSE file\. Also add the Description\, Requirements\, Use cases\, Testing\, Related information sections\, and a link to the platform life cycle\.
 * install\_hb\_multicast \- new role\, adding a multicast heartbeat to the cluster\, with an optional interface per node\. It refuses a group and port pair already used by another multicast heartbeat\, and waits for the heartbeat to beat on every node\.
+
+<a id="bugfixes"></a>
+### Bugfixes
+
+* install\_hb\_unicast\, install\_hb\_disk \- with ansible\-core 2\.21 and later\, the roles succeeded when the heartbeat did not beat on every node at the end of the wait\, as ansible\-core now marks a task out of retries with <code>failed\_when</code> false as succeeded\. The wait condition is now checked again after the wait\.
 
 <a id="v1-4-0"></a>
 ## v1\.4\.0
@@ -69,7 +75,7 @@ Support of RHEL 8\, 9 and 10\, Ubuntu 22\.04\, 24\.04 and 26\.04\, SLES 15 and 1
 * unprovision\_cluster \- remove the OpenSVC packages on SLES\.
 * unprovision\_cluster \- with <code>unprovision\_cluster\_purge</code>\, also remove the files added by provision\_cluster\, the OpenSVC package repository\, the sysrq setting\, the <code>/etc/hosts</code> block and the docker daemon configuration it installed\.
 
-<a id="bugfixes"></a>
+<a id="bugfixes-1"></a>
 ### Bugfixes
 
 * install\_cni \- the <code>cni\.plugins</code> and <code>cni\.config</code> cluster keywords were not set when the plugins were already in <code>install\_cni\_plugins\_dir</code>\, and an interrupted download or extraction was never resumed\.
@@ -102,7 +108,7 @@ Support of RHEL 8\, 9 and 10\, Ubuntu 22\.04\, 24\.04 and 26\.04\, SLES 15 and 1
 
 Bugfix release\: the roles no longer rely on the top\-level fact variables deprecated by ansible\-core 2\.20\, and the cluster vip interface detection matches the exact node name\.
 
-<a id="bugfixes-1"></a>
+<a id="bugfixes-2"></a>
 ### Bugfixes
 
 * Use the <code>ansible\_facts</code> dictionary instead of the top\-level fact variables\, removing the <code>INJECT\_FACTS\_AS\_VARS</code> deprecation warning of ansible\-core 2\.20 and later\.
@@ -128,7 +134,7 @@ install\_drbd now installs DRBD 9 when it is missing\, from the LINBIT ppa\, ELR
 * install\_drbd \- new <code>install\_drbd\_linbit\_key</code> variable\, the confidential LINBIT enabler code\: when set\, DRBD 9 is installed from the official LINBIT customer repositories \(Ubuntu\, Debian\, RHEL 7 to 10\)\. The tasks using it are hidden from the logs\, and the repository files are readable by root only\.
 * provision\_cluster\, install\_dns \- the event filters select the nodes by hostname\, like the OpenSVC node names\.
 
-<a id="bugfixes-2"></a>
+<a id="bugfixes-3"></a>
 ### Bugfixes
 
 * install\_drbd \- the daemon restart handler used the OpenSVC v2 <code>om node wait</code> command\.
@@ -146,7 +152,7 @@ install\_drbd now installs DRBD 9 when it is missing\, from the LINBIT ppa\, ELR
 * unprovision\_cluster \- the OpenSVC configuration and data are kept\, unless <code>unprovision\_cluster\_purge</code> is set to <code>true</code>\.
 * unprovision\_services \- the role lists the objects to purge and fails without changing anything\, unless <code>unprovision\_services\_confirm</code> is set to <code>true</code>\.
 
-<a id="bugfixes-3"></a>
+<a id="bugfixes-4"></a>
 ### Bugfixes
 
 * unprovision\_cluster \- fail when services or volumes are still defined on the cluster\.
@@ -169,7 +175,7 @@ install\_drbd now installs DRBD 9 when it is missing\, from the LINBIT ppa\, ELR
 * provision\_cluster \- install a given OpenSVC version with <code>provision\_cluster\_version</code> \(server and client pinned\)\, downgrades require <code>provision\_cluster\_allow\_downgrade</code>\, freeze the cluster before and thaw it only once all nodes have rejoined\.
 * provision\_cluster \- set the <code>hb\#1\.timeout</code> keyword from <code>provision\_cluster\_hb\_timeout</code>\.
 
-<a id="bugfixes-4"></a>
+<a id="bugfixes-5"></a>
 ### Bugfixes
 
 * Install\_pool\, install\_backend\_network\: detect existing objects from <code>om \.\.\. ls \-o json</code>\.
@@ -196,7 +202,7 @@ install\_drbd now installs DRBD 9 when it is missing\, from the LINBIT ppa\, ELR
 * Red Hat Ansible Automation Platform is ending support for Ansible Core 2\.15 and Python 3\.11\.
 * Set minimum ansible version to 2\.16\.0\.
 
-<a id="bugfixes-5"></a>
+<a id="bugfixes-6"></a>
 ### Bugfixes
 
 * Fix deprecated syntax\.

@@ -1,7 +1,0 @@
----
-bugfixes:
-  - install_hb_unicast, install_hb_disk - with ansible-core 2.21 and later,
-    the roles succeeded when the heartbeat did not beat on every node at the
-    end of the wait, as ansible-core now marks a task out of retries with
-    ``failed_when`` false as succeeded. The wait condition is now checked
-    again after the wait.
