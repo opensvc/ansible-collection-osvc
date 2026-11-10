@@ -414,7 +414,7 @@
         {{ (install_hb_disk_wait_timeout | int / 5) | round(0, 'ceil')
            | int }}
       delay: 5
-      until: >-
+      until: &beating >-
         install_hb_disk_status.rc == 0
         and _items | rejectattr('state', 'equalto', 'running') | list
             | length == 0
@@ -423,7 +423,7 @@
             | map(attribute='node') | unique | length == _count | int
         and _items | selectattr('id', 'match', '.*[.]tx$')
             | map(attribute='node') | unique | length == _count | int
-      vars:
+      vars: &beating_vars
         _count: "{{ install_hb_disk_hb_nodes | length }}"
         _items: >-
           {{ (install_hb_disk_status.stdout | default('{}', true)
@@ -435,9 +435,11 @@
       run_once: true
       when: install_hb_disk_hb_nodes | length > 1
 
+    # the condition of the wait, evaluated again: since ansible-core 2.21,
+    # failed_when false also marks a wait out of retries as succeeded
     - name: Check the heartbeat beats on every node
       ansible.builtin.assert:
-        that: install_hb_disk_status is succeeded
+        that: *beating
         fail_msg: >-
           {{ install_hb_disk_section }} does not beat on every node after
           {{ install_hb_disk_wait_timeout }}s:
@@ -448,12 +450,6 @@
                    | map('ternary', 'beating', 'not beating'))
              | map('join', ' ') | join(', ') }}
         quiet: true
-      vars:
-        _items: >-
-          {{ (install_hb_disk_status.stdout | default('{}', true)
-              | from_json)['items'] | default([])
-             | selectattr('id', 'in', [install_hb_disk_section ~ '.rx',
-                                       install_hb_disk_section ~ '.tx'])
-             | list }}
+      vars: *beating_vars
       run_once: true
       when: install_hb_disk_hb_nodes | length > 1
